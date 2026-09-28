@@ -205,6 +205,51 @@ describe('useScrollBars · 展开 / 收起时机', () => {
     expect(bars.barsVisible.value).toBe(true)
     dispose()
   })
+
+  it('指针从嵌套子级移到外层（祖先）ScrollView 轨道区域时立即让位，不残留 hover', () => {
+    const core = makeCore()
+    // 子级根：自身内容 + 自身轨道
+    const root = document.createElement('div')
+    root.className = 'fui-scrollview'
+    const childContent = document.createElement('span')
+    root.appendChild(childContent)
+    const childTrack = document.createElement('div')
+    root.appendChild(childTrack)
+    // 外层（祖先）ScrollView：把子级根包进去，并附带一条「外层轨道」作为父级轨道区域
+    const ancestor = document.createElement('div')
+    ancestor.className = 'fui-scrollview'
+    ancestor.appendChild(root)
+    const ancestorTrack = document.createElement('div')
+    ancestor.appendChild(ancestorTrack)
+    core.setElement('rootEl', root)
+
+    const over = (target: EventTarget): PointerEvent => {
+      const event = new PointerEvent('pointerover', { bubbles: true })
+      Object.defineProperty(event, 'target', { value: target, configurable: true })
+      return event
+    }
+    const out = (related: EventTarget): PointerEvent => {
+      const event = new PointerEvent('pointerout', { bubbles: true })
+      Object.defineProperty(event, 'relatedTarget', { value: related, configurable: true })
+      return event
+    }
+
+    const { value: bars, dispose } = scoped(() => useScrollBars(core))
+
+    // 子级先进入自身轨道 → 显示 + 展开轨道
+    bars.onPointerOverViewport(over(childTrack))
+    expect(bars.barsVisible.value).toBe(true)
+    bars.onBarPointerEnter()
+    expect(bars.trackExpanded.value).toBe(true)
+
+    // 指针移入外层（祖先）ScrollView 的轨道区域：子级不再是「最内层」
+    bars.onPointerOutViewport(out(ancestorTrack))
+    // 子级必须立即让位，不残留 hover / 轨道（否则会悬在父级轨道之上）
+    expect(bars.barsVisible.value).toBe(false)
+    expect(bars.hovering.value).toBe(false)
+    expect(bars.trackExpanded.value).toBe(false)
+    dispose()
+  })
 })
 
 describe('useScrollBars · 轨道展开', () => {

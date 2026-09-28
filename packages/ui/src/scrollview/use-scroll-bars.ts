@@ -6,6 +6,9 @@
  *  - trackExpanded：指针进入滚动条命中区（或正在拖拽滑块）→ 轨道连同两端步进
  *    按钮展开显示，离开后收起。两者都由 CSS 过渡驱动，JS 只切换状态标志。
  *
+ * 嵌套 ScrollView 的 hover 归属（详见 resolveHoverOwner）：一次指针事件只在
+ * 唯一一个 ScrollView 上生效，其余层级让位，因此任意时刻最多只有一条轨道展开。
+ *
  * 拇指长度 / 位移是视图状态的纯派生值，这里用 watchEffect 响应式维护，
  * 任何 offset / zoom / 尺寸变化后自动刷新，core.applyView 不再关心拇指。
  */
@@ -22,6 +25,11 @@ import type { ScrollViewCore } from './core'
 /** 滚动条轴向 */
 type ScrollBarAxis = 'vertical' | 'horizontal'
 
+/** ScrollView 根元素类名（模板与几何判定共用，避免字符串散落） */
+const ROOT_CLASS = 'fui-scrollview'
+/** 滚动条命中区类名 */
+const BAR_CLASS = 'fui-scrollview__scrollbar'
+
 /**
  * 滑块行程两端需要让开的步进按钮 band（px）。
  *
@@ -36,11 +44,75 @@ const thumbTravelInset = (thumb: HTMLElement, axis: ScrollBarAxis): number =>
  * 指针命中最内层 ScrollView 的根元素：
  * - element 属于某个 ScrollView（含自身），返回该根元素；
  * - 否则返回 undefined。
- * 用「最内层 ScrollView」作为 hover 的唯一权威，祖先 / 同级据此让位，
- * 从而在嵌套 ScrollView 下只有指针真正所在的视图进入 hover 态。
  */
 const innermostScrollView = (target: EventTarget | null): Element | undefined =>
-  target instanceof Element ? (target.closest('.fui-scrollview') ?? undefined) : undefined
+  target instanceof Element ? (target.closest(`.${ROOT_CLASS}`) ?? undefined) : undefined
+
+/** 从事件目标向上收集 ScrollView 根元素链：最内层在前、最外层在后 */
+const scrollViewChain = (target: EventTarget | null): Element[] => {
+  const chain: Element[] = []
+  let node = innermostScrollView(target)
+  while (node) {
+    chain.push(node)
+    node = node.parentElement ? innermostScrollView(node.parentElement) : undefined
+  }
+  return chain
+}
+
+/** 某个 ScrollView 自身的滚动条命中区（只取直接子元素，不含嵌套子级的） */
+const ownScrollBars = (root: Element): Element[] =>
+  [...root.children].filter((child) => child.classList.contains(BAR_CLASS))
+
+/**
+ * 指针坐标是否落在某个 ScrollView 自身的滚动条命中区内。
+ *
+ * 用几何判定而非「事件目标是不是命中区」：命中区在收起时 pointer-events:none，
+ * 指针落在父级轨道上时命中的是下层的嵌套 ScrollView，单看 event.target 会把
+ * 父级的轨道误判给子级。
+ *
+ * 未布局（矩形退化）时不参与判定——jsdom 与未挂载场景下所有矩形都是 0×0，
+ * 此时一律走「最内层归属」，行为与纯 DOM 冒泡判定一致。
+ */
+const pointerInBarArea = (root: Element, event: PointerEvent): boolean => {
+  if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+    return false
+  }
+  return ownScrollBars(root).some((bar) => {
+    const rect = bar.getBoundingClientRect()
+    if (rect.width <= 0 || rect.height <= 0) {
+      return false
+    }
+    return (
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom
+    )
+  })
+}
+
+/**
+ * 一次指针事件的 hover 归属（唯一权威，所有层级据此决定是否进入 hover 态）。
+ *
+ * 判定顺序「由外向内」检查各层自身的滚动条命中区：命中即该层独占。这与滚动条
+ * 绘制在内容之上的稳态命中顺序一致，因此归属结果不会与浏览器的命中测试互相
+ * 拉扯（否则父级一收起就让出指针、子级随即顶上，来回抖动）。都不命中时归最内层
+ * ScrollView——指针位于它的内容上。
+ */
+const resolveHoverOwner = (event: PointerEvent): Element | undefined => {
+  const chain = scrollViewChain(event.target)
+  const innermost = chain[0]
+  if (!innermost) {
+    return undefined
+  }
+  for (let index = chain.length - 1; index >= 0; index -= 1) {
+    const view = chain[index]
+    if (view && pointerInBarArea(view, event)) {
+      return view
+    }
+  }
+  return innermost
+}
 
 /** 滚动条展示层暴露给其他模块 / 模板的对象 */
 interface ScrollBars {
@@ -58,8 +130,8 @@ interface ScrollBars {
   /** 在 2s 无交互后收起滚动条 */
   scheduleHide: () => void
   /**
-   * 指针划过本视图（由冒泡的 pointerover 驱动）。内部按「指针命中的最内层
-   * ScrollView」判定：只有最内层进入 hover，祖先 / 同级自动让位，实现嵌套隔离。
+   * 指针划过本视图（由冒泡的 pointerover 驱动）。内部按 resolveHoverOwner
+   * 判定归属：只有被判定的归属者进入 hover，其余层级自动让位，实现嵌套隔离。
    */
   onPointerOverViewport: (event: PointerEvent) => void
   onPointerOutViewport: (event: PointerEvent) => void
@@ -156,14 +228,18 @@ const useScrollBars = (core: ScrollViewCore): ScrollBars => {
   }
 
   const onPointerOverViewport = (event: PointerEvent): void => {
-    // 事件冒泡：target 是本视图子树内任意元素，最近的自带 fui-scrollview
-    // 类的祖先即「指针命中的最内层 ScrollView」。
-    if (innermostScrollView(event.target) === rootEl.value) {
-      hoverViewport()
-    } else {
-      // 指针落在更深的嵌套 ScrollView 上 → 本视图让位
+    const root = rootEl.value
+    // 事件冒泡：本视图与所有祖先 / 嵌套子级都会收到同一次事件，因此统一按
+    // 归属判定决定谁进入 hover，保证一次事件只有一个归属者。
+    if (resolveHoverOwner(event) !== root) {
+      // 归属其它 ScrollView（更深的嵌套子级，或绘制在本视图之上的祖先轨道）→ 让位
       releaseHoverViewport(true)
+      return
     }
+    hoverViewport()
+    // 指针直接落在自身轨道区时展开轨道：命中区收起时不拦截指针事件，收不到
+    // 进入通知，这里按几何判定展开；离开命中区后由同一次判定复位。
+    barHovered.value = root !== null && pointerInBarArea(root, event)
   }
 
   const onPointerOutViewport = (event: PointerEvent): void => {
@@ -173,13 +249,9 @@ const useScrollBars = (core: ScrollViewCore): ScrollBars => {
       // 指针仍在自身区域内（含自身滚动条）→ 保持悬停
       return
     }
-    if (inner instanceof Element && target?.contains(inner)) {
-      // 指针移入自身的嵌套子级 ScrollView → 立即让位
-      releaseHoverViewport(true)
-      return
-    }
-    // 指针真正离开本视图 → 走收起延时
-    releaseHoverViewport(false)
+    // 指针移进了另一个 ScrollView（自身的嵌套子级 / 祖先 / 同级）：立即让位，
+    // 否则两条轨道会叠在一起显示；只有真正离开所有 ScrollView 才走收起延时。
+    releaseHoverViewport(inner !== undefined)
   }
 
   const onBarPointerEnter = (): void => {

@@ -69,7 +69,7 @@
   touch-action: none;
 }
 
-.fui-scrollview--panning .fui-scrollview__presenter {
+.fui-scrollview--panning > .fui-scrollview__presenter {
   user-select: none;
   -webkit-user-select: none;
 }
@@ -108,11 +108,11 @@
   --fui-scrollview-track-scale: var(--fui-scrollview-track-scale-collapsed);
 }
 
-.fui-scrollview--bars-visible .fui-scrollview__scrollbar {
+.fui-scrollview--bars-visible > .fui-scrollview__scrollbar {
   pointer-events: auto;
 }
 
-.fui-scrollview--bars-expanded .fui-scrollview__scrollbar {
+.fui-scrollview--bars-expanded > .fui-scrollview__scrollbar {
   --fui-scrollview-motion-curve: var(--fui-scrollview-enter-curve);
   --fui-scrollview-thumb-scale: 1;
   --fui-scrollview-track-scale: 1;
@@ -132,10 +132,10 @@
 }
 
 /* 双轴同时滚动：各自让出角落，避免两条轨道两端的箭头在角落重叠 */
-.fui-scrollview--both-bars .fui-scrollview__scrollbar--vertical {
+.fui-scrollview--both-bars > .fui-scrollview__scrollbar--vertical {
   bottom: var(--fui-scrollview-bar-size);
 }
-.fui-scrollview--both-bars .fui-scrollview__scrollbar--horizontal {
+.fui-scrollview--both-bars > .fui-scrollview__scrollbar--horizontal {
   right: var(--fui-scrollview-bar-size);
 }
 
@@ -148,7 +148,7 @@
   transition: opacity var(--fui-scrollview-expand-duration) var(--fui-scrollview-motion-curve);
 }
 
-.fui-scrollview--bars-expanded .fui-scrollview__track {
+.fui-scrollview--bars-expanded > .fui-scrollview__scrollbar > .fui-scrollview__track {
   opacity: 1;
 }
 
@@ -190,7 +190,7 @@
   transition: opacity var(--fui-scrollview-expand-duration) var(--fui-scrollview-motion-curve);
 }
 
-.fui-scrollview--bars-expanded .fui-scrollview__track-button {
+.fui-scrollview--bars-expanded > .fui-scrollview__scrollbar .fui-scrollview__track-button {
   opacity: 1;
   pointer-events: auto;
 }
@@ -266,12 +266,12 @@
   transition: opacity var(--fui-scrollview-expand-duration) var(--curveLinear);
 }
 
-.fui-scrollview--bars-visible .fui-scrollview__thumb {
+.fui-scrollview--bars-visible > .fui-scrollview__scrollbar .fui-scrollview__thumb {
   opacity: 1;
 }
 
 /* 交互 / 悬停触发时立即显示（无展开延迟），收起时淡出 */
-.fui-scrollview--bars-immediate .fui-scrollview__thumb {
+.fui-scrollview--bars-immediate > .fui-scrollview__scrollbar .fui-scrollview__thumb {
   transition-duration: 0s;
 }
 

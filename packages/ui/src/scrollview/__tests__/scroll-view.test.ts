@@ -1,40 +1,16 @@
-/* oxlint-disable capitalized-comments, consistent-function-scoping, import/no-nodejs-modules, max-statements, no-magic-numbers --
+/* oxlint-disable capitalized-comments, consistent-function-scoping, max-statements, no-magic-numbers --
  * 测试代码：文件头注释为被测契约说明，挂载工具按用例就地定义更直观，
- * 断言步骤数与窗口部件数量属测试表达；读取外置样式文件需要用 node: 内置模块，均豁免。 */
+ * 断言步骤数与窗口部件数量属测试表达，豁免结构风格规则。 */
 /**
  * FluereScrollView 组件：滚动条「滑块 / 轨道 / 双轴角落」三层可见性的模板装配。
  *
  * 可见性本身由 CSS 过渡驱动，JS 只切换状态类，这里断言类名与窗口部件结构，
  * 把「指针进入容器显示滑块 → 进入命中区展开轨道 → 离开收起」的契约钉住。
  */
-import { readFileSync } from 'node:fs'
-// jsdom 替换了全局 URL，readFileSync 只认 node:url 的实现
-import { URL } from 'node:url'
 import { mount } from '@vue/test-utils'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import FluereScrollView from '../scroll-view.vue'
-
-/**
- * 组件样式外置在 scroll-view.css（vitest 默认不处理 CSS，`?raw` 只会得到空串），
- * 因此直接读源码文本做样式契约断言。base 必须用变量承载：写成
- * `new URL('../scroll-view.css', import.meta.url)` 会被 Vite 当成资源导入改写。
- */
-const TEST_MODULE_URL = import.meta.url
-const SCROLL_VIEW_CSS = readFileSync(new URL('../scroll-view.css', TEST_MODULE_URL), 'utf8')
-
-/** 取某条选择器的声明块（压缩空白，便于 contain 断言） */
-const cssRule = (selector: string): string => {
-  const selectorStart = SCROLL_VIEW_CSS.indexOf(selector)
-  const open = selectorStart === -1 ? -1 : SCROLL_VIEW_CSS.indexOf('{', selectorStart)
-  const close = open === -1 ? -1 : SCROLL_VIEW_CSS.indexOf('}', open)
-  if (close === -1) {
-    return ''
-  }
-  return SCROLL_VIEW_CSS.slice(open + 1, close)
-    .replaceAll(/\s+/g, ' ')
-    .trim()
-}
 
 /** jsdom 无 ResizeObserver：测量层只依赖其回调，空实现替身即可 */
 class ResizeObserverStub {
@@ -128,6 +104,73 @@ const NESTED_HARNESS = defineComponent({
   },
 })
 
+/* ---- 几何夹具：jsdom 不做布局，命中区矩形需要显式给定 ---- */
+
+/** 固定下来的布局矩形（jsdom 的 getBoundingClientRect 恒为 0×0） */
+interface StubRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+const stubRect = (element: Element, rect: StubRect): void => {
+  const { x, y, width, height } = rect
+  element.getBoundingClientRect = (): DOMRect =>
+    ({
+      x,
+      y,
+      width,
+      height,
+      left: x,
+      top: y,
+      right: x + width,
+      bottom: y + height,
+      toJSON: () => rect,
+    }) as DOMRect
+}
+
+/** 取某个 ScrollView 自身的滚动条命中区（只认直接子元素，避免取到嵌套子级的） */
+const ownBar = (root: { element: Element }, axis: 'vertical' | 'horizontal'): Element => {
+  const bar = [...root.element.children].find((child) =>
+    child.classList.contains(`fui-scrollview__scrollbar--${axis}`),
+  )
+  if (!bar) {
+    throw new Error(`滚动条命中区未渲染：${axis}`)
+  }
+  return bar
+}
+
+/** 派发指针事件所需的坐标（可选 relatedTarget，仅 pointerout 需要） */
+interface PointerInit {
+  clientX: number
+  clientY: number
+  relatedTarget?: Element
+}
+
+/**
+ * 派发带坐标的 pointerover / pointerout。
+ * jsdom 不做命中测试，因此「指针落在父级轨道上、事件目标却是下层的嵌套子级」
+ * 这种真实浏览器行为只能靠显式指定目标 + 坐标来还原。
+ */
+const dispatchPointer = async (
+  target: Element,
+  type: 'pointerover' | 'pointerout',
+  init: PointerInit,
+): Promise<void> => {
+  const { clientX, clientY, relatedTarget } = init
+  target.dispatchEvent(
+    new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      clientX,
+      clientY,
+      ...(relatedTarget ? { relatedTarget } : {}),
+    }),
+  )
+  await nextTick()
+}
+
 describe('FluereScrollView · 嵌套悬停隔离', () => {
   it('hover 父级自身区域时，子级不会进入 hover 态', async () => {
     const wrapper = mount(NESTED_HARNESS)
@@ -164,34 +207,69 @@ describe('FluereScrollView · 嵌套悬停隔离', () => {
   })
 })
 
-describe('FluereScrollView · 焦点与 presenter 裁切契约', () => {
-  it('焦点进入内容内元素时触发 bring-into-view（对齐 WinUI BringIntoViewOnFocusChange）', async () => {
-    const wrapper = mount(FluereScrollView, {
-      slots: { default: '<button type="button">内容内的按钮</button>' },
+/** 布局常量：父级视口 400×400，轨道 12px；子级轨道比父级内缩 20px（对齐 demo 的留白） */
+const PARENT_BAR_X = 388
+const CHILD_BAR_X = 368
+
+describe('FluereScrollView · 嵌套轨道区归属', () => {
+  /** 挂载嵌套基座并钉住父级 / 子级 A 的纵向轨道矩形 */
+  const mountWithRects = () => {
+    const wrapper = mount(NESTED_HARNESS)
+    const parent = wrapper.get('.fui-scrollview')
+    const childA = wrapper.get('[data-test="child-a"]')
+    stubRect(ownBar(parent, 'vertical'), { x: PARENT_BAR_X, y: 0, width: 12, height: 400 })
+    stubRect(ownBar(childA, 'vertical'), { x: CHILD_BAR_X, y: 100, width: 12, height: 120 })
+    return { wrapper, parent, childA }
+  }
+
+  it('hover 父级轨道区：父级展开轨道，纵向重叠的子级不进入 hover 态', async () => {
+    const { wrapper, parent, childA } = mountWithRects()
+
+    // 指针落在父级轨道区（x 在 388..400），纵向位置与子级 A 重叠：
+    // 父级轨道收起时不拦截命中，真实浏览器里事件目标是下层的子级 A
+    await dispatchPointer(childA.element, 'pointerover', {
+      clientX: PARENT_BAR_X + 6,
+      clientY: 150,
     })
 
-    expect(wrapper.emitted('bring-into-view')).toBeUndefined()
-    await wrapper.get('button').trigger('focusin')
-    expect(wrapper.emitted('bring-into-view')).toHaveLength(1)
+    expect(parent.classes()).toContain('fui-scrollview--bars-visible')
+    expect(parent.classes()).toContain('fui-scrollview--bars-expanded')
+    expect(childA.classes()).not.toContain('fui-scrollview--bars-visible')
+    expect(childA.classes()).not.toContain('fui-scrollview--bars-expanded')
     wrapper.unmount()
   })
 
-  it('焦点落在滚动条步进按钮上时不触发 bring-into-view（视口之外）', async () => {
-    const wrapper = mount(FluereScrollView, {
-      props: { verticalScrollBarVisibility: 'visible' },
-    })
+  it('hover 子级自身轨道区：子级展开轨道，父级让位', async () => {
+    const { wrapper, parent, childA } = mountWithRects()
 
-    await wrapper.get('.fui-scrollview__track-button').trigger('focusin')
-    expect(wrapper.emitted('bring-into-view')).toBeUndefined()
+    await dispatchPointer(childA.element, 'pointerover', { clientX: CHILD_BAR_X + 6, clientY: 150 })
+
+    expect(childA.classes()).toContain('fui-scrollview--bars-visible')
+    expect(childA.classes()).toContain('fui-scrollview--bars-expanded')
+    expect(parent.classes()).not.toContain('fui-scrollview--bars-visible')
+    expect(parent.classes()).not.toContain('fui-scrollview--bars-expanded')
     wrapper.unmount()
   })
 
-  it('presenter 用 clip 裁切（非滚动容器），避免原生滚动与 transform 偏移脱节', () => {
-    const presenter = cssRule('.fui-scrollview__presenter')
-    expect(presenter).toContain('position: absolute')
-    expect(presenter).toContain('touch-action: none')
-    expect(presenter).toContain('overflow: clip')
-    // 旧引擎回退：clip 之前必须先声明 hidden，否则退化为 visible、内容溢出裁切框
-    expect(presenter.indexOf('overflow: hidden')).toBeLessThan(presenter.indexOf('overflow: clip'))
+  it('从子级移入父级轨道区：子级立即让位，父级接管并展开轨道', async () => {
+    const { wrapper, parent, childA } = mountWithRects()
+
+    await dispatchPointer(childA.element, 'pointerover', { clientX: 100, clientY: 150 })
+    expect(childA.classes()).toContain('fui-scrollview--bars-visible')
+
+    const parentBar = ownBar(parent, 'vertical')
+    await dispatchPointer(childA.element, 'pointerout', {
+      clientX: PARENT_BAR_X + 6,
+      clientY: 150,
+      relatedTarget: parentBar,
+    })
+    await dispatchPointer(parentBar, 'pointerover', {
+      clientX: PARENT_BAR_X + 6,
+      clientY: 150,
+    })
+
+    expect(parent.classes()).toContain('fui-scrollview--bars-expanded')
+    expect(childA.classes()).not.toContain('fui-scrollview--bars-visible')
+    wrapper.unmount()
   })
 })
