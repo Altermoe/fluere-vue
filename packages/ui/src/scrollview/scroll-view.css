@@ -41,7 +41,7 @@
 
   /* ---- 颜色（语义 token，可在组件外就地覆写） ---- */
   --fui-scrollview-track-fill: var(--colorNeutralBackground8);
-  --fui-scrollview-thumb-fill: var(--colorNeutralForeground3);
+  --fui-scrollview-thumb-fill: var(--colorNeutralForeground4);
   --fui-scrollview-step-fill: var(--colorSubtleBackground);
   --fui-scrollview-step-fill-hover: var(--colorSubtleBackgroundHover);
   --fui-scrollview-step-fill-pressed: var(--colorSubtleBackgroundPressed);

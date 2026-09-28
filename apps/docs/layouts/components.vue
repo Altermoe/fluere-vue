@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
-import { componentNavGroups } from '../data/components-nav'
+import { FluentIconNavigation24Regular } from '@fluere-vue/icons'
 
 /** 仓库地址（外链） */
 const REPOSITORY_URL = 'https://github.com/'
 
 const route = useRoute()
-
-const isActive = (slug: string) => route.path === `/components/${slug}`
+const { open, toggle } = useDocsSidebar()
 
 /** 外链在新标签页打开；noopener/noreferrer 与 <a rel> 语义等价 */
 const openRepository = () => {
@@ -18,7 +17,7 @@ const openRepository = () => {
 const CONTENT_TOP_OFFSET = 0
 
 /**
- * 右侧主内容区的滚动由 FluereScrollView 接管（结构见模板注释）。
+ * 主内容区的滚动由 FluereScrollView 接管（结构见模板注释）。
  * 文档级滚动被 app shell 关闭后，「切换组件页回到顶部」不再由浏览器负责，
  * 因此这里显式把内容区偏移复位：`animationMode: 'disabled'` 即瞬时复位，
  * 与原先浏览器对 document 的复位等价（不引入一段多余滚动动画）。
@@ -37,33 +36,74 @@ watch(
 
 <template>
   <!--
-    app shell：整屏 flex 列，高度锁定到视口，文档级滚动由此关闭。
-    桌面端左右两栏各自用 FluereScrollView 承担内部滚动（左：组件导航，右：主内容），
-    对齐 WinUI 窗口内「NavigationView + 独立滚动内容区」的结构；移动端只剩主内容一栏，
-    同一套 shell 让内容区仍由 FluereScrollView 滚动，不退回文档级滚动。
+    app shell：整体锁定到视口高度（dvh），文档级滚动由此关闭。
+    - FluereScrollView 绝对定位占满整个视口 → 滚动视口是「整页」而非仅内容区，
+      鼠标落在右侧任何留白（含超宽屏容器外边距）滚轮都能滚动；
+    - header 悬浮叠加在滚动视口上（毛玻璃），内容从其下方滚过；
+    - 左侧导航由 DocsSidebar 承担：桌面常驻栏贴视口左缘，移动端为抽屉浮层。
     ScrollView 的 presenter 是绝对定位，宿主必须有确定高度（见文件末尾 .docs-shell）。
   -->
   <div
-    class="docs-shell flex flex-col overflow-hidden bg-colorNeutralBackground2 text-colorNeutralForeground1 font-base"
+    class="docs-shell relative overflow-hidden bg-colorNeutralBackground2 text-colorNeutralForeground1 font-base"
   >
-    <!-- Header：shell 自身不滚动，无需 sticky 也始终贴顶 -->
+    <!-- 整页滚动视口：占满视口。FluereScrollView 根节点自带 scoped `position: relative`
+         （与工具类同特异性、组件样式注入更晚），不能直接在组件上定位，
+         故用普通 div 包裹做定位，组件自身只负责填满（h-full）。
+         pt-14 为悬浮 header 让出初始可视区；lg:pl 为常驻侧边栏
+         （w-60=15rem + gap-8=2rem）让出横向空间，使文档内容对齐到侧边栏右缘之外。 -->
+    <div class="absolute inset-0">
+      <FluereScrollView
+        ref="contentScrollView"
+        class="h-full"
+      >
+        <div class="pt-14 lg:pl-[calc(15rem+2rem)]">
+          <div class="mx-auto w-full max-w-7xl px-6">
+            <div class="p-fluent-xxxl">
+              <slot />
+            </div>
+          </div>
+        </div>
+      </FluereScrollView>
+    </div>
+
+    <!-- 侧边栏：桌面常驻 + 移动端抽屉，响应式逻辑全部内聚于此 -->
+    <DocsSidebar />
+
+    <!-- Header：悬浮叠加层，自身不滚动，内容从其下方滚过 -->
     <header
-      class="shrink-0 z-10 backdrop-blur-md bg-colorNeutralBackground1/80 border-b border-colorNeutralStroke1"
+      class="absolute inset-x-0 top-0 z-40 border-b border-colorNeutralStroke1 bg-colorNeutralBackground1/80 backdrop-blur-md"
     >
-      <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <div class="flex items-center gap-8">
+      <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
+        <div class="flex items-center gap-3 md:gap-8">
+          <!-- 移动端导航折叠按钮：仅 <lg 显示；图标取 WinUI 汉堡钮（Navigation）。
+               外层 div 承担 lg:hidden——FluereButton 根节点自带 scoped display:flex，
+               与工具类同特异性且组件样式注入更晚，直接在按钮上写 lg:hidden 会被覆盖。 -->
+          <div class="lg:hidden">
+            <FluereButton
+              appearance="outline"
+              size="medium"
+              icon-only
+              :aria-label="open ? '关闭组件导航' : '打开组件导航'"
+              :title="open ? '关闭组件导航' : '打开组件导航'"
+              @click="toggle"
+            >
+              <template #icon>
+                <FluentIconNavigation24Regular :size="20" />
+              </template>
+            </FluereButton>
+          </div>
           <NuxtLink
             to="/"
             class="flex items-center gap-2 font-semibold text-lg"
           >
             <div
-              class="w-6 h-6 rounded-fluent-md bg-colorBrandBackground text-colorBrandForegroundInverted flex items-center justify-center text-xs font-bold"
+              class="flex h-6 w-6 items-center justify-center rounded-fluent-md bg-colorBrandBackground text-xs font-bold text-colorBrandForegroundInverted"
             >
               W
             </div>
             FluereVue
           </NuxtLink>
-          <nav class="hidden md:flex items-center gap-6 text-sm text-colorNeutralForeground2">
+          <nav class="hidden items-center gap-6 text-sm text-colorNeutralForeground2 md:flex">
             <NuxtLink
               to="/components"
               class="hover:text-colorNeutralForeground1 transition-colors"
@@ -97,119 +137,6 @@ watch(
         </div>
       </div>
     </header>
-
-    <!-- Mobile nav -->
-    <nav
-      class="lg:hidden shrink-0 w-full max-w-7xl mx-auto px-6 pt-4 overflow-x-auto whitespace-nowrap"
-      aria-label="组件导航"
-    >
-      <div class="flex gap-2 text-sm">
-        <NuxtLink
-          to="/components"
-          class="px-3 py-1.5 rounded-fluent-md transition-colors"
-          :class="
-            route.path === '/components'
-              ? 'bg-colorBrandBackground text-colorNeutralForegroundOnBrand font-medium'
-              : 'bg-colorNeutralBackground1 text-colorNeutralForeground2 border border-colorNeutralStroke1'
-          "
-        >
-          Overview
-        </NuxtLink>
-        <NuxtLink
-          v-for="item in componentNavGroups.flatMap((g) => g.items).filter((i) => i.implemented)"
-          :key="item.slug"
-          :to="`/components/${item.slug}`"
-          class="px-3 py-1.5 rounded-fluent-md transition-colors"
-          :class="
-            isActive(item.slug)
-              ? 'bg-colorBrandBackground text-colorNeutralForegroundOnBrand font-medium'
-              : 'bg-colorNeutralBackground1 text-colorNeutralForeground2 border border-colorNeutralStroke1'
-          "
-        >
-          {{ item.name }}
-        </NuxtLink>
-      </div>
-    </nav>
-
-    <!-- 两栏区：flex-1 + min-h-0 吃掉 header / 移动端 nav 之外的剩余高度；
-         align-items 保持默认 stretch，两栏才能拿到确定高度供 ScrollView 撑满 -->
-    <div class="w-full max-w-7xl mx-auto px-6 flex gap-8 flex-1 min-h-0">
-      <!-- Sidebar -->
-      <aside class="hidden lg:block w-60 shrink-0 min-h-0">
-        <FluereScrollView class="h-full">
-          <nav class="space-y-7 py-4 pr-4">
-            <NuxtLink
-              to="/components"
-              class="block px-3 py-1.5 rounded-fluent-md text-sm transition-colors"
-              :class="
-                route.path === '/components'
-                  ? 'bg-colorBrandBackground text-colorNeutralForegroundOnBrand font-medium'
-                  : 'text-colorNeutralForeground2 hover:bg-colorSubtleBackgroundHover hover:text-colorNeutralForeground1'
-              "
-            >
-              Overview
-            </NuxtLink>
-
-            <section
-              v-for="group in componentNavGroups"
-              :key="group.id"
-            >
-              <h3
-                class="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-colorNeutralForeground3"
-              >
-                {{ group.title }}
-                <span class="ml-1 font-normal normal-case text-colorNeutralForeground3">{{
-                  group.label
-                }}</span>
-              </h3>
-              <ul class="space-y-0.5">
-                <li
-                  v-for="item in group.items"
-                  :key="item.slug"
-                >
-                  <NuxtLink
-                    v-if="item.implemented"
-                    :to="`/components/${item.slug}`"
-                    class="block px-3 py-1.5 rounded-fluent-md text-sm transition-colors"
-                    :class="
-                      isActive(item.slug)
-                        ? 'bg-colorBrandBackground text-colorNeutralForegroundOnBrand font-medium'
-                        : 'text-colorNeutralForeground2 hover:bg-colorSubtleBackgroundHover hover:text-colorNeutralForeground1'
-                    "
-                  >
-                    {{ item.name }}
-                  </NuxtLink>
-                  <span
-                    v-else
-                    class="flex items-center gap-2 px-3 py-1.5 rounded-fluent-md text-sm text-colorNeutralForeground3 opacity-50"
-                  >
-                    {{ item.name }}
-                    <span
-                      class="text-[10px] leading-none px-1 py-0.5 rounded-fluent-sm bg-colorNeutralBackground3 text-colorNeutralForeground3"
-                    >
-                      未实现
-                    </span>
-                  </span>
-                </li>
-              </ul>
-            </section>
-          </nav>
-        </FluereScrollView>
-      </aside>
-
-      <!-- Content：主内容滚动改由 FluereScrollView 承担（原先跟随文档级滚动）。
-           内边距放进滚动内容里，滚动条才会贴住内容区右缘，而不是浮在留白中间。 -->
-      <main class="flex-1 min-w-0 min-h-0">
-        <FluereScrollView
-          ref="contentScrollView"
-          class="h-full"
-        >
-          <div class="p-fluent-xxxl">
-            <slot />
-          </div>
-        </FluereScrollView>
-      </main>
-    </div>
   </div>
 </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FluereButton } from '@fluere-vue/ui'
+import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 
 /** 仓库地址（外链） */
 const REPOSITORY_URL = 'https://github.com/'
@@ -68,10 +68,23 @@ const ctLinks = [
 </script>
 
 <template>
-  <div class="min-h-screen bg-colorNeutralBackground1 text-colorNeutralForeground1 font-base">
+  <!--
+    与 /components 同一套 app shell：整体锁定视口高度（dvh），文档级滚动由此关闭；
+    整页滚动改由 FluereScrollView 接管（绝对定位占满视口，鼠标落在页面任何留白处
+    滚轮都能滚动）。header 悬浮叠加在滚动视口上（毛玻璃），内容从其下方滚过。
+    滚动内容统一加 pt-14，为悬浮 header 让出初始可视区。
+  -->
+  <div
+    class="docs-shell-home relative overflow-hidden bg-colorNeutralBackground1 text-colorNeutralForeground1 font-base"
+  >
+    <!-- 定位由外层 div 承担：FluereScrollView 根节点自带 scoped `position: relative`，
+         直接在组件上写定位工具类会被组件样式（同特异性、注入更晚）覆盖。 -->
+    <div class="absolute inset-0">
+      <FluereScrollView class="h-full">
+      <div class="pt-14">
     <!-- Nav -->
     <header
-      class="sticky top-0 z-10 backdrop-blur-md bg-colorNeutralBackground1/80 border-b border-colorNeutralStroke1"
+      class="absolute inset-x-0 top-0 z-40 border-b border-colorNeutralStroke1 bg-colorNeutralBackground1/80 backdrop-blur-md"
     >
       <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
         <div class="flex items-center gap-8">
@@ -381,5 +394,20 @@ const ctLinks = [
         <div>© 2026 FluereVue. MIT License.</div>
       </div>
     </footer>
+      </div>
+      </FluereScrollView>
+    </div>
   </div>
 </template>
+
+<style scoped>
+/*
+ * app shell 高度：dvh 优先（移动端地址栏收放会改变可见视口高度），
+ * 不支持 dvh 的旧浏览器回退 vh。必须是确定高度，否则 FluereScrollView 的
+ * 绝对定位 presenter 会塌成 0 高、内容不可见。
+ */
+.docs-shell-home {
+  height: 100vh;
+  height: 100dvh;
+}
+</style>

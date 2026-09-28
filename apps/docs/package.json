@@ -24,6 +24,7 @@
     "vue": "catalog:"
   },
   "devDependencies": {
+    "@fluere-vue/hooks": "workspace:*",
     "@fluere-vue/icons": "workspace:*",
     "@fluere-vue/themes": "workspace:*",
     "@fluere-vue/ui": "workspace:*",
