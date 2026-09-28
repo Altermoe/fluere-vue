@@ -204,6 +204,7 @@ defineExpose({
     <div
       ref="viewportEl"
       class="fui-scrollview__presenter"
+      @focusin="bringIntoViewController.onFocusIn"
       @pointerdown="pointer.onPointerDown"
       @pointermove="pointer.onPointerMove"
       @pointerup="pointer.onPointerUp"

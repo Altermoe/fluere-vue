@@ -13,13 +13,42 @@ const isActive = (slug: string) => route.path === `/components/${slug}`
 const openRepository = () => {
   window.open(REPOSITORY_URL, '_blank', 'noopener,noreferrer')
 }
+
+/** 内容区顶部偏移（水平 / 垂直同值，均为 0） */
+const CONTENT_TOP_OFFSET = 0
+
+/**
+ * 右侧主内容区的滚动由 FluereScrollView 接管（结构见模板注释）。
+ * 文档级滚动被 app shell 关闭后，「切换组件页回到顶部」不再由浏览器负责，
+ * 因此这里显式把内容区偏移复位：`animationMode: 'disabled'` 即瞬时复位，
+ * 与原先浏览器对 document 的复位等价（不引入一段多余滚动动画）。
+ */
+const contentScrollView = ref<InstanceType<typeof FluereScrollView>>()
+
+watch(
+  () => route.fullPath,
+  () => {
+    contentScrollView.value?.scrollTo(CONTENT_TOP_OFFSET, CONTENT_TOP_OFFSET, {
+      animationMode: 'disabled',
+    })
+  },
+)
 </script>
 
 <template>
-  <div class="min-h-screen bg-colorNeutralBackground2 text-colorNeutralForeground1 font-base">
-    <!-- Header -->
+  <!--
+    app shell：整屏 flex 列，高度锁定到视口，文档级滚动由此关闭。
+    桌面端左右两栏各自用 FluereScrollView 承担内部滚动（左：组件导航，右：主内容），
+    对齐 WinUI 窗口内「NavigationView + 独立滚动内容区」的结构；移动端只剩主内容一栏，
+    同一套 shell 让内容区仍由 FluereScrollView 滚动，不退回文档级滚动。
+    ScrollView 的 presenter 是绝对定位，宿主必须有确定高度（见文件末尾 .docs-shell）。
+  -->
+  <div
+    class="docs-shell flex flex-col overflow-hidden bg-colorNeutralBackground2 text-colorNeutralForeground1 font-base"
+  >
+    <!-- Header：shell 自身不滚动，无需 sticky 也始终贴顶 -->
     <header
-      class="sticky top-0 z-10 backdrop-blur-md bg-colorNeutralBackground1/80 border-b border-colorNeutralStroke1"
+      class="shrink-0 z-10 backdrop-blur-md bg-colorNeutralBackground1/80 border-b border-colorNeutralStroke1"
     >
       <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <div class="flex items-center gap-8">
@@ -71,7 +100,7 @@ const openRepository = () => {
 
     <!-- Mobile nav -->
     <nav
-      class="lg:hidden max-w-7xl mx-auto px-6 pt-4 overflow-x-auto whitespace-nowrap"
+      class="lg:hidden shrink-0 w-full max-w-7xl mx-auto px-6 pt-4 overflow-x-auto whitespace-nowrap"
       aria-label="组件导航"
     >
       <div class="flex gap-2 text-sm">
@@ -102,9 +131,11 @@ const openRepository = () => {
       </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-6 flex gap-8 items-start">
+    <!-- 两栏区：flex-1 + min-h-0 吃掉 header / 移动端 nav 之外的剩余高度；
+         align-items 保持默认 stretch，两栏才能拿到确定高度供 ScrollView 撑满 -->
+    <div class="w-full max-w-7xl mx-auto px-6 flex gap-8 flex-1 min-h-0">
       <!-- Sidebar -->
-      <aside class="hidden lg:block w-60 shrink-0 sticky top-14 h-[calc(100vh-3.5rem)]">
+      <aside class="hidden lg:block w-60 shrink-0 min-h-0">
         <FluereScrollView class="h-full">
           <nav class="space-y-7 py-4 pr-4">
             <NuxtLink
@@ -166,10 +197,30 @@ const openRepository = () => {
         </FluereScrollView>
       </aside>
 
-      <!-- Content -->
-      <main class="flex-1 min-w-0 p-fluent-xxxl">
-        <slot />
+      <!-- Content：主内容滚动改由 FluereScrollView 承担（原先跟随文档级滚动）。
+           内边距放进滚动内容里，滚动条才会贴住内容区右缘，而不是浮在留白中间。 -->
+      <main class="flex-1 min-w-0 min-h-0">
+        <FluereScrollView
+          ref="contentScrollView"
+          class="h-full"
+        >
+          <div class="p-fluent-xxxl">
+            <slot />
+          </div>
+        </FluereScrollView>
       </main>
     </div>
   </div>
 </template>
+
+<style scoped>
+/*
+ * app shell 高度：dvh 优先（移动端地址栏收放会改变可见视口高度），
+ * 不支持 dvh 的旧浏览器回退 vh。必须是确定高度，否则 FluereScrollView 的
+ * 绝对定位 presenter 会塌成 0 高、内容不可见。
+ */
+.docs-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+</style>

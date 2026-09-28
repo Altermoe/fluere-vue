@@ -61,7 +61,11 @@
 .fui-scrollview__presenter {
   position: absolute;
   inset: 0;
+  /* 裁切，但不是滚动容器：偏移一律由组件用 transform 表达，若 presenter 可被
+     原生滚动（聚焦、scrollIntoView、锚点跳转都会触发），就会与 offset 状态脱节、
+     出现「滚不回顶部」的死区。`clip` 让 presenter 彻底不可滚动；旧引擎回退 `hidden`。 */
   overflow: hidden;
+  overflow: clip;
   touch-action: none;
 }
 

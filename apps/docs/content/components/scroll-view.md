@@ -81,6 +81,15 @@ overlay 样式（2px 细滑块，指针进入容器即显示；指针移到滚�
 
 ::
 
+## 焦点滚动
+
+焦点（Tab 或程序化 `focus()`）进入内容内的元素时，元素自动滚进视口 —— 对齐 WinUI
+`BringIntoViewOnFocusChange`（缺省开启），键盘用户不会把焦点留在视口之外；元素已在视口内时不产生动画。
+该次滚动同样触发 `bring-into-view` 事件，可在回调中取消或改写目标偏移。
+
+容器获得焦点（或焦点在内容内）时，方向键、PageUp / PageDown、Home / End 滚动视图；命中
+`input` / `textarea` / `select` / `contenteditable` 时按键交还给输入控件。
+
 ## 缩放
 
 `zoom-mode="enabled"`：Ctrl / Cmd + 滚轮或双指捏合缩放，缩放中心为指针位置。对齐 WinUI 的
@@ -118,7 +127,7 @@ overlay 样式（2px 细滑块，指针进入容器即显示；指针移到滚�
 
 ## 程序化 API
 
-对齐 WinUI 方法：`scrollTo / scrollBy / zoomTo / zoomBy`（支持动画与 correlation ID），以及只读属性
+对齐 WinUI 方法：`scrollTo / scrollBy / zoomTo / zoomBy / bringIntoView`（支持动画与 correlation ID），以及只读属性
 `horizontalOffset / verticalOffset / zoomFactor / scrollableWidth / scrollableHeight / state`。
 
 ::demo-block{title="程序化 API"}
