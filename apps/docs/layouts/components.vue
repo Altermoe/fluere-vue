@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { FluereScrollView } from '@fluere-vue/ui'
+import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 import { componentNavGroups } from '../data/components-nav'
+
+/** 仓库地址（外链） */
+const REPOSITORY_URL = 'https://github.com/'
 
 const route = useRoute()
 
 const isActive = (slug: string) => route.path === `/components/${slug}`
+
+/** 外链在新标签页打开；noopener/noreferrer 与 <a rel> 语义等价 */
+const openRepository = () => {
+  window.open(REPOSITORY_URL, '_blank', 'noopener,noreferrer')
+}
 </script>
 
 <template>
@@ -43,14 +51,19 @@ const isActive = (slug: string) => route.path === `/components/${slug}`
         </div>
         <div class="flex items-center gap-3 text-sm">
           <span class="text-colorNeutralForeground3">v0.0.1</span>
-          <a
-            href="https://github.com/"
-            target="_blank"
-            rel="noopener"
-            class="px-3 py-1.5 rounded-fluent-md border border-colorNeutralStroke1 hover:bg-colorNeutralBackground1Hover transition-colors text-colorNeutralForeground2"
+          <!--
+            导航栏的按钮一律复用组件库的 FluereButton（站点自身即组件库的第一消费方）：
+            GitHub 是外链，仍以按钮承载动作（组件库只提供 <button> 语义），由脚本开新标签页；
+            outline + medium 与原手写样式的边框/内边距/高度对齐，视觉零漂移。
+          -->
+          <FluereButton
+            appearance="outline"
+            size="medium"
+            title="在新标签页打开 GitHub 仓库"
+            @click="openRepository"
           >
             GitHub
-          </a>
+          </FluereButton>
           <ThemeToggle />
         </div>
       </div>

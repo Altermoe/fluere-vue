@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { FluentIconWeatherMoon24Regular, FluentIconWeatherSunny24Regular } from '@fluere-vue/icons'
+import { FluereButton } from '@fluere-vue/ui'
 
 const { isDark, toggle } = useColorMode()
 </script>
 
 <template>
-  <button
-    type="button"
-    class="flex items-center justify-center w-8 h-8 rounded-fluent-md border border-colorNeutralStroke1 hover:bg-colorNeutralBackground1Hover text-colorNeutralForeground2 transition-colors"
+  <!--
+    图标按钮直接复用组件库的 FluereButton（icon-only）：外观/尺寸/悬停/焦点环都交给
+    组件实现，站点不再手写一套按钮样式。点击事件透传 MouseEvent，供切换动效取圆心。
+  -->
+  <FluereButton
+    appearance="outline"
+    size="medium"
+    icon-only
     :aria-label="isDark ? '切换到亮色模式' : '切换到暗色模式'"
     :title="isDark ? '切换到亮色模式' : '切换到暗色模式'"
     @click="toggle"
@@ -18,15 +24,24 @@ const { isDark, toggle } = useColorMode()
       既不产生水合告警，也不会闪错图标。aria-label/title 仍是动态文案，靠
       useColorMode 把「读取存储值」推迟到 onMounted（水合完成后）保证属性一致。
     -->
-    <FluentIconWeatherSunny24Regular class="fui-theme-toggle__icon fui-theme-toggle__icon--sun" />
-    <FluentIconWeatherMoon24Regular class="fui-theme-toggle__icon fui-theme-toggle__icon--moon" />
-  </button>
+    <template #icon>
+      <!-- size 20：Fluent 2 中号图标按钮（32px）配 20px 图标，与 library 的 .fui-button__icon 一致 -->
+      <FluentIconWeatherSunny24Regular
+        :size="20"
+        class="fui-theme-toggle__icon fui-theme-toggle__icon--sun"
+      />
+      <FluentIconWeatherMoon24Regular
+        :size="20"
+        class="fui-theme-toggle__icon fui-theme-toggle__icon--moon"
+      />
+    </template>
+  </FluereButton>
 </template>
 
 <style scoped>
 /* 亮色（或脚本未写入属性）显示月亮、暗色显示太阳 —— 语义与原 isDark 分支一致：
    图标提示的是「可切换到的目标模式」。选择器锚定 html 属性（组件外的全局状态），
-   而图标本身带本组件 scope id，故只作用于这两个 svg。 */
+   而图标本身带本组件 scope id（插槽内容在父组件作用域编译），故只作用于这两个 svg。 */
 html:not([data-color-mode='dark']) .fui-theme-toggle__icon--sun {
   display: none;
 }

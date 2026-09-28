@@ -43,7 +43,8 @@ export default defineNuxtConfig({
       },
     },
   },
-  css: ['~/assets/content-code.css'],
+  // content-code.css：Shiki 代码块明暗增强；theme-transition.css：主题切换的圆形揭示
+  css: ['~/assets/content-code.css', '~/assets/theme-transition.css'],
   vite: {
     plugins: [
       {

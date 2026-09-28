@@ -1,8 +1,18 @@
 <script setup lang="ts">
+import { FluereButton } from '@fluere-vue/ui'
+
+/** 仓库地址（外链） */
+const REPOSITORY_URL = 'https://github.com/'
+
 const navLinks = [
   { label: 'Docs', to: '/components' },
   { label: 'Components', to: '/components/button' },
 ]
+
+/** 外链在新标签页打开；noopener/noreferrer 与 <a rel> 语义等价 */
+const openRepository = () => {
+  window.open(REPOSITORY_URL, '_blank', 'noopener,noreferrer')
+}
 
 const features = [
   {
@@ -89,14 +99,16 @@ const ctLinks = [
         </div>
         <div class="flex items-center gap-3 text-sm">
           <span class="text-colorNeutralForeground3">v0.0.1</span>
-          <a
-            href="https://github.com/"
-            target="_blank"
-            rel="noopener"
-            class="px-3 py-1.5 rounded-fluent-md border border-colorNeutralStroke1 hover:bg-colorNeutralBackground1Hover transition-colors text-colorNeutralForeground2"
+          <!-- 与 /components 布局同款：导航按钮复用组件库 Button；首页此前缺少主题切换入口 -->
+          <FluereButton
+            appearance="outline"
+            size="medium"
+            title="在新标签页打开 GitHub 仓库"
+            @click="openRepository"
           >
             GitHub
-          </a>
+          </FluereButton>
+          <ThemeToggle />
         </div>
       </div>
     </header>

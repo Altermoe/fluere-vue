@@ -1,0 +1,18 @@
+/*
+ * 主题切换的「圆形揭示」视图过渡（View Transition API）基础样式。
+ *
+ * 过渡期间浏览器把「旧主题」「新主题」各截一张整页快照叠放：旧快照作底层、新快照作
+ * 顶层，顶层的 clip-path 由 utils/view-transition.ts 用 Web Animations API 从圆心
+ * 向外扩散，被裁掉的部分露出底层旧主题。
+ *
+ * 这里必须关掉 UA 默认的整体交叉淡入淡出（两端 animation: none）：默认淡入淡出会与
+ * 圆形裁切叠加成一层灰雾，让揭示边界失去「实心圆」的锐利感。同时把 UA 默认的
+ * mix-blend-mode: plus-lighter 复位为 normal，避免两枚不透明快照叠加处被提亮。
+ *
+ * 减少动效（prefers-reduced-motion: reduce）由 JS 直接跳过视图过渡，CSS 无需再声明。
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}

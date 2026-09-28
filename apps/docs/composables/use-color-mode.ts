@@ -8,7 +8,11 @@
  * - `data-color-mode` 属性 → 让 content-code.css 的代码块跟随手动选择。
  *
  * 偏好持久化到 localStorage。首次访问无存储值时跟随系统（与既有行为一致）。
+ *
+ * 切换过程通过 View Transition API 以「圆形揭示」呈现（圆心为切换按钮/指针位置，
+ * 见 utils/view-transition.ts）；API 不可用或用户偏好减少动效时自动退化为瞬时切换。
  */
+import { runCircularReveal } from '../utils/view-transition'
 
 type ColorMode = 'light' | 'dark'
 
@@ -66,8 +70,23 @@ const useColorMode = () => {
     }
   }
 
-  const toggle = () => {
-    setMode(OPPOSITE[mode.value], true)
+  /**
+   * 切换明暗模式。
+   *
+   * 传入点击事件时，以指针位置（键盘激活则取按钮中心）为圆心做圆形揭示；
+   * 省略事件（程序化调用）则以视口中心为圆心。
+   */
+  const toggle = (event?: MouseEvent) => {
+    const next = OPPOSITE[mode.value]
+    const anchor = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
+    // 键盘合成的 click（Enter/Space）detail 为 0，且 clientX/Y 恒为 0，不能当圆心用。
+    const point = event?.detail ? { x: event.clientX, y: event.clientY } : undefined
+
+    void runCircularReveal({
+      apply: () => setMode(next, true),
+      point,
+      anchor,
+    })
   }
 
   return { mode, isDark, toggle }
