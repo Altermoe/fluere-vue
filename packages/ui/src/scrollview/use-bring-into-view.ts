@@ -37,6 +37,7 @@ const useBringIntoView = (
     zoomFactor,
     clampX,
     clampY,
+    setState,
   } = core
 
   const computeTarget = (
@@ -98,10 +99,17 @@ const useBringIntoView = (
     }
     core.events.bringIntoView(args)
     if (args.cancel) {
+      // 请求被应用侧取消：不干预当前正在推进的滚动
       core.emitScrollCompleted(id)
       return id
     }
+    // 请求被接受：先停住正在推进的滚动 / 惯性。已在视口内的 no-op 分支同样要停，
+    // 否则「元素可见」的保证会被继续滑动的视图推翻（焦点元素随即被带出视口）。
+    const interrupted = animation.cancelActiveAnimation()
     if (target.targetX === offsetX.value && target.targetY === offsetY.value) {
+      if (interrupted) {
+        setState('idle')
+      }
       core.emitScrollCompleted(id)
       return id
     }
@@ -118,7 +126,8 @@ const useBringIntoView = (
    * 焦点进入内容内元素：把它滚进视口。
    *
    * 只认视口（presenter）内部的元素，外部（如滚动条步进按钮）不参与；
-   * 元素已在视口内时目标偏移等于当前偏移，bringIntoView 会直接补发 completed、不产生动画。
+   * 元素已在视口内时目标偏移等于当前偏移，bringIntoView 会直接补发 completed、
+   * 不产生动画，但仍会停住进行中的滚动 / 惯性（否则焦点元素会被带出视口）。
    */
   const onFocusIn = (event: FocusEvent): void => {
     const target = event.target as HTMLElement | null

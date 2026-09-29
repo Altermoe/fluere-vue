@@ -87,12 +87,16 @@ const useScrollApi = (
       core.emitScrollCompleted(id)
       return id
     }
-    animation.cancelActiveAnimation()
+    const interrupted = animation.cancelActiveAnimation()
     inertia.cancelInertia()
     if (animation.resolveAnimationMode(options?.animationMode) === 'disabled') {
       offsetX.value = toX
       offsetY.value = toY
       applyView()
+      // 打断后没有任何推进者：把 interactionState 归位，否则会停留在 'animation'
+      if (interrupted) {
+        setState('idle')
+      }
       core.emitScrollCompleted(id)
       return id
     }
@@ -129,13 +133,17 @@ const useScrollApi = (
       core.emitZoomCompleted(id)
       return id
     }
-    animation.cancelActiveAnimation()
+    const interrupted = animation.cancelActiveAnimation()
     inertia.cancelInertia()
     if (animation.resolveAnimationMode(options?.animationMode) === 'disabled') {
       zoomFactor.value = toZoom
       offsetX.value = clampX(core.scaleAboutCenter(offsetX.value, centerX, toZoom / fromZoom))
       offsetY.value = clampY(core.scaleAboutCenter(offsetY.value, centerY, toZoom / fromZoom))
       applyView()
+      // 同 scrollTo：非动画路径打断旧动画后需要把状态归位
+      if (interrupted) {
+        setState('idle')
+      }
       core.emitZoomCompleted(id)
       return id
     }
@@ -166,6 +174,10 @@ const useScrollApi = (
       Math.abs(velocityX) < OFFSET_VELOCITY_EPSILON &&
       Math.abs(velocityY) < OFFSET_VELOCITY_EPSILON
     ) {
+      // 立即完成：必须先停住进行中的动画 / 惯性，否则「已 idle + 已 completed」
+      // 的声明与仍在推进的视图相矛盾
+      animation.cancelActiveAnimation()
+      inertia.cancelInertia()
       setState('idle')
       core.emitScrollCompleted(id)
       return id
@@ -190,6 +202,9 @@ const useScrollApi = (
     const centerX = centerPoint ? centerPoint.x : viewportWidth.value * HALF
     const centerY = centerPoint ? centerPoint.y : viewportHeight.value * HALF
     if (Math.abs(zoomFactorVelocity) < ZOOM_VELOCITY_EPSILON) {
+      // 同 addScrollVelocity：立即完成时先打断进行中的动画 / 惯性
+      animation.cancelActiveAnimation()
+      inertia.cancelInertia()
       setState('idle')
       core.emitZoomCompleted(id)
       return id

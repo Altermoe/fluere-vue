@@ -11,6 +11,16 @@ import { useReducedMotion } from '@fluere-vue/hooks'
  * 缩放保持固定时长的 decelerate 三次贝塞尔（离散目标，见 decelerateEase）。
  * 含 prefers-reduced-motion 响应：resolveAnimationMode 在 auto 模式下据此
  * 决定是否禁用动画，供程序化 API / 输入模块消费。
+ *
+ * 「单一 offset 写入者」不变式：滚动驱动 / 缩放动画 / 惯性都会逐帧写 offset，
+ * 同一时刻只允许一个在推进。任何新动画开始前统一调用 cancelActiveAnimation，
+ * 由它一并打断惯性（惯性引擎在创建时反向注册取消回调，见 registerInertiaCancel），
+ * 否则两路 rAF 会互相拉扯 —— 例如惯性滑行中滚轮接管时，滚动驱动朝新目标收敛、
+ * 惯性继续沿旧方向推进，表现为来回抖动。
+ *
+ * 帧长统一由 frame-timing 计算：rAF 时间戳可能早于启动时读到的
+ * performance.now()（浏览器「帧起点」语义），负帧长会让缓动朝反方向走一步，
+ * 即「刚停下再开始滚动时先反向抖一下」，逐帧积分必须按非负帧长处理。
  */
 /* oxlint-disable max-statements, max-params, no-magic-numbers, no-ternary, id-length, capitalized-comments --
  * 动画状态机属于 FluereScrollView 的复杂交互流程（对齐 WinUI 3 ScrollView）：
@@ -24,8 +34,6 @@ import {
   DECELERATE_P0_Y,
   DECELERATE_P1_X,
   DECELERATE_P1_Y,
-  MAX_FRAME_DELTA_TIME,
-  MS_PER_SECOND,
   NEWTON_DERIVATIVE_TOLERANCE,
   NEWTON_MAX_ITERATIONS,
   NEWTON_TOLERANCE,
@@ -34,6 +42,7 @@ import {
   SCROLL_CHASE_EPSILON,
 } from './constants'
 import type { ScrollViewCore } from './core'
+import { frameElapsedMs, frameStepSeconds } from './frame-timing'
 import type { ScrollingAnimationMode } from './types'
 import type { ScrollBars } from './use-scroll-bars'
 
@@ -41,8 +50,19 @@ import type { ScrollBars } from './use-scroll-bars'
 interface AnimationEngine {
   /** 解析动画模式：enabled/disabled 直通，auto 按 reduced-motion 判定 */
   resolveAnimationMode: (mode: ScrollingAnimationMode | undefined) => ScrollingAnimationMode
-  /** 取消进行中的动画（滚动驱动 / 缩放）并补发对应 completed 事件 */
-  cancelActiveAnimation: () => void
+  /**
+   * 取消进行中的滚动动画、缩放动画与惯性，并补发对应的 completed 事件。
+   * 返回是否确实打断了某个正在推进的活动（调用方据此把 interactionState 归位）。
+   *
+   * 三者共用同一组 offset / zoom 写入通道（单一写入者），因此任何「接管」动作都
+   * 应通过本方法先停住旧的推进，再启动自己的推进。
+   */
+  cancelActiveAnimation: () => boolean
+  /**
+   * 由惯性引擎注册自身的取消回调（返回是否确实取消了惯性）。use-animation 先于
+   * use-inertia 创建，且不应反向依赖它，故取消惯性通过注册回调实现。
+   */
+  registerInertiaCancel: (cancel: () => boolean) => void
   /**
    * 统一滚动原语：把目标偏移交给滚动驱动缓动。
    *  - retarget=false（scrollTo / scrollBy / 键盘 / 轨道翻页 / bringIntoView）：
@@ -155,15 +175,25 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
   let scrollChase: ScrollChase | undefined = undefined
   let zoomAnimation: ZoomAnimation | undefined = undefined
   let zoomRaf: number | undefined = undefined
+  let inertiaCancel: (() => boolean) | undefined = undefined
 
-  const cancelActiveAnimation = (): void => {
-    cancelScrollChase()
-    cancelZoomAnimation()
+  const registerInertiaCancel = (cancel: () => boolean): void => {
+    inertiaCancel = cancel
   }
 
-  const cancelScrollChase = (): void => {
+  const cancelInertiaActivity = (): boolean => (inertiaCancel ? inertiaCancel() : false)
+
+  const cancelActiveAnimation = (): boolean => {
+    const cancelledChase = cancelScrollChase()
+    const cancelledZoom = cancelZoomAnimation()
+    // 惯性是第三路 offset 写入者：新动画接管前必须先停住它
+    const cancelledInertia = cancelInertiaActivity()
+    return cancelledChase || cancelledZoom || cancelledInertia
+  }
+
+  const cancelScrollChase = (): boolean => {
     if (!scrollChase) {
-      return
+      return false
     }
     const cancelled = scrollChase
     scrollChase = undefined
@@ -171,11 +201,12 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
     if (cancelled.emitCompletion) {
       core.emitScrollCompleted(cancelled.correlationId)
     }
+    return true
   }
 
-  const cancelZoomAnimation = (): void => {
+  const cancelZoomAnimation = (): boolean => {
     if (!zoomAnimation) {
-      return
+      return false
     }
     const cancelled = zoomAnimation
     zoomAnimation = undefined
@@ -184,6 +215,7 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
       zoomRaf = undefined
     }
     core.emitZoomCompleted(cancelled.correlationId)
+    return true
   }
 
   /* ---- 滚动驱动（所有滚动原语共用的缓动逻辑） ---- */
@@ -196,7 +228,7 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
     // 目标随内容边界实时收敛，避免内容尺寸变化后动画无法停止
     chase.targetX = clampX(chase.targetX)
     chase.targetY = clampY(chase.targetY)
-    const deltaTime = Math.min(MAX_FRAME_DELTA_TIME, (now - chase.lastTime) / MS_PER_SECOND)
+    const deltaTime = frameStepSeconds(now, chase.lastTime)
     chase.lastTime = now
     const deltaX = chase.targetX - offsetX.value
     const deltaY = chase.targetY - offsetY.value
@@ -310,7 +342,8 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
     if (!current) {
       return
     }
-    const elapsed = now - current.startTime
+    // 绝对时长动画：只做非负钳制，不按帧长封顶（否则后台恢复后进度会永远补不回来）
+    const elapsed = frameElapsedMs(now, current.startTime)
     const progress = Math.min(1, elapsed / current.duration)
     const eased = decelerateEase(progress)
 
@@ -361,6 +394,7 @@ const useAnimation = (core: ScrollViewCore, bars: ScrollBars): AnimationEngine =
   return {
     resolveAnimationMode,
     cancelActiveAnimation,
+    registerInertiaCancel,
     animateScrollTo,
     getScrollTarget,
     animateZoomTo,

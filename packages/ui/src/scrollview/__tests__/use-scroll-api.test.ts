@@ -133,6 +133,47 @@ describe('useScrollApi', () => {
     dispose()
   })
 
+  it('scrollTo（disabled）打断进行中的动画后 interactionState 归位 idle', () => {
+    const clock = installRafClock()
+    const { core, api, dispose } = makeEngine()
+    setVertical(core)
+    const first = api.scrollTo(0, 600)
+    clock.run(50)
+    expect(core.interactionState.value).toBe('animation')
+
+    const second = api.scrollTo(0, 300, { animationMode: 'disabled' })
+    expect(core.offsetY.value).toBe(300)
+    expect(core.interactionState.value).toBe('idle')
+    // 旧动画被打断后补发其 completed，随后补发本次的 completed
+    expect(core.events.scrollCompleted.mock.calls.map((call) => call[0])).toEqual([
+      { correlationId: first },
+      { correlationId: second },
+    ])
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(300)
+    clock.dispose()
+    dispose()
+  })
+
+  it('addScrollVelocity 低于阈值时停住进行中的动画，不再继续推进', () => {
+    const clock = installRafClock()
+    const { core, api, dispose } = makeEngine()
+    setVertical(core)
+    const scrollId = api.scrollTo(0, 600)
+    clock.run(50)
+    const stopped = core.offsetY.value
+
+    const id = api.addScrollVelocity({ x: 0, y: 0 })
+    expect(core.interactionState.value).toBe('idle')
+    // 立即完成时也要打断旧动画，否则「已 idle + 已 completed」与仍在推进的视图矛盾
+    expect(core.events.scrollCompleted).toHaveBeenCalledWith({ correlationId: scrollId })
+    expect(core.events.scrollCompleted).toHaveBeenCalledWith({ correlationId: id })
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(stopped)
+    clock.dispose()
+    dispose()
+  })
+
   it('addZoomVelocity 低于阈值立即完成，高于阈值进入缩放惯性', () => {
     const { core, api, dispose } = makeEngine()
     const low = api.addZoomVelocity(0.00001)

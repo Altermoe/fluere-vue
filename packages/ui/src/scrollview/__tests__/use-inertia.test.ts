@@ -128,4 +128,65 @@ describe('useInertia', () => {
     clock.dispose()
     dispose()
   })
+
+  it('首帧时间戳早于调度时刻（浏览器帧起点语义）时不反向滑动', () => {
+    const clock = installRafClock()
+    const { core, inertia, dispose } = makeEngine()
+    core.extentHeight.value = 2000
+    core.viewportHeight.value = 300
+    core.offsetY.value = 500
+
+    // 输入事件处理结束时时钟为 1000ms，而首帧 rAF 时间戳是本帧起点（更早）
+    clock.now = 1000
+    inertia.startInertia({
+      velocityX: 0,
+      velocityY: 500,
+      decayX: 0.95,
+      decayY: 0.95,
+      emitCompletion: false,
+    })
+    let previous = core.offsetY.value
+    clock.step(-8)
+    expect(core.offsetY.value).toBeGreaterThanOrEqual(previous)
+
+    for (let i = 0; i < 30; i += 1) {
+      clock.step()
+      expect(core.offsetY.value).toBeGreaterThanOrEqual(previous)
+      previous = core.offsetY.value
+    }
+    clock.dispose()
+    dispose()
+  })
+
+  it('新的滚动动画打断进行中的惯性（同一时刻只有一路 offset 写入者）', () => {
+    const clock = installRafClock()
+    const { core, animation, inertia, dispose } = makeEngine()
+    core.extentHeight.value = 5000
+    core.viewportHeight.value = 300
+
+    inertia.startInertia({
+      velocityX: 0,
+      velocityY: 600,
+      decayX: 0.95,
+      decayY: 0.95,
+      emitCompletion: true,
+      correlationId: 9,
+    })
+    clock.run(50)
+    expect(core.interactionState.value).toBe('inertia')
+
+    animation.animateScrollTo(0, 400, 8)
+    // 惯性被立即打断并补发其 completed（不是等它自然滑停）
+    expect(core.events.scrollCompleted).toHaveBeenCalledWith({ correlationId: 9 })
+
+    // 惯性若未被停住，会一直把 offset 顶在目标之外，滚动驱动因差值始终超过收敛
+    // 阈值而无法结束（interactionState 停在 'animation'）
+    clock.run(800)
+    expect(core.interactionState.value).toBe('idle')
+    expect(core.offsetY.value).toBeLessThanOrEqual(400)
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(400)
+    clock.dispose()
+    dispose()
+  })
 })

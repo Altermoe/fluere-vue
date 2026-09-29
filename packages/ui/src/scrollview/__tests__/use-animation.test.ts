@@ -88,6 +88,33 @@ describe('useAnimation · 滚动驱动', () => {
     dispose()
   })
 
+  it('首帧时间戳早于调度时刻（浏览器帧起点语义）时不产生反向回退', () => {
+    const clock = installRafClock()
+    const { core, animation, dispose } = makeEngine()
+    core.extentHeight.value = 2000
+    core.viewportHeight.value = 300
+    core.offsetY.value = 500
+
+    // 输入事件处理结束时时钟为 1000ms，而首帧 rAF 时间戳是本帧起点（更早）：
+    // 浏览器在同一帧内先派发输入事件、再执行 rAF 回调时会出现这种时间差
+    clock.now = 1000
+    animation.animateScrollTo(0, 1000, 1)
+    let previous = core.offsetY.value
+    clock.step(-8)
+    expect(core.offsetY.value).toBeGreaterThanOrEqual(previous)
+
+    for (let i = 0; i < 40; i += 1) {
+      clock.step()
+      expect(core.offsetY.value).toBeGreaterThanOrEqual(previous)
+      previous = core.offsetY.value
+    }
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(1000)
+    expect(core.interactionState.value).toBe('idle')
+    clock.dispose()
+    dispose()
+  })
+
   it('滚轮式 retarget 平滑续接：不重启、不跳变、收敛到新目标且不补发 completed', () => {
     const clock = installRafClock()
     const { core, animation, dispose } = makeEngine()

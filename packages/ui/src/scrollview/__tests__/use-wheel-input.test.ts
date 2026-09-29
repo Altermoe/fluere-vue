@@ -247,6 +247,67 @@ describe('useWheelInput · reduced-motion 直通', () => {
   })
 })
 
+describe('useWheelInput · 打断进行中的滚动', () => {
+  it('完全停止后重新滚轮：首帧不会朝反方向抖动', () => {
+    const clock = installRafClock()
+    const { result, unmount } = mountWheel()
+    const { core, wheel } = result
+    core.extentHeight.value = 2000
+    core.viewportHeight.value = 300
+
+    // 先滚一段并等它完全停下
+    wheel.onWheel(wheelEvent({ deltaY: 120 }))
+    clock.run(3000)
+    expect(core.offsetY.value).toBe(120)
+    expect(core.interactionState.value).toBe('idle')
+
+    // 再次滚轮：输入处理结束时刻比上一帧晚 100ms，而首帧 rAF 时间戳是帧起点（更早 8ms）
+    clock.now += 100
+    wheel.onWheel(wheelEvent({ deltaY: 120 }))
+    const settled = core.offsetY.value
+    clock.step(-8)
+    expect(core.offsetY.value).toBeGreaterThanOrEqual(settled)
+
+    clock.run(3000)
+    expect(core.offsetY.value).toBe(240)
+    clock.dispose()
+    unmount()
+  })
+
+  it('惯性滑行中滚轮接管：立即停住惯性并由滚动驱动独占推进', () => {
+    const clock = installRafClock()
+    const { result, unmount } = mountWheel()
+    const { core, inertia, wheel } = result
+    core.extentHeight.value = 5000
+    core.viewportHeight.value = 300
+
+    inertia.startInertia({
+      velocityX: 0,
+      velocityY: 600,
+      decayX: 0.95,
+      decayY: 0.95,
+      emitCompletion: true,
+      correlationId: 77,
+    })
+    clock.run(50)
+    expect(core.interactionState.value).toBe('inertia')
+
+    const flingOffset = core.offsetY.value
+    wheel.onWheel(wheelEvent({ deltaY: 100 }))
+    // 惯性被立即打断并补发其 completed
+    expect(core.events.scrollCompleted).toHaveBeenCalledWith({ correlationId: 77 })
+
+    // 惯性若未被停住，会持续顶在目标之外，滚动驱动无法收敛（状态停在 'animation'）
+    clock.run(800)
+    expect(core.interactionState.value).toBe('idle')
+    expect(core.offsetY.value).toBeCloseTo(flingOffset + 100, 6)
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(flingOffset + 100)
+    clock.dispose()
+    unmount()
+  })
+})
+
 describe('useWheelInput · Ctrl/⌘+滚轮缩放', () => {
   it('以指针为缩放中心发出 zoomBy（带动画）', () => {
     const clock = installRafClock()

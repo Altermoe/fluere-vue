@@ -9,9 +9,9 @@ import { useBringIntoView } from '../use-bring-into-view'
 import { installRafClock, makeEngine, makeRectElement } from './helpers'
 
 const makeBiv = () => {
-  const { core, animation, dispose } = makeEngine()
+  const { core, animation, inertia, dispose } = makeEngine()
   const biv = useBringIntoView(core, animation)
-  return { core, animation, biv, dispose }
+  return { core, animation, inertia, biv, dispose }
 }
 
 const setViewport = (core: { setElement: (name: 'viewportEl', el: unknown) => void }): void => {
@@ -97,6 +97,38 @@ describe('useBringIntoView', () => {
     expect(core.events.bringIntoView).toHaveBeenCalledWith(
       expect.objectContaining({ targetVerticalOffset: 300 }),
     )
+    dispose()
+  })
+
+  it('元素已在视口内（no-op）时仍停住进行中的惯性，焦点元素不会被带出视口', () => {
+    const clock = installRafClock()
+    const { core, biv, inertia, dispose } = makeBiv()
+    core.extentWidth.value = 2000
+    core.extentHeight.value = 2000
+    core.viewportWidth.value = 300
+    core.viewportHeight.value = 200
+    setViewport(core)
+
+    inertia.startInertia({
+      velocityX: 0,
+      velocityY: 600,
+      decayX: 0.95,
+      decayY: 0.95,
+      emitCompletion: false,
+    })
+    clock.run(50)
+    const settled = core.offsetY.value
+    expect(core.interactionState.value).toBe('inertia')
+
+    // 该元素在任意 offset 下都完全位于视口内 → 目标偏移等于当前偏移（no-op 分支）
+    const visible = makeRectElement({ left: 100, top: 50, width: 100, height: 50 })
+    biv.bringIntoView(visible as never)
+
+    expect(core.interactionState.value).toBe('idle')
+    expect(core.events.scrollCompleted).toHaveBeenCalledTimes(1)
+    clock.run(1000)
+    expect(core.offsetY.value).toBe(settled)
+    clock.dispose()
     dispose()
   })
 
