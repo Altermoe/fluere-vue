@@ -19,6 +19,7 @@ import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
 import FluereInput from '../input/input.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
+import FluereProgressRing from '../progress-ring/progress-ring.vue'
 import FluereRadioButton from '../radio/radio-button.vue'
 import FluereRadioGroup from '../radio/radio-group.vue'
 import FluereScrollView from '../scrollview/scroll-view.vue'
@@ -113,6 +114,20 @@ describe('SSR 兼容性冒烟测试', () => {
     // Minimum/Maximum 被改写时才拼进 UIA name 的口径）
     expect(html).not.toContain('aria-valuemin')
     expect(html).not.toContain('aria-valuemax')
+  })
+
+  it('FluereProgressRing 可服务端渲染（纯 SVG + CSS 动画，setup 无浏览器 API 依赖）', async () => {
+    const html = await renderServer(FluereProgressRing)
+    expect(html).toContain('fui-pr')
+    expect(html).toContain('role="progressbar"')
+    expect(html).toContain('fui-pr__arc')
+    // determinate 语义同步进 SSR 标记
+    const app = createSSRApp({
+      render: () => h(FluereProgressRing, { indeterminate: false, modelValue: 40 }),
+    })
+    const determinateHtml = await renderToString(app)
+    expect(determinateHtml).toContain('aria-valuenow="40"')
+    expect(determinateHtml).toContain('aria-valuetext="40%"')
   })
 
   it('FluereCombobox 可服务端渲染（弹层走 Teleport + Presence，收起时不进首帧）', async () => {

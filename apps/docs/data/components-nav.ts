@@ -111,6 +111,7 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'pagination', name: 'Pagination', implemented: false },
       { slug: 'popover', name: 'Popover', implemented: false },
       { slug: 'progress', name: 'Progress', implemented: false },
+      { slug: 'progress-ring', name: 'Progress Ring', implemented: true },
       { slug: 'scroll-area', name: 'Scroll Area', implemented: false },
       { slug: 'separator', name: 'Separator', implemented: false },
       { slug: 'splitter', name: 'Splitter', implemented: false },

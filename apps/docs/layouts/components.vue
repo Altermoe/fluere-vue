@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 import { FluentIconNavigation24Regular } from '@fluere-vue/icons'
+import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 
 /** 仓库地址（外链） */
 const REPOSITORY_URL = 'https://github.com/'

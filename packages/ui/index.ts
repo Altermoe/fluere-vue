@@ -6,6 +6,7 @@ import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
 import FluereInput from './src/input/input.vue'
 import FluereNumberBox from './src/number-box/number-box.vue'
+import FluereProgressRing from './src/progress-ring/progress-ring.vue'
 import FluereRadioButton from './src/radio/radio-button.vue'
 import FluereRadioGroup from './src/radio/radio-group.vue'
 import FluereScrollView from './src/scrollview/scroll-view.vue'
@@ -18,6 +19,7 @@ export {
   FluereCombobox,
   FluereInput,
   FluereNumberBox,
+  FluereProgressRing,
   FluereRadioButton,
   FluereRadioGroup,
   FluereScrollView,
@@ -40,6 +42,10 @@ export type {
   FluereNumberBoxValidationMode,
   FluereNumberBoxValueChangedEventArgs,
 } from './src/number-box/types'
+export type {
+  FluereProgressRingProps,
+  FluereProgressRingSize,
+} from './src/progress-ring/progress-ring.vue'
 export type { FluereRadioButtonProps } from './src/radio/radio-button.vue'
 export type { FluereRadioGroupProps } from './src/radio/radio-group.vue'
 export type {
