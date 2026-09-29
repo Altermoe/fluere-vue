@@ -30,6 +30,20 @@ html[data-color-mode='dark'] .shiki span {
   }
 }
 
+/* 普通内联代码块：`:not(pre) > code` 排除 Shiki 的 `<pre><code>` 整块代码 */
+:not(pre) > code {
+  /* 等宽字体 */
+  font-family: var(--fontFamilyMonospace);
+  /* 字号略小于正文；行高按自身字号计算，内联时不顶起所在行的行盒 */
+  font-size: 0.875em;
+  line-height: 1;
+  /* 竖向 padding 不参与行盒高度计算，此值使底色高度≈所在行高，逐行不凹凸 */
+  padding: 0.25em 0.4em;
+  border-radius: var(--borderRadiusMedium);
+  /* 略深于主背景 colorNeutralBackground2（#fafafa / #1f1f1f）：暗色下再压深会糊成一片，故改为略提亮 */
+  background-color: light-dark(#f0f0f0, #2e2e2e);
+}
+
 /* ---- 行号 ---- */
 .demo-block__code pre.shiki,
 .demo-block__code :is(pre.shiki, pre.shiki code) {
