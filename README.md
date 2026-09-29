@@ -116,7 +116,7 @@ import { FluereButton } from '@fluere-vue/ui'
 
 欢迎任何形式的贡献。开发环境需要 Node 与 pnpm（^11.1.1）。
 
-新增组件的流程大致是：先在 WinUI 3 Gallery 确认规格与各状态细节 → 补设计令牌 → 实现组件 → 添加文档示例 → 按还原度自检清单逐项核对（清单整理中）。
+新增组件的流程、对齐源与验收清单见 [AGENTS.md](./AGENTS.md)（开发前必读）与 [docs/style-spec.md](./docs/style-spec.md)（样式与行为对齐源）：先在 WinUI 3 Gallery 与**对应版本的 Windows App SDK 源码 tag** 确认规格与各状态细节 → 补设计令牌 → 实现组件 → 添加文档示例 → 按 Definition of Done 逐项核对。
 
 常用命令：`pnpm dev`（文档站）、`pnpm build`、`pnpm lint`、`pnpm tsc`、`pnpm check`。
 

@@ -7,7 +7,9 @@ nav:
 
 # Progress Ring 进度环
 
-Progress Ring 用来指示正在进行、但暂不可量化的操作（不确定态「转圈」），或展示已可量化的进度（确定态弧长）。样式对齐 WinUI 3 / Windows App SDK 的 ProgressRing（`microsoft-ui-xaml` `winui3/release/2.0-stable`）：圆环几何（r≈14 / 32px 控件、stroke≈3、圆线帽）、品牌前景色、透明无底环、彗星动画（弧头亮、弧尾渐隐，≈450°/s 顺时针匀速）；组件为纯装饰指示（`pointer-events: none`、不进 Tab 序、SVG 对屏幕阅读器隐藏）。
+Progress Ring 用来指示正在进行、但暂不可量化的操作（不确定态「转圈」），或展示已可量化的进度（确定态弧长）。
+
+样式对齐 WinUI 3 / Windows App SDK 的 ProgressRing（`microsoft-ui-xaml` `winui3/release/2.5.1`，已核对与最新 WinUI3 Gallery 发行版 v2.9.3 所用的 WindowsAppSDK 2.0.1 源码逐字节一致）：圆环几何（r≈14 / 32px 控件、stroke≈3、两端圆线帽）、品牌前景色、可选轨道色；不确定态是**实色圆头弧段**的 2s 循环——弧先由圆点逐渐变长（上限半周长），随后尾端追上首端、弧又缩回圆点，如此往复；组件为纯装饰指示（`pointer-events: none`、不进 Tab 序、SVG 对屏幕阅读器隐藏）。
 
 ::demo-block{title="基础用法（不确定转圈）"}
 #preview
@@ -52,6 +54,26 @@ Progress Ring 用来指示正在进行、但暂不可量化的操作（不确定
 
 ::
 
+## 轨道（BackgroundColor）
+
+`background-color` 传入任意 CSS 颜色即在圆环下方绘制轨道，对齐 WinUI `ProgressRing.Background`（WinUI3 Gallery 的「Background color」选项，落到 Lottie 里那条**不参与旋转**的整圆）。**缺省不传即不显示轨道**，与 WinUI 默认值 `ControlFillColorTransparentBrush` 一致；两种形态（不确定 / 确定）都支持。
+
+::demo-block{title="带轨道的不确定态与确定态（对齐 WinUI3 Gallery）"}
+#preview
+:ProgressRingBackgroundDemo
+#code
+
+```vue
+<FluereProgressRing background-color="var(--colorNeutralStroke1)" />
+<FluereProgressRing
+  :model-value="20"
+  :indeterminate="false"
+  background-color="var(--colorNeutralStroke1)"
+/>
+```
+
+::
+
 ## 激活 / 隐藏
 
 `:active="false"` 时整体透明且动画暂停（对齐 WinUI `IsActive=false` → `Opacity=0`），常用于「加载完即消失」的场景。
@@ -85,15 +107,20 @@ Progress Ring 用来指示正在进行、但暂不可量化的操作（不确定
 
 ## API
 
-| 属性（Props）   | 类型                             | 默认       | 说明                                                       |
-| --------------- | -------------------------------- | ---------- | ---------------------------------------------------------- |
-| `indeterminate` | `boolean`                        | `true`     | 不确定（转圈）模式，对齐 WinUI IsIndeterminate             |
-| `active`        | `boolean`                        | `true`     | 激活；false 时透明且动画暂停，对齐 WinUI IsActive          |
-| `modelValue`    | `number`                         | `0`        | 当前进度值（确定态生效，`v-model`）                        |
-| `min`           | `number`                         | `0`        | 最小值                                                     |
-| `max`           | `number`                         | `100`      | 最大值                                                     |
-| `size`          | `'small' \| 'medium' \| 'large'` | `'medium'` | 尺寸：16 / 32（WinUI 默认）/ 48                            |
-| `disabled`      | `boolean`                        | `false`    | 禁用（前景降级 …Disabled 档）                              |
-| `label`         | `string`                         | `—`        | 可访问名称（`aria-label`）；纯装饰场景由消费方决定标注与否 |
+| 属性（Props）     | 类型                             | 默认       | 说明                                                                     |
+| ----------------- | -------------------------------- | ---------- | ------------------------------------------------------------------------ |
+| `indeterminate`   | `boolean`                        | `true`     | 不确定（转圈）模式，对齐 WinUI IsIndeterminate                           |
+| `active`          | `boolean`                        | `true`     | 激活；false 时透明且动画暂停，对齐 WinUI IsActive                        |
+| `modelValue`      | `number`                         | `0`        | 当前进度值（确定态生效，`v-model`）                                      |
+| `min`             | `number`                         | `0`        | 最小值                                                                   |
+| `max`             | `number`                         | `100`      | 最大值                                                                   |
+| `size`            | `'small' \| 'medium' \| 'large'` | `'medium'` | 尺寸：16 / 32（WinUI 默认）/ 48                                          |
+| `backgroundColor` | `string`                         | `—`        | 轨道（底环）颜色，任意 CSS 颜色；对齐 WinUI `Background`，缺省透明无轨道 |
+| `disabled`        | `boolean`                        | `false`    | 禁用（前景降级 …Disabled 档）                                            |
+| `label`           | `string`                         | `—`        | 可访问名称（`aria-label`）；纯装饰场景由消费方决定标注与否               |
 
-> 实现要点：不确定态彗星弧头亮、弧尾渐变隐没（`linearGradient` 作用于 stroke），整环 0.8s/圈 线性匀速顺时针旋转（≈450°/s，对齐 WinUI Lottie 可见转速）；确定态弧长走 `stroke-dashoffset` 过渡。动画时长 / 缓动来自 Fluent `duration*`、`curve*` 令牌，并遵循 `prefers-reduced-motion`（减弱时停止旋转与过渡）。
+> 实现要点：不确定态是实色圆头弧段（`RoundLineCap`，无渐变），2s / 一轮：弧长 0 → 半周长 → 0，起点与终点分别对应 Lottie 的 `TrimStart / TrimEnd` 分段线性关键帧，可见旋转 900°/轮（Lottie `RotationAngleInDegrees`，其 `cubic-bezier(.167,.167,.833,.833)` 缓动恒等线性），弧长为 0 时两端圆头合成一个「直径 = 线宽」的圆点，周期首尾在模 360° 下重合、无缝循环。
+>
+> 旋转与弧长由**同一条** `@keyframes` 驱动，且每项属性在周期边界处「视觉等价」（旋转跳 2 整圈、`stroke-dashoffset` 跳 1 整圈而此刻弧长为 0）。这是刻意设计：Lottie 的旋转跳变（900° ≡ 180°）与 dash 半圈跳变必须同时翻页才互相抵消，若拆成「父元素旋转 + 子元素 dash」两条动画，负载高时会出现一条已翻页、另一条未翻页的帧，整环瞬间翻转 180°（表现为「弧接近顶部时底部闪一个小圆点」）。
+>
+> 确定态弧长走 `stroke-dashoffset` 过渡。动画时长 / 缓动来自 Fluent `duration*`、`curve*` 令牌，并遵循 `prefers-reduced-motion`（减弱时停动画并停在半环）。

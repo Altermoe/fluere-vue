@@ -163,6 +163,7 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
 5. **版本比对先归一化 BOM/CRLF**，否则整文件皆差异，容易得出"版本漂移了"的错误结论。
 6. **历史注释会骗人**：上一轮 `progress-ring.vue` 的注释把渐变彗星写得头头是道。改动落地时**顺手更新注释与文档**，否则错误结论会自我延续。
 7. **`prefers-reduced-motion` 要有兜底外观**：动画被 `animation: none` 关掉后，静态声明必须仍是一个合理的形态（ProgressRing 取半环），不能留一个 0 长度或空环。
+8. **周期边界不能依赖两条动画"同时翻页"**：不确定态可见旋转 900°/轮（≡180°），而 dash 在周期首尾跳半圈（≡−180°），二者必须**同一帧**翻页才互相抵消。若拆成「`<g>` 旋转 + `<circle>` dash」两条动画，负载高时（实测 `Emulation.setCPUThrottlingRate=6`）会出现只有一条翻页的帧，整环瞬间翻转 180°——观感即"弧接近顶部时，底部突然闪一个小圆点"。修法：合并为**同一条** keyframes，并让每条属性在边界处**视觉等价**（旋转跳 2 整圈、`stroke-dashoffset` 跳 +1 圈而此刻弧长为 0）。注意**冻结帧验证查不出这类问题**（冻结会把两条动画设到同一 `currentTime`，恰好消除了这种不同步），必须另做实时播放采样：CDP `Page.startScreencast` 抓真实合成帧，用"张角→合法的两个中线角"做模型一致性判定（修前 123/400、44/400 帧不符；修后 0/801）。
 
 ## 附录 A：ProgressRing 对齐结论（范式样例）
 
@@ -181,4 +182,4 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
 | 确定态几何     | `AnimatedVisuals/ProgressRingDeterminate.cpp`                   | 32×32 舞台、`r=8×1.77`、`stroke=1.5×1.77`；自 12 点顺时针增长到 `(value−min)/(max−min)`                     |
 | 确定态进度联动 | `ProgressRing.cpp#UpdateLottieProgress`                         | 递增时 `PlayAsync(旧进度, 新进度)`（时长 = 2s × Δ进度），回退时 `SetProgress`                               |
 
-实现侧对应结论：`packages/ui/src/progress-ring/progress-ring.vue`（单弧三段线性 dash + `−90°→810°` 线性旋转 + `--pr-track-color` 轨道）；误差以冻结帧像素测量为准（张角误差 < 1°、中线误差 < 0.5°）。
+实现侧对应结论：`packages/ui/src/progress-ring/progress-ring.vue`（单弧 + **同一条** keyframes 同时驱动旋转与 dash：`transform −90°→180°→630°`、`stroke-dasharray 0→半圈→0`、`stroke-dashoffset 0→−C/2→−C`，可见几何仍等价于「900°/轮 旋转 + `min(p,1−p)` 弧长」；另有 `--pr-track-color` 轨道）；误差以冻结帧像素测量为准（张角误差 < 1°、中线误差 < 0.5°）。

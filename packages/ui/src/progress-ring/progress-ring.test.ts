@@ -10,14 +10,33 @@ import ringSfc from './progress-ring.vue?raw'
  * jsdom 不解析 CSS 自定义属性（var()），拿不到可靠的计算样式，所以这里退一步
  * 断言声明本身——守住曾经跑偏的 WinUI 还原规则。
  *
- * 对照来源：WinUI 3（microsoft-ui-xaml winui3/release/2.0-stable）
+ * 解析规则：按 `}` 切块、再按 `{` 切出「选择器 → 声明」。因此
+ *   - 普通规则：`.sel { a: b }` → key `.sel`
+ *   - @keyframes 内部块：`0% { a: b }` → key `0%` / `50%` / `100%` / `from` / `to`
+ *   - 同一选择器的多次声明（外层 + @media 覆盖）合并为一条
+ *
+ * 对照来源：WinUI 3（microsoft-ui-xaml winui3/release/2.5.1，与最新 WinUI3 Gallery
+ * 发行版 v2.9.3 所用的 WindowsAppSDK 2.0.1 同源，ProgressRing 源码逐字节一致）
  *   src/controls/dev/ProgressRing/ProgressRing.xaml
  *   src/controls/dev/ProgressRing/ProgressRing_themeresources.xaml
  *   src/controls/dev/ProgressRing/AnimatedVisuals/ProgressRingIndeterminate.cpp
  *   src/controls/dev/ProgressRing/AnimatedVisuals/ProgressRingDeterminate.cpp
  */
+const readStyleText = (): string =>
+  (/<style[^>]*>(?<css>[\s\S]*?)<\/style>/.exec(ringSfc)?.groups?.css ?? '').replace(
+    /\/\*[\s\S]*?\*\//g,
+    '',
+  )
+
+/** 取出某个 @keyframes 的完整内容（规则解析器会吞掉第一个关键帧选择器，故单列） */
+const readKeyframes = (name: string): string => {
+  const matched =
+    new RegExp(`@keyframes\\s+${name}\\s*\\{([\\s\\S]*?)^\\}`, 'm').exec(readStyleText())?.[1] ?? ''
+  return matched.replace(/\s+/g, ' ').trim()
+}
+
 const readStyleRules = (): Map<string, string> => {
-  const styleBlock = /<style[^>]*>(?<css>[\s\S]*?)<\/style>/.exec(ringSfc)?.groups?.css ?? ''
+  const styleBlock = readStyleText()
   const rules = new Map<string, string>()
   const blocks = styleBlock
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -42,12 +61,17 @@ const readStyleRules = (): Map<string, string> => {
   return rules
 }
 
+/** 与组件脚本同源：r=14（WinUI Lottie 80×80 舞台里 r=35 归一化到 32px 控件） */
+const R = 14
+const CIRCUMFERENCE = 2 * Math.PI * R
+
 describe('FluereProgressRing 渲染契约', () => {
-  it('渲染为 role=progressbar 的装饰根节点，内含 SVG 圆环', () => {
+  it('渲染为 role=progressbar 的装饰根节点，内含轨道 + 圆环 SVG', () => {
     const wrapper = mount(FluereProgressRing)
     const root = wrapper.get('[role="progressbar"]')
     expect(root.classes()).toContain('fui-pr')
     expect(wrapper.find('.fui-pr__svg').exists()).toBe(true)
+    expect(wrapper.find('.fui-pr__track').exists()).toBe(true)
     expect(wrapper.find('.fui-pr__arc').exists()).toBe(true)
     // 纯装饰：SVG 对屏幕阅读器隐藏（对齐 IsTabStop=False）
     expect(wrapper.get('.fui-pr__svg').attributes('aria-hidden')).toBe('true')
@@ -61,6 +85,17 @@ describe('FluereProgressRing 渲染契约', () => {
     expect(root.attributes('aria-valuemin')).toBeUndefined()
   })
 
+  it('indeterminate：弧长完全交给 CSS 动画，不写内联 dash 属性、也不用渐变', () => {
+    const wrapper = mount(FluereProgressRing)
+    const arc = wrapper.get('.fui-pr__arc')
+    expect(arc.attributes('stroke-dasharray')).toBeUndefined()
+    expect(arc.attributes('stroke-dashoffset')).toBeUndefined()
+    // 实色圆头弧段（Lottie 里就是主题色实心描边，没有彗星渐变）
+    expect(arc.attributes('style')).toBeUndefined()
+    expect(wrapper.find('linearGradient').exists()).toBe(false)
+    expect(wrapper.find('.fui-pr__grad-stop').exists()).toBe(false)
+  })
+
   it('determinate：data-state=determinate + aria-valuenow/min/max + 百分比 aria-valuetext', () => {
     const wrapper = mount(FluereProgressRing, {
       props: { indeterminate: false, modelValue: 25, max: 100 },
@@ -71,6 +106,21 @@ describe('FluereProgressRing 渲染契约', () => {
     expect(root.attributes('aria-valuemax')).toBe('100')
     expect(root.attributes('aria-valuenow')).toBe('25')
     expect(root.attributes('aria-valuetext')).toBe('25%')
+  })
+
+  it('determinate：dasharray=[C, C]、dashoffset=C·(1−fraction)（弧自 12 点顺时针增长）', () => {
+    const wrapper = mount(FluereProgressRing, {
+      props: { indeterminate: false, modelValue: 25, max: 100 },
+    })
+    const arc = wrapper.get('.fui-pr__arc')
+    const [dash] = (arc.attributes('stroke-dasharray') ?? '').split(' ')
+    expect(Number(dash)).toBeCloseTo(CIRCUMFERENCE, 5)
+    expect(Number(arc.attributes('stroke-dashoffset'))).toBeCloseTo(CIRCUMFERENCE * 0.75, 5)
+    // 满进度 → 弧覆盖整圈（offset=0）
+    const full = mount(FluereProgressRing, {
+      props: { indeterminate: false, modelValue: 100 },
+    })
+    expect(Number(full.get('.fui-pr__arc').attributes('stroke-dashoffset'))).toBeCloseTo(0, 5)
   })
 
   it('determinate：value 钳位到 [min, max]', () => {
@@ -98,13 +148,25 @@ describe('FluereProgressRing 渲染契约', () => {
     expect(mount(FluereProgressRing).get('[role="progressbar"]').attributes('data-active')).toBe('')
   })
 
-  it('indeterminate 弧线使用每实例渐变 id（stroke=url(#grad)）', () => {
-    const wrapper = mount(FluereProgressRing)
-    const arc = wrapper.get('.fui-pr__arc')
-    // Vue 会把 style 绑定序列化成带引号的 CSS：stroke: url("#fui-pr-grad-19");
-    expect(arc.attributes('style')).toMatch(/stroke:\s*url\(["']?#fui-pr-grad-/)
-    expect(wrapper.find('.fui-pr__grad-tail').exists()).toBe(true)
-    expect(wrapper.find('.fui-pr__grad-head').exists()).toBe(true)
+  it('轨道色：缺省不注入 --pr-track-color（WinUI 默认透明轨道）', () => {
+    const style = mount(FluereProgressRing).get('[role="progressbar"]').attributes('style') ?? ''
+    expect(style).toContain('--pr-c:')
+    expect(style).not.toContain('--pr-track-color')
+  })
+
+  it('轨道色：backgroundColor 透传为 --pr-track-color（对齐 WinUI Background）', () => {
+    const wrapper = mount(FluereProgressRing, {
+      props: { backgroundColor: 'var(--colorNeutralStroke1)' },
+    })
+    const style = wrapper.get('[role="progressbar"]').attributes('style') ?? ''
+    expect(style).toContain('--pr-track-color: var(--colorNeutralStroke1)')
+    // 两种形态都绘制轨道（Lottie 的 Background SpriteShape 与状态无关）
+    const det = mount(FluereProgressRing, {
+      props: { indeterminate: false, backgroundColor: '#d3d3d3' },
+    })
+    expect(det.get('[role="progressbar"]').attributes('style')).toContain(
+      '--pr-track-color: #d3d3d3',
+    )
   })
 
   it('label 透传为 aria-label', () => {
@@ -122,9 +184,8 @@ describe('FluereProgressRing 状态样式（WinUI 3 ProgressRing 契约）', () 
     expect(rules.get(".fui-pr[data-size='large']") ?? '').toContain('--pr-size: 48px')
   })
 
-  it('前景 = AccentFillColorDefaultBrush → colorCompoundBrandBackground（无轨道、无底色）', () => {
+  it('前景 = AccentFillColorDefaultBrush → colorCompoundBrandBackground（根节点无底色）', () => {
     expect(rules.get('.fui-pr') ?? '').toContain('color: var(--colorCompoundBrandBackground)')
-    // 根背景透明：不绘制任何底环（ControlFillColorTransparentBrush）
     expect((rules.get('.fui-pr') ?? '').includes('background')).toBe(false)
   })
 
@@ -132,24 +193,51 @@ describe('FluereProgressRing 状态样式（WinUI 3 ProgressRing 契约）', () 
     expect(rules.get('.fui-pr') ?? '').toContain('pointer-events: none')
   })
 
-  it('弧线：圆头（stroke-linecap: round），stroke=currentColor 级联 disabled', () => {
+  it('弧线：圆头（stroke-linecap: round）、stroke=currentColor、stroke-width=3', () => {
     const arc = rules.get('.fui-pr__arc') ?? ''
     expect(arc).toContain('stroke-linecap: round')
     expect(arc).toContain('stroke: currentColor')
+    expect(arc).toContain('stroke-width: 3')
   })
 
-  it('dash 起点由 orbit 静态 rotate(-90deg) 落到 12 点；keyframes 在此基础上 −90°→270° 无缝循环', () => {
-    const orbit = rules.get('.fui-pr__orbit') ?? ''
-    expect(orbit).toContain('transform: rotate(-90deg)')
-    expect(orbit).toContain('transform-box: view-box')
-    const all = [...rules.values()].join('\n')
-    expect(all).toContain('transform: rotate(-90deg)')
-    expect(all).toContain('transform: rotate(270deg)')
+  it('轨道：静态整圆，描边走 --pr-track-color 且缺省透明（ControlFillColorTransparentBrush）', () => {
+    const track = rules.get('.fui-pr__track') ?? ''
+    expect(track).toContain('stroke: var(--pr-track-color, transparent)')
+    expect(track).toContain('stroke-width: 3')
   })
 
-  it('indeterminate：orbit 0.8s 线性匀速旋转（≈450°/s，对齐 Lottie 可见转速）', () => {
-    const orbit = rules.get(".fui-pr[data-state='indeterminate'] .fui-pr__orbit") ?? ''
-    expect(orbit).toContain('animation: fui-pr-orbit 0.8s linear infinite')
+  it('dash 起点由弧线静态 rotate(-90deg) 落到 12 点（不再有独立的 orbit 包裹层）', () => {
+    const arc = rules.get('.fui-pr__arc') ?? ''
+    expect(arc).toContain('transform: rotate(-90deg)')
+    expect(arc).toContain('transform-box: view-box')
+    expect(arc).toContain('transform-origin: 16px 16px')
+    // 旋转已与 dash 合并到弧线自身，避免「父元素旋转 + 子元素 dash」两条动画在周期边界脱节
+    expect(rules.get('.fui-pr__orbit')).toBeUndefined()
+  })
+
+  it('indeterminate：同一条 2s 线性动画驱动旋转 + 弧长 + 弧位置（Lottie 2s / c_durationTicks=20000000）', () => {
+    const arc = rules.get(".fui-pr[data-state='indeterminate'] .fui-pr__arc") ?? ''
+    expect(arc).toContain('animation: fui-pr-arc 2s linear infinite')
+    // 静态兜底（reduced-motion 停动画后）= 半环
+    expect(arc).toContain('stroke-dasharray: calc(var(--pr-c) / 2) var(--pr-c)')
+    const frames = readKeyframes('fui-pr-arc')
+    // 0%：弧长 0（RoundLineCap 收成圆点），12 点基准，dash 相位 0
+    expect(frames).toContain(
+      '0% { transform: rotate(-90deg); stroke-dasharray: 0 var(--pr-c); stroke-dashoffset: 0; }',
+    )
+    // 50%：可见旋转已推进 270°（180° 变换 + dash 相位半圈 = Lottie 的 450°），弧长上限 = 半周长
+    expect(frames).toContain(
+      '50% { transform: rotate(180deg); stroke-dasharray: calc(var(--pr-c) / 2) var(--pr-c); stroke-dashoffset: calc(var(--pr-c) * -0.5); }',
+    )
+    // 100%：弧长 0；边界跳变量各自「视觉等价」——transform 跳 720°（= 2 整圈）、
+    // dashoffset 跳 +C（此刻弧长为 0、图案周期恰为 C）→ 不依赖两条动画同步
+    expect(frames).toContain(
+      '100% { transform: rotate(630deg); stroke-dasharray: 0 var(--pr-c); stroke-dashoffset: calc(var(--pr-c) * -1); }',
+    )
+    // 不再有彗星渐变的痕迹
+    const all = [...rules.entries()].map(([k, v]) => `${k}: ${v}`).join('\n')
+    expect(all).not.toContain('grad')
+    expect(all).not.toContain('stop-opacity')
   })
 
   it('determinate：value 变化走 stroke-dashoffset 过渡（弧长平滑增长）', () => {
@@ -159,39 +247,28 @@ describe('FluereProgressRing 状态样式（WinUI 3 ProgressRing 契约）', () 
     )
   })
 
-  it('彗星渐变：弧尾 stop-opacity=0、弧头 stop-opacity=1', () => {
-    expect(rules.get('.fui-pr__grad-tail') ?? '').toContain('stop-opacity: 0')
-    expect(rules.get('.fui-pr__grad-head') ?? '').toContain('stop-opacity: 1')
-    expect(rules.get('.fui-pr__grad-stop') ?? '').toContain(
-      'stop-color: var(--colorCompoundBrandBackground)',
-    )
-  })
-
-  it('disabled：前景与渐变色标降级 …Disabled 档', () => {
+  it('disabled：前景降级 …Disabled 档', () => {
     expect(rules.get('.fui-pr[data-disabled]') ?? '').toContain(
       'color: var(--colorNeutralForegroundDisabled)',
     )
-    expect(rules.get('.fui-pr[data-disabled] .fui-pr__grad-stop') ?? '').toContain(
-      'stop-color: var(--colorNeutralForegroundDisabled)',
-    )
   })
 
-  it('inactive（IsActive=false）：opacity:0 + 动画暂停（对齐 WinUI Inactive 态）', () => {
+  it('inactive（IsActive=false）：opacity:0 + 动画暂停', () => {
     expect(rules.get('.fui-pr:not([data-active])') ?? '').toContain('opacity: 0')
-    expect(rules.get('.fui-pr:not([data-active]) .fui-pr__orbit') ?? '').toContain(
+    expect(rules.get('.fui-pr:not([data-active]) .fui-pr__arc') ?? '').toContain(
       'animation-play-state: paused',
     )
   })
 
-  it('动效尊重系统减弱：reduced-motion 下关闭旋转与过渡', () => {
-    const orbit = rules.get(".fui-pr[data-state='indeterminate'] .fui-pr__orbit") ?? ''
-    const arc = rules.get(".fui-pr[data-state='determinate'] .fui-pr__arc") ?? ''
-    // 外层规则（旋转/过渡）与 reduced-motion 覆盖（animation:none / transition:none）共存
-    expect(orbit).toContain('animation: fui-pr-orbit 0.8s linear infinite')
-    expect(orbit).toContain('animation: none')
-    expect(arc).toContain(
+  it('动效尊重系统减弱：reduced-motion 下关闭动画与过渡', () => {
+    const arc = rules.get(".fui-pr[data-state='indeterminate'] .fui-pr__arc") ?? ''
+    const det = rules.get(".fui-pr[data-state='determinate'] .fui-pr__arc") ?? ''
+    // 外层规则与 reduced-motion 覆盖共存
+    expect(arc).toContain('animation: fui-pr-arc 2s linear infinite')
+    expect(arc).toContain('animation: none')
+    expect(det).toContain(
       'transition: stroke-dashoffset var(--durationNormal) var(--curveEasyEase)',
     )
-    expect(arc).toContain('transition: none')
+    expect(det).toContain('transition: none')
   })
 })

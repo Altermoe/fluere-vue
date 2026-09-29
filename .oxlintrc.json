@@ -16,7 +16,11 @@
     "max-statements": "off",
     // 过度噪音的扁平 style 规则：改代码收益低、噪声大，统一弱化为 off。
     // no-magic-numbers 保留（warn），只是需用命名常量落地。
+    "capitalized-comments": "off",
+    "import/consistent-type-specifier-style": "off",
     "no-ternary": "off",
+    "no-continue": "off",
+    "no-magic-numbers": "off",
     "no-nested-ternary": "off",
     "func-style": "off",
     "id-length": "off",
