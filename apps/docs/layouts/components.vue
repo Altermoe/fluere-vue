@@ -2,16 +2,8 @@
 import { FluentIconNavigation24Regular } from '@fluere-vue/icons'
 import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 
-/** 仓库地址（外链） */
-const REPOSITORY_URL = 'https://github.com/'
-
 const route = useRoute()
 const { open, toggle } = useDocsSidebar()
-
-/** 外链在新标签页打开；noopener/noreferrer 与 <a rel> 语义等价 */
-const openRepository = () => {
-  window.open(REPOSITORY_URL, '_blank', 'noopener,noreferrer')
-}
 
 /** 内容区顶部偏移（水平 / 垂直同值，均为 0） */
 const CONTENT_TOP_OFFSET = 0
@@ -121,18 +113,10 @@ watch(
         <div class="flex items-center gap-3 text-sm">
           <span class="text-colorNeutralForeground3">v0.0.1</span>
           <!--
-            导航栏的按钮一律复用组件库的 FluereButton（站点自身即组件库的第一消费方）：
-            GitHub 是外链，仍以按钮承载动作（组件库只提供 <button> 语义），由脚本开新标签页；
-            outline + medium 与原手写样式的边框/内边距/高度对齐，视觉零漂移。
+            GitHub 仓库入口：外链，语义与样式都是链接（无边框、无底色），
+            图标用 GitHub 官方 Invertocat，实现与地址见 components/github-link.vue。
           -->
-          <FluereButton
-            appearance="outline"
-            size="medium"
-            title="在新标签页打开 GitHub 仓库"
-            @click="openRepository"
-          >
-            GitHub
-          </FluereButton>
+          <GithubLink />
           <ThemeToggle />
         </div>
       </div>
