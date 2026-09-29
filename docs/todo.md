@@ -22,7 +22,7 @@
 ## Wave 2 · 反馈与状态（满足"加载 / 提示"）
 
 - [x] 7. `ProgressRing`（ProgressRing，不确定转圈；自定义实现，参考 ScrollView 动效基建）
-- [ ] 8. `ProgressBar`（ProgressBar，复用 reka Progress）
+- [x] 8. `ProgressBar`（ProgressBar，复用 reka Progress）
 - [ ] 9. `InfoBar`（InfoBar，信息横幅，自定义实现）
 - [ ] 10. `Badge`（Badge，自定义实现）
 

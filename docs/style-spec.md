@@ -136,19 +136,25 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
 
 已核对的映射（示例，随组件增加而扩充）：
 
-| WinUI 资源（Light/Default）                                                              | 本库 token                              | 说明                                               |
-| ---------------------------------------------------------------------------------------- | --------------------------------------- | -------------------------------------------------- |
-| `ProgressRingForegroundThemeBrush` → `AccentFillColorDefaultBrush`                       | `var(--colorCompoundBrandBackground)`   | 强调色填充位；系统强调色 → Fluent 默认强调色       |
-| `ProgressRingBackgroundThemeBrush` → `ControlFillColorTransparentBrush`                  | 无（`#00FFFFFF`，缺省不绘制）           | 对应 ProgressRing 的 `backgroundColor` Prop 缺省值 |
-| `ProgressRingForegroundThemeBrush`（HighContrast） → `SystemControlHighlightAccentBrush` | 待接入 HC 主题时统一处理                | 目前仅记录，未实现 HC 分支                         |
-| 前景降级（本库约定，非 WinUI 资源）                                                      | `var(--colorNeutralForegroundDisabled)` | `disabled` 时的前景                                |
+| WinUI 资源（Light/Default）                                                                                 | 本库 token                               | 说明                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ProgressRingForegroundThemeBrush` → `AccentFillColorDefaultBrush`                                          | `var(--colorCompoundBrandBackground)`    | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
+| `ProgressRingBackgroundThemeBrush` → `ControlFillColorTransparentBrush`                                     | 无（`#00FFFFFF`，缺省不绘制）            | 对应 ProgressRing 的 `backgroundColor` Prop 缺省值                                                        |
+| `ProgressRingForegroundThemeBrush`（HighContrast） → `SystemControlHighlightAccentBrush`                    | 待接入 HC 主题时统一处理                 | 目前仅记录，未实现 HC 分支                                                                                |
+| 前景降级（本库约定，非 WinUI 资源）                                                                         | `var(--colorNeutralForegroundDisabled)`  | `disabled` 时的前景                                                                                       |
+| `ProgressBarForeground` → `AccentFillColorDefaultBrush`                                                     | `var(--colorCompoundBrandBackground)`    | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
+| `ProgressBarBackground` → `ControlStrongStrokeColorDefault`（Light `#72000000` / Dark `#8BFFFFFF`，半透明） | `var(--colorNeutralStrokeAccessible)`    | 中性强描边位；Fluent 2 Web 无同值 token，取值差异记录在组件注释（可用 `backgroundColor` 传入 WinUI 原值） |
+| `ProgressBarPausedForegroundColor` → `SystemFillColorCaution`（Light `#9D5D00` / Dark `#FCE100`）           | `var(--colorPaletteYellowForeground1)`   | 黄色警示家族中取值最接近者（Light `#817400` / Dark `#feee66`）；status warning 家族为橙色系，色相偏差更大 |
+| `ProgressBarErrorForegroundColor` → `SystemFillColorCritical`（Light `#C42B1C` / Dark `#FF99A4`）           | `var(--colorStatusDangerForeground3)`    | Light `#c50f1f` ≈ `#C42B1C`、Dark `#eeacb2` ≈ `#FF99A4`，两个主题都最接近                                 |
+| `ProgressBarMinHeight`/`TrackHeight`/`CornerRadius`/`TrackCornerRadius` = 3 / 1 / 1.5 / 0.5                 | 无同值 token（组件内 `--pb-*` 局部变量） | Fluent token 表无 1.5 / 0.5 档圆角与 3px 高度，按 WinUI 资源名落成组件局部变量                            |
 
 ## 7. 验证证据链（结论必须有证据）
 
 1. **契约单测**：jsdom 解析不了 `var()`，因此对 SFC 源码做文本断言（选择器 → 声明、关键帧内容、内联属性）。参见 `packages/ui/src/progress-ring/progress-ring.test.ts` 里的 `readStyleRules()` / `readKeyframes()`。
 2. **动效还原**：`docs` dev server（60727）+ Playwright **冻结帧 + 像素测量**。
    - 冻结用 Web Animations API：`el.getAnimations().forEach(a => { a.pause(); a.currentTime = ms })`；**"负 `animation-delay` + `paused`"在 Chromium 下有约 50ms 漂移，不可用于逐帧比对**。
-   - 用"按颜色分离像素 → 极坐标角度直方图"独立测量弧的张角与中线，与源码关键帧公式逐点比对。可复用脚本：[temp/pw-progress-ring.mjs](../temp/pw-progress-ring.mjs)（62 项断言含冻结帧数学表）。
+   - 用"按颜色分离像素 → 极坐标角度直方图"独立测量弧的张角与中线，与源码关键帧公式逐点比对。可复用脚本：[temp/pw-progress-ring.mjs](../temp/pw-progress-ring.mjs)（62 项断言含冻结帧数学表）；线性指示条用 [temp/pw-progress-bar.mjs](../temp/pw-progress-bar.mjs)（32 项断言：几何/配色/五状态 + 冻结帧位移与可见像素段，含"1:1 截图 + 探针"的像素测量法）。
+   - **像素测量的两个前提**：① 探针元素要用整数像素定位（`padding` 而非 `center` + 半像素高度），否则 1px 细线会被亚像素摊成两行；② 参照色从 `getComputedStyle` 读，按颜色距离分类像素，不要用"与背景不同"这种模糊阈值。
    - 文档站内容区是自带 `ScrollView`（`transform` 偏移 + `overflow: clip`，**不是原生滚动容器**）：Playwright 的 `scrollIntoView` / `scrollIntoViewIfNeeded` 无效，要 `page.mouse.wheel()`；否则截到的是空白。
    - Vue 的 `<style scoped>` 会给 `@keyframes` 加 hash 后缀（`fui-pr-orbit-79c45151`），断言动画名用前缀匹配。
 3. **参考图取样**：`ffmpeg -i ref.png -f rawvideo -pix_fmt rgb24 out.raw` → 用 Python 读字节做径向直方图/取色，用数据判断几何与颜色（本轮据此确认参考图轨道是 `#D3D3D3`、确定态自 12 点顺时针 72°）。
@@ -164,6 +170,7 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
 6. **历史注释会骗人**：上一轮 `progress-ring.vue` 的注释把渐变彗星写得头头是道。改动落地时**顺手更新注释与文档**，否则错误结论会自我延续。
 7. **`prefers-reduced-motion` 要有兜底外观**：动画被 `animation: none` 关掉后，静态声明必须仍是一个合理的形态（ProgressRing 取半环），不能留一个 0 长度或空环。
 8. **周期边界不能依赖两条动画"同时翻页"**：不确定态可见旋转 900°/轮（≡180°），而 dash 在周期首尾跳半圈（≡−180°），二者必须**同一帧**翻页才互相抵消。若拆成「`<g>` 旋转 + `<circle>` dash」两条动画，负载高时（实测 `Emulation.setCPUThrottlingRate=6`）会出现只有一条翻页的帧，整环瞬间翻转 180°——观感即"弧接近顶部时，底部突然闪一个小圆点"。修法：合并为**同一条** keyframes，并让每条属性在边界处**视觉等价**（旋转跳 2 整圈、`stroke-dashoffset` 跳 +1 圈而此刻弧长为 0）。注意**冻结帧验证查不出这类问题**（冻结会把两条动画设到同一 `currentTime`，恰好消除了这种不同步），必须另做实时播放采样：CDP `Page.startScreencast` 抓真实合成帧，用"张角→合法的两个中线角"做模型一致性判定（修前 123/400、44/400 帧不符；修后 0/801）。
+9. **1px 细线不要用 `top: 50%` + `translateY(-50%)` 居中**（ProgressBar 实测）：条高 3、轨道高 1 时该组合把轨道放到 `1.5px − 0.5px` 的**半像素**上，Chromium 会把它摊成两行各 50% 覆盖——`#616161` 被画成 `#A9A9A9`，比 WinUI 的实机（XAML 布局取整后落在整数像素、参考图里只有一行灰线）淡一档。修法：直接写中心偏移 `top: calc((H − h) / 2)`（默认 3/1 ⇒ 整数 1px）。**只有像素测量能发现它**：`getBoundingClientRect()` 给出的位置是"变换后"的 21px，看起来完全正常。
 
 ## 附录 A：ProgressRing 对齐结论（范式样例）
 

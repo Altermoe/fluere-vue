@@ -19,6 +19,7 @@ import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
 import FluereInput from '../input/input.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
+import FluereProgressBar from '../progress-bar/progress-bar.vue'
 import FluereProgressRing from '../progress-ring/progress-ring.vue'
 import FluereRadioButton from '../radio/radio-button.vue'
 import FluereRadioGroup from '../radio/radio-group.vue'
@@ -128,6 +129,28 @@ describe('SSR 兼容性冒烟测试', () => {
     const determinateHtml = await renderToString(app)
     expect(determinateHtml).toContain('aria-valuenow="40"')
     expect(determinateHtml).toContain('aria-valuetext="40%"')
+  })
+
+  it('FluereProgressBar 可服务端渲染（纯 div + CSS 动画，复用 reka ProgressRoot）', async () => {
+    const app = createSSRApp({
+      render: () => h(FluereProgressBar, { modelValue: 30, label: '下载进度' }),
+    })
+    const html = await renderToString(app)
+    expect(html).toContain('fui-pb')
+    expect(html).toContain('role="progressbar"')
+    expect(html).toContain('data-state="determinate"')
+    expect(html).toContain('aria-valuenow="30"')
+    expect(html).toContain('aria-valuetext="30%"')
+    expect(html).toContain('aria-label="下载进度"')
+    expect(html).toContain('fui-pb__track')
+    // 不确定态：不渲染 RangeValue 语义（对齐 ProgressBarAutomationPeer）
+    const indeterminate = createSSRApp({
+      render: () => h(FluereProgressBar, { indeterminate: true }),
+    })
+    const indeterminateHtml = await renderToString(indeterminate)
+    expect(indeterminateHtml).toContain('data-state="indeterminate"')
+    expect(indeterminateHtml).not.toContain('aria-valuenow')
+    expect(indeterminateHtml).not.toContain('aria-valuemin')
   })
 
   it('FluereCombobox 可服务端渲染（弹层走 Teleport + Presence，收起时不进首帧）', async () => {
