@@ -65,22 +65,23 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 组件进度
 
-| 组件                                     | 对应 WinUI 3 控件     | 状态   |
-| ---------------------------------------- | --------------------- | ------ |
-| `FluereButton`                           | Button / ToggleButton | 已完成 |
-| `FluereCheckbox`                         | CheckBox              | 已完成 |
-| `FluereToggleSwitch`                     | ToggleSwitch          | 已完成 |
-| `FluereRadioGroup` / `FluereRadioButton` | RadioButton           | 已完成 |
-| `FluereSlider`                           | Slider                | 已完成 |
-| `FluereNumberBox`                        | NumberBox             | 已完成 |
-| `FluereCombobox`                         | ComboBox              | 已完成 |
-| `FluereContentDialog`                    | ContentDialog         | 已完成 |
-| `FluereInfoBadge`                        | InfoBadge             | 已完成 |
-| `FluereInfoBar`                          | InfoBar               | 已完成 |
-| `FluereProgressBar`                      | ProgressBar           | 已完成 |
-| `FluereProgressRing`                     | ProgressRing          | 已完成 |
-| `FluereInput`                            | TextBox               | 开发中 |
-| `FluereScrollView`                       | ScrollView            | 开发中 |
+| 组件                                     | 对应 WinUI 3 控件        | 状态   |
+| ---------------------------------------- | ------------------------ | ------ |
+| `FluereButton`                           | Button / ToggleButton    | 已完成 |
+| `FluereCheckbox`                         | CheckBox                 | 已完成 |
+| `FluereToggleSwitch`                     | ToggleSwitch             | 已完成 |
+| `FluereRadioGroup` / `FluereRadioButton` | RadioButton              | 已完成 |
+| `FluereSlider`                           | Slider                   | 已完成 |
+| `FluereNumberBox`                        | NumberBox                | 已完成 |
+| `FluereCombobox`                         | ComboBox                 | 已完成 |
+| `FluereContentDialog`                    | ContentDialog            | 已完成 |
+| `FluereInfoBadge`                        | InfoBadge                | 已完成 |
+| `FluereInfoBar`                          | InfoBar                  | 已完成 |
+| `FluereProgressBar`                      | ProgressBar              | 已完成 |
+| `FluereProgressRing`                     | ProgressRing             | 已完成 |
+| `FluereInput`                            | TextBox                  | 开发中 |
+| `FluereTooltip`                          | ToolTip / ToolTipService | 已完成 |
+| `FluereScrollView`                       | ScrollView               | 开发中 |
 
 ### 0.1.0-rc.1 组件清单
 
@@ -88,7 +89,7 @@ import { FluereButton } from '@fluere-vue/ui'
 
 - **Wave 1 · 核心表单**：Checkbox、ToggleSwitch、RadioButton / RadioGroup、Slider、NumberBox、Combobox
 - **Wave 2 · 反馈与状态**：ProgressRing、ProgressBar、InfoBar、Badge
-- **Wave 3 · 弹层与微交互**：ContentDialog（含共享弹层原语 `FluereSmokeLayer` / `useDisclosure`）、Tooltip
+- **Wave 3 · 弹层与微交互**：ContentDialog（含共享弹层原语 `FluereSmokeLayer` / `useDisclosure`）、Tooltip / TooltipProvider
 - **Wave 4 · 高级交互**：ToggleButton / ToggleGroup、Avatar / Persona、DropDownButton
 - **rc.1 不做**（推给 0.2）：NavigationView、ListView / GridView / DataGrid、TreeView、CalendarDatePicker / TimePicker、MenuBar 完整版、RatingControl、CommandBar
 

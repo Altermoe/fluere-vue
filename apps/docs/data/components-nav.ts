@@ -122,7 +122,7 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'tabs', name: 'Tabs', implemented: false },
       { slug: 'toast', name: 'Toast', implemented: false },
       { slug: 'toolbar', name: 'Toolbar', implemented: false },
-      { slug: 'tooltip', name: 'Tooltip', implemented: false },
+      { slug: 'tooltip', name: 'Tooltip', implemented: true },
       { slug: 'tree', name: 'Tree', implemented: false },
     ],
   },

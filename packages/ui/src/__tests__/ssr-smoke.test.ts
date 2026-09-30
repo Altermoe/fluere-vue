@@ -30,6 +30,8 @@ import FluereRadioGroup from '../radio/radio-group.vue'
 import FluereScrollView from '../scrollview/scroll-view.vue'
 import FluereSlider from '../slider/slider.vue'
 import FluereToggleSwitch from '../toggle-switch/toggle-switch.vue'
+import FluereTooltipProvider from '../tooltip/tooltip-provider.vue'
+import FluereTooltip from '../tooltip/tooltip.vue'
 
 /** 把单个组件以 SSR 模式渲染为 HTML 字符串 */
 const renderServer = async (component: Component, slotText = ''): Promise<string> => {
@@ -267,6 +269,30 @@ describe('SSR 兼容性冒烟测试', () => {
     const openedHtml = await renderToString(opened)
     expect(openedHtml).not.toContain('role="dialog"')
     expect(openedHtml).not.toContain('fui-content-dialog')
+  })
+
+  it('FluereTooltip 可服务端渲染（触发元素进首帧，提示面延迟到客户端 Teleport）', async () => {
+    // reka 的 Tooltip 必须挂在 TooltipProvider 之下（与 WinUI 的 ToolTipService 对位）
+    const app = createSSRApp({
+      render: () =>
+        h(
+          FluereTooltipProvider,
+          {},
+          {
+            default: () =>
+              h(
+                FluereTooltip,
+                { content: 'Simple ToolTip', open: true },
+                { default: () => h('button', { type: 'button' }, '按钮') },
+              ),
+          },
+        ),
+    })
+    const html = await renderToString(app)
+    expect(html).toContain('按钮')
+    // 提示面走 Teleport，`onMounted` 之前不渲染 ⇒ 服务端无占位、无水合不匹配
+    expect(html).not.toContain('fui-tooltip')
+    expect(html).not.toContain('<!--teleport start-->')
   })
 
   it('FluereSmokeLayer 可服务端渲染（浮层属纯客户端，SSR 不输出）', async () => {

@@ -107,13 +107,27 @@ export type {
 
 <script setup lang="ts">
 import { FluentIconDismiss16Regular } from '@fluere-vue/icons'
-import { computed, nextTick, useSlots, watch } from 'vue'
+import { computed, defineComponent, h, nextTick, useSlots, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
+import FluereTooltip from '../tooltip/tooltip.vue'
 import { INFO_BAR_SEVERITY_ICONS } from './constants'
 import type { FluereInfoBarCloseReason, FluereInfoBarProps } from './types'
 import { useInfoBarLayout } from './use-infobar-layout'
 
 defineOptions({ name: 'FluereInfoBar' })
+
+/**
+ * 关闭按钮没有提示文案时的宿主：只把插槽原样渲染出来（不产生额外 DOM 层级）。
+ * 这样关闭按钮永远是 Grid 第 3 列的直接子项，拿到的布局与是否包 Tooltip 无关 ——
+ * reka 的 `TooltipRoot` 是渲染上下文的提供者，不产出 DOM，不会打乱 Grid 列。
+ */
+const PassthroughHost = defineComponent({
+  name: 'FluereInfoBarPassthrough',
+  setup:
+    (_props, { slots }) =>
+    () =>
+      slots.default?.(),
+})
 
 const props = withDefaults(defineProps<FluereInfoBarProps>(), {
   open: false,
@@ -300,21 +314,30 @@ const setGridRef = (ref_: Element | ComponentPublicInstance | null): void => {
         </div>
 
         <!-- ---- 关闭按钮（第 2 列） ---- -->
-        <button
+        <!-- 关闭按钮的提示走 FluereTooltip（对齐 WinUI 里 `InfoBarCloseButtonTooltip`
+             由 ToolTipService 承载），而不是原生 `title`：原生 title 有浏览器内置的
+             ~1s 延时且样式不可控，与 WinUI 的 ToolTip 不是同一件东西。
+             `closeButtonTooltip` 缺省（本库不硬编码文案）时用 PassthroughHost 直接
+             输出按钮，DOM 结构与布局完全不变 -->
+        <component
+          :is="closeButtonTooltip ? FluereTooltip : PassthroughHost"
           v-if="isClosable"
-          type="button"
-          class="fui-infobar__close"
-          :aria-label="closeButtonLabel ?? undefined"
-          :title="closeButtonTooltip ?? undefined"
-          @click="onCloseButtonClick"
+          v-bind="closeButtonTooltip ? { content: closeButtonTooltip } : {}"
         >
-          <slot name="close-icon">
-            <FluentIconDismiss16Regular
-              class="fui-infobar__close-glyph"
-              :size="16"
-            />
-          </slot>
-        </button>
+          <button
+            type="button"
+            class="fui-infobar__close"
+            :aria-label="closeButtonLabel ?? undefined"
+            @click="onCloseButtonClick"
+          >
+            <slot name="close-icon">
+              <FluentIconDismiss16Regular
+                class="fui-infobar__close-glyph"
+                :size="16"
+              />
+            </slot>
+          </button>
+        </component>
       </div>
 
       <!--

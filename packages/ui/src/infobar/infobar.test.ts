@@ -306,17 +306,23 @@ describe('FluereInfoBar 关闭链路（对齐 InfoBar.cpp）', () => {
     expect(calls).toStrictEqual(['command', 'closing'])
   })
 
-  it('closeButtonTooltip 透传为 title；不传则不渲染', () => {
-    expect(
-      mount(FluereInfoBar, { props: { open: true, closeButtonTooltip: 'Close' } })
-        .get('.fui-infobar__close')
-        .attributes('title'),
-    ).toBe('Close')
-    expect(
-      mount(FluereInfoBar, { props: { open: true } })
-        .get('.fui-infobar__close')
-        .attributes('title'),
-    ).toBeUndefined()
+  it('closeButtonTooltip 走 FluereTooltip；不传时关闭按钮不带任何提示元素', async () => {
+    // 传了提示文案：关闭按钮被 FluereTooltip 包住，默认插槽仍是那个按钮
+    const withTip = mount(FluereInfoBar, {
+      props: { open: true, closeButtonTooltip: 'Close' },
+      attachTo: document.body,
+    })
+    const button = withTip.get('.fui-infobar__close')
+    expect(button.attributes('data-state')).toBe('closed')
+    // 提示面按需 Teleport 到 body，默认不渲染；且不再用原生 title
+    expect(button.attributes('title')).toBeUndefined()
+    expect(document.body.querySelector('.fui-tooltip')).toBeNull()
+
+    // 不传提示文案：关闭按钮的 DOM 与是否包 Tooltip 无关（无额外包装层）
+    const withoutTip = mount(FluereInfoBar, { props: { open: true } })
+    expect(withoutTip.get('.fui-infobar__close').attributes('title')).toBeUndefined()
+    expect(withoutTip.get('.fui-infobar__close').attributes('data-state')).toBeUndefined()
+    withTip.unmount()
   })
 })
 

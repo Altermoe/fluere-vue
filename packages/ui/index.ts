@@ -18,6 +18,8 @@ import FluereScrollView from './src/scrollview/scroll-view.vue'
 import { SCROLL_VIEW_AGENT_EVENTS } from './src/scrollview/use-agent-surface'
 import FluereSlider from './src/slider/slider.vue'
 import FluereToggleSwitch from './src/toggle-switch/toggle-switch.vue'
+import FluereTooltipProvider from './src/tooltip/tooltip-provider.vue'
+import FluereTooltip from './src/tooltip/tooltip.vue'
 
 export {
   FluereButton,
@@ -36,6 +38,8 @@ export {
   FluereSlider,
   FluereSmokeLayer,
   FluereToggleSwitch,
+  FluereTooltip,
+  FluereTooltipProvider,
   SCROLL_VIEW_AGENT_EVENTS,
 }
 export type { FluereButtonProps } from './src/button/button.vue'
@@ -85,6 +89,12 @@ export type {
 } from './src/progress-ring/progress-ring.vue'
 export type { FluereRadioButtonProps } from './src/radio/radio-button.vue'
 export type { FluereRadioGroupProps } from './src/radio/radio-group.vue'
+export type {
+  FluereTooltipAlign,
+  FluereTooltipPlacement,
+  FluereTooltipProps,
+  FluereTooltipProviderProps,
+} from './src/tooltip/types'
 export type {
   FluereToggleSwitchProps,
   FluereToggleSwitchSize,
