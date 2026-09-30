@@ -161,7 +161,8 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 ## 事件
 
 `view-changed / extent-changed / state-changed / scroll-animation-starting / scroll-completed / zoom-animation-starting / zoom-completed / anchor-requested / bring-into-view`，
-载荷见下方「事件」表。
+载荷见下方「事件」表。这些是组件事件（`@event`）；供页面自动化使用的 **DOM 命令事件** 见「Agent / 自动化访问」，
+事件名带 `fluere:` 前缀，在根元素上派发。
 
 ::demo-block{title="事件"}
 #preview
@@ -179,6 +180,99 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 ```
 
 ::
+
+## Agent / 自动化访问
+
+本组件的偏移由内容 `transform` 表达、presenter 是 `overflow: clip`（**不是原生滚动容器**），
+因此浏览器与自动化工具的原生滚动语义在这里不成立：`scrollTop` 恒为 `0`，
+`scrollBy` / `scrollIntoView` / `scrollIntoViewIfNeeded` 都找不到可滚动祖先
+（Playwright 点击视口外元素前的自动滚动同样失效，这也是
+[style-spec §7](./../../../docs/style-spec.md) 记录的那条坑）。组件为此提供两条 DOM 通路，
+**都不需要接触组件实例**：
+
+- **只读反射**：根元素始终带一组状态属性，用来判断「动没动、还剩多少」；
+- **命令事件**：在根元素上派发 `fluere:*` 事件即可驱动滚动，落地后收到回执。
+
+### 只读反射属性
+
+| 属性（Attribute）   | 说明                                                  |
+| ------------------- | ----------------------------------------------------- |
+| `data-scroll-x`     | 当前水平偏移（像素，取整）                            |
+| `data-scroll-y`     | 当前垂直偏移（像素，取整）                            |
+| `data-scroll-max-x` | 可滚动宽度上限（内容 × 缩放 − 视口，取整）            |
+| `data-scroll-max-y` | 可滚动高度上限，取整                                  |
+| `data-zoom-factor`  | 当前缩放系数                                          |
+| `data-scroll-state` | `'idle' \| 'interaction' \| 'inertia' \| 'animation'` |
+
+取整后可安全地做相等比较来判断「到底了没有」（`data-scroll-y === data-scroll-max-y`）。
+这些属性在偏移变化时逐帧重写，**不要在 CSS 里匹配它们**（否则动画期间每帧都会触发样式重算；
+仓库有契约测试守着这条约定）。
+
+### 命令事件
+
+在组件根元素（`.fui-scrollview`）上派发，`bubbles: true`，因此也可以挂在页面级监听。
+
+| 事件（DOM 事件）         | 载荷（`event.detail`）             | 说明                                       |
+| ------------------------ | ---------------------------------- | ------------------------------------------ |
+| `fluere:scroll-to`       | `{ x?, y?, animationMode? }`       | 滚到绝对偏移；缺省分量保持不变             |
+| `fluere:scroll-by`       | `{ x?, y?, animationMode? }`       | 按增量滚动；缺省分量按 `0` 处理            |
+| `fluere:bring-into-view` | `{ element?, selector?, margin? }` | 把内容区内的元素滚入视口（`element` 优先） |
+| `fluere:scroll-settled`  | `{ x, y, zoomFactor }`（**出站**） | 命令落地后由组件派发，用于等待稳定帧       |
+
+载荷非法（非有限数、目标不可解析）时是空操作，不抛错；`bring-into-view` 只接受内容区内的元素。
+`animationMode` 传 `'disabled'` 可跳过动画，适合截图前的确定性定位；
+`agentCommands` 设为 `false` 可关闭命令事件（只读反射保留）。
+
+```js
+const el = document.querySelector('.fui-scrollview')
+
+// 1. 先读状态：还需要滚多少？
+const remaining = Number(el.dataset.scrollMaxY) - Number(el.dataset.scrollY)
+
+// 2. 派发命令（bubbles 让页面级监听也能收到）
+el.dispatchEvent(
+  new CustomEvent('fluere:scroll-by', { detail: { y: remaining, animationMode: 'disabled' } }),
+)
+
+// 3. 等回执再截图 / 断言
+await new Promise((resolve) =>
+  el.addEventListener('fluere:scroll-settled', resolve, { once: true }),
+)
+```
+
+::demo-block{title="Agent 交互面"}
+#preview
+:ScrollViewAgentDemo
+#code
+
+```vue
+<FluereScrollView ref="sv" label="日志列表" @view-changed="refresh">
+  …内容…
+</FluereScrollView>
+```
+
+```ts
+// 只读反射：读 DOM，不碰组件实例
+const root = sv.value.$el
+const { scrollY, scrollMaxY } = root.dataset
+
+// 命令 + 回执
+root.addEventListener('fluere:scroll-settled', refresh)
+root.dispatchEvent(
+  new CustomEvent('fluere:bring-into-view', {
+    detail: { selector: '[data-row="24"]' },
+    bubbles: true,
+  }),
+)
+```
+
+::
+
+> **仍不适用的原生语义**：组件不是原生滚动容器，因此 `el.scrollTop`、`el.scrollBy()`、
+> `el.scrollIntoView()`、CDP `DOM.scrollIntoViewIfNeeded`、浏览器「在页面中查找」与
+> `#:~:text=` 文本片段定位依旧不生效，请用上面的命令事件替代。
+> 另有一条既有通路：焦点进入内容区元素时组件会按 `BringIntoViewOnFocusChange` 自动把它滚入视口
+> （对齐 WinUI，见「方法」表的 `bringIntoView`）。
 
 ## API
 
@@ -204,6 +298,8 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 | `verticalAnchorRatio`           | `number`                                         | `NaN`        | 垂直锚点比例（0~1），`NaN` 表示不启用垂直锚定                                                 |
 | `background`                    | `string`                                         | `—`          | 内容区背景色                                                                                  |
 | `tabIndex`                      | `number`                                         | `0`          | 键盘可聚焦（Arrow / PageUp / Home 等方向键滚动）                                              |
+| `label`                         | `string`                                         | `—`          | 可访问名；设置后根元素带 `role="region"`，供屏幕阅读器与无障碍树型 Agent 识别该滚动区域       |
+| `agentCommands`                 | `boolean`                                        | `true`       | 是否响应 `fluere:*` DOM 命令事件（见「Agent / 自动化访问」）；只读状态反射始终保留            |
 
 ### 事件（Events）
 

@@ -15,6 +15,7 @@ import FluereProgressRing from './src/progress-ring/progress-ring.vue'
 import FluereRadioButton from './src/radio/radio-button.vue'
 import FluereRadioGroup from './src/radio/radio-group.vue'
 import FluereScrollView from './src/scrollview/scroll-view.vue'
+import { SCROLL_VIEW_AGENT_EVENTS } from './src/scrollview/use-agent-surface'
 import FluereSlider from './src/slider/slider.vue'
 import FluereToggleSwitch from './src/toggle-switch/toggle-switch.vue'
 
@@ -35,6 +36,7 @@ export {
   FluereSlider,
   FluereSmokeLayer,
   FluereToggleSwitch,
+  SCROLL_VIEW_AGENT_EVENTS,
 }
 export type { FluereButtonProps } from './src/button/button.vue'
 export type { FluereCheckboxProps } from './src/checkbox/checkbox.vue'
@@ -94,6 +96,9 @@ export type {
 } from './src/slider/types'
 export type {
   FluereScrollViewProps,
+  ScrollingAgentBringIntoViewDetail,
+  ScrollingAgentScrollDetail,
+  ScrollingAgentSettledDetail,
   ScrollingAnchorRequestedEventArgs,
   ScrollingAnimationMode,
   ScrollingBringingIntoViewEventArgs,

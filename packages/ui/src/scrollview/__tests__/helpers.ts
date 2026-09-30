@@ -45,6 +45,8 @@ const DEFAULT_PROPS: ResolvedScrollViewProps = {
   verticalAnchorRatio: Number.NaN,
   background: undefined,
   tabIndex: 0,
+  label: undefined,
+  agentCommands: true,
 }
 
 /** 每个事件一个 vi.fn 的事件集合（含 Mock 类型，便于断言调用参数） */

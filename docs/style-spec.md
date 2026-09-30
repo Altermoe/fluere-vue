@@ -168,7 +168,7 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
    - 用"按颜色分离像素 → 极坐标角度直方图"独立测量弧的张角与中线，与源码关键帧公式逐点比对。可复用脚本：[temp/pw-progress-ring.mjs](../temp/pw-progress-ring.mjs)（62 项断言含冻结帧数学表）；线性指示条用 [temp/pw-progress-bar.mjs](../temp/pw-progress-bar.mjs)（32 项断言：几何/配色/五状态 + 冻结帧位移与可见像素段，含"1:1 截图 + 探针"的像素测量法）；弹层类用 [temp/pw-content-dialog.mjs](../temp/pw-content-dialog.mjs)（55 项断言：几何/八种按钮落位/明暗主题 + 进入退出逐点冻结帧（scale 与 opacity 两条时间轴共存）+ 退出门控 + 遮罩合成像素与表面取色的 1×1 探针）。
    - 冻结帧测量的两个补充前提（ContentDialog 实测）：① 几何 / 像素探针必须**等动画收敛**再取样，否则根节点的 `scale` 会把 24px 内边距量成 26.25px（= 25px × 1.05）；② 同一元素上「时长不同的多条动画」不能只看最长的那条——reka 的 Presence 以第一次 `animationend` 决定卸载，故把缩放放根节点、透明度放内层，脚本要同时对两层分别比对。
    - **像素测量的两个前提**：① 探针元素要用整数像素定位（`padding` 而非 `center` + 半像素高度），否则 1px 细线会被亚像素摊成两行；② 参照色从 `getComputedStyle` 读，按颜色距离分类像素，不要用"与背景不同"这种模糊阈值。
-   - 文档站内容区是自带 `ScrollView`（`transform` 偏移 + `overflow: clip`，**不是原生滚动容器**）：Playwright 的 `scrollIntoView` / `scrollIntoViewIfNeeded` 无效，要 `page.mouse.wheel()`；否则截到的是空白。
+   - 文档站内容区是自带 `ScrollView`（`transform` 偏移 + `overflow: clip`，**不是原生滚动容器**）：Playwright 的 `scrollIntoView` / `scrollIntoViewIfNeeded` 无效，要 `page.mouse.wheel()`，或改用组件的 DOM 命令事件（`fluere:scroll-by` 等，见 [scroll-view.md 的「Agent / 自动化访问」](../apps/docs/content/components/scroll-view.md)）；否则截到的是空白。
    - Vue 的 `<style scoped>` 会给 `@keyframes` 加 hash 后缀（`fui-pr-orbit-79c45151`），断言动画名用前缀匹配。
 3. **参考图取样**：`ffmpeg -i ref.png -f rawvideo -pix_fmt rgb24 out.raw` → 用 Python 读字节做径向直方图/取色，用数据判断几何与颜色（本轮据此确认参考图轨道是 `#D3D3D3`、确定态自 12 点顺时针 72°）。
 4. **门禁**：`pnpm check`（lint + format + tsc）、`pnpm vitest run`、`pnpm lint:ssr`。

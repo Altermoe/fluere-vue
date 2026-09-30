@@ -13,6 +13,7 @@
  *  - use-inertia.ts            惯性滑行
  *  - use-scroll-api.ts         程序化 API（scrollTo / zoomTo / velocity …）
  *  - use-bring-into-view.ts    元素滚动进视口（BringIntoView）
+ *  - use-agent-surface.ts      Agent 交互面（状态反射 + DOM 命令事件）
  *  - use-anchor.ts             锚点逻辑
  *  - use-wheel-input.ts        滚轮与滚动链式传递
  *  - use-pointer-input.ts      触控 / 笔平移（含手势分发）
@@ -23,10 +24,11 @@
  * Props 类型定义见 ./types.ts（对外由 @fluere-vue/ui 重新导出）。
  */
 
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { createScrollViewCore } from './core'
 import { createScrollViewEvents } from './events'
 import type { FluereScrollViewProps, ScrollViewEmits } from './types'
+import { useAgentSurface } from './use-agent-surface'
 import { useAnchor } from './use-anchor'
 import { useAnimation } from './use-animation'
 import { useBringIntoView } from './use-bring-into-view'
@@ -39,7 +41,6 @@ import { useScrollBars } from './use-scroll-bars'
 import { useScrollbarInput } from './use-scrollbar-input'
 import type { StepDirection } from './use-scrollbar-input'
 import { useWheelInput } from './use-wheel-input'
-
 /* ------------------------------------------------------------------ */
 /* 轨道两端步进按钮描述（key 决定箭头朝向，direction 为偏移增量方向）    */
 /* ------------------------------------------------------------------ */
@@ -84,9 +85,21 @@ const props = withDefaults(defineProps<FluereScrollViewProps>(), {
   verticalAnchorRatio: Number.NaN,
   background: undefined,
   tabIndex: 0,
+  label: undefined,
+  agentCommands: true,
 })
 
 const emit = defineEmits<ScrollViewEmits>()
+
+/**
+ * 内容元素 id：滚动条的 `aria-controls` 需要指回被滚动的元素。
+ * 用 `useId()` 而非 `getCurrentInstance().uid`，保证 SSR 与水合一致
+ * （见 docs/ssr-guide.md 第 9 节）。
+ */
+const contentId = `fui-scrollview-content-${useId()}`
+
+/** 只在提供了可访问名时才加 `role="region"`：未命名的地标不如不加 */
+const rootRole = computed(() => (props.label === undefined ? undefined : 'region'))
 
 /* ------------------------------------------------------------------ */
 /* 装配：创建核心状态并按职责组合各 composable                          */
@@ -98,6 +111,7 @@ const animation = useAnimation(core, bars)
 const inertia = useInertia(core, animation)
 const api = useScrollApi(core, animation, inertia)
 const bringIntoViewController = useBringIntoView(core, animation)
+const agent = useAgentSurface(core, api, bringIntoViewController)
 const anchor = useAnchor(core)
 useMeasurement(core, anchor)
 const wheel = useWheelInput(core, bars, api, animation)
@@ -129,6 +143,22 @@ const {
   onBarPointerEnter,
   onBarPointerLeave,
 } = bars
+/** Agent 交互面：只读反射属性 + 滚动条 ARIA + 入站命令处理器（同样顶层解构） */
+const {
+  scrollX,
+  scrollY,
+  maxScrollX,
+  maxScrollY,
+  zoomFactor,
+  scrollState,
+  ariaValueNowX,
+  ariaValueNowY,
+  ariaValueMaxX,
+  ariaValueMaxY,
+  onScrollTo,
+  onScrollBy,
+  onBringIntoView,
+} = agent
 
 /** 双轴滚动条同时可见：两条轨道需各自让出角落，避免两端箭头相互重叠 */
 const bothBarsVisible = computed(() => computedHBarVisible.value && computedVBarVisible.value)
@@ -195,11 +225,22 @@ defineExpose({
       'fui-scrollview--both-bars': bothBarsVisible,
     }"
     :style="rootStyle"
+    :role="rootRole"
+    :aria-label="props.label"
+    :data-scroll-x="scrollX"
+    :data-scroll-y="scrollY"
+    :data-scroll-max-x="maxScrollX"
+    :data-scroll-max-y="maxScrollY"
+    :data-zoom-factor="zoomFactor"
+    :data-scroll-state="scrollState"
     :tabindex="props.tabIndex"
     @wheel="wheel.onWheel"
     @keydown="keyboard.onKeyDown"
     @pointerover="onPointerOverViewport"
     @pointerout="onPointerOutViewport"
+    @fluere:scroll-to="onScrollTo"
+    @fluere:scroll-by="onScrollBy"
+    @fluere:bring-into-view="onBringIntoView"
   >
     <div
       ref="viewportEl"
@@ -212,6 +253,7 @@ defineExpose({
     >
       <div
         ref="contentEl"
+        :id="contentId"
         class="fui-scrollview__content"
         :class="contentOrientationClass"
       >
@@ -255,6 +297,14 @@ defineExpose({
       <div
         ref="hThumbEl"
         class="fui-scrollview__thumb fui-scrollview__thumb--horizontal"
+        role="scrollbar"
+        tabindex="-1"
+        aria-orientation="horizontal"
+        aria-label="Horizontal scroll bar"
+        aria-valuemin="0"
+        :aria-valuemax="ariaValueMaxX"
+        :aria-valuenow="ariaValueNowX"
+        :aria-controls="contentId"
       />
     </div>
     <!-- 纵向滚动条：结构与横向一致，仅轴向不同 -->
@@ -293,6 +343,14 @@ defineExpose({
       <div
         ref="vThumbEl"
         class="fui-scrollview__thumb fui-scrollview__thumb--vertical"
+        role="scrollbar"
+        tabindex="-1"
+        aria-orientation="vertical"
+        aria-label="Vertical scroll bar"
+        aria-valuemin="0"
+        :aria-valuemax="ariaValueMaxY"
+        :aria-valuenow="ariaValueNowY"
+        :aria-controls="contentId"
       />
     </div>
     <div

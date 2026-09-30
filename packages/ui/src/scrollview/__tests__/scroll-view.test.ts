@@ -8,19 +8,47 @@
  * 把「指针进入容器显示滑块 → 进入命中区展开轨道 → 离开收起」的契约钉住。
  */
 import { mount } from '@vue/test-utils'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
 import FluereScrollView from '../scroll-view.vue'
+import { SCROLL_VIEW_AGENT_EVENTS } from '../use-agent-surface'
+import scrollViewCss from '../scroll-view.css?raw'
 
-/** jsdom 无 ResizeObserver：测量层只依赖其回调，空实现替身即可 */
+/** jsdom 无 ResizeObserver：记录回调，供用例手动触发一次测量（= 浏览器布局后的时机） */
+const resizeCallbacks: (() => void)[] = []
 class ResizeObserverStub {
+  private readonly callback: () => void
+  constructor(callback: () => void) {
+    this.callback = callback
+    resizeCallbacks.push(callback)
+  }
   observe(): void {}
   unobserve(): void {}
   disconnect(): void {}
 }
 
+/** 触发全部已注册的 ResizeObserver 回调并等一次渲染 */
+const flushResize = async (): Promise<void> => {
+  for (const callback of resizeCallbacks) {
+    callback()
+  }
+  await nextTick()
+}
+
+/** jsdom 不做布局：clientWidth / scrollHeight 等只读几何量按用例就地钉住 */
+const stubSize = (element: Element, size: Record<string, number>): void => {
+  for (const [key, value] of Object.entries(size)) {
+    Object.defineProperty(element, key, { configurable: true, value })
+  }
+}
+
 beforeAll(() => {
   vi.stubGlobal('ResizeObserver', ResizeObserverStub)
+})
+
+/* 每个用例只触发自己挂载出来的观察者回调（避免上个用例的组件被重复测量） */
+beforeEach(() => {
+  resizeCallbacks.length = 0
 })
 
 describe('FluereScrollView · 滚动条装配', () => {
@@ -271,5 +299,122 @@ describe('FluereScrollView · 嵌套轨道区归属', () => {
     expect(parent.classes()).toContain('fui-scrollview--bars-expanded')
     expect(childA.classes()).not.toContain('fui-scrollview--bars-visible')
     wrapper.unmount()
+  })
+})
+
+/* ------------------------------------------------------------------ */
+/* Agent 交互面：反射属性、无障碍语义与 DOM 命令                          */
+/* ------------------------------------------------------------------ */
+
+/** 把滚动条与该用例的几何对上 */
+const mountWithMetrics = async (
+  props: Record<string, unknown> = {},
+): Promise<ReturnType<typeof mount>> => {
+  const wrapper = mount(FluereScrollView, { props })
+  stubSize(wrapper.get('.fui-scrollview__presenter').element, {
+    clientWidth: 300,
+    clientHeight: 100,
+  })
+  stubSize(wrapper.get('.fui-scrollview__content').element, { scrollHeight: 1000 })
+  await flushResize()
+  return wrapper
+}
+
+/** 派发一条 Agent 命令（`bubbles` 与文档示例一致，便于页面级监听） */
+const dispatchAgentCommand = (target: Element, name: string, detail: unknown): void => {
+  target.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
+}
+
+describe('FluereScrollView · Agent 交互面', () => {
+  it('提供 label 时暴露具名 region；未提供时不加 role', () => {
+    const labelled = mount(FluereScrollView, { props: { label: '订单列表' } })
+    expect(labelled.get('.fui-scrollview').attributes('role')).toBe('region')
+    expect(labelled.get('.fui-scrollview').attributes('aria-label')).toBe('订单列表')
+    labelled.unmount()
+
+    const bare = mount(FluereScrollView)
+    expect(bare.get('.fui-scrollview').attributes('role')).toBeUndefined()
+    expect(bare.get('.fui-scrollview').attributes('aria-label')).toBeUndefined()
+    bare.unmount()
+  })
+
+  it('滚动条滑块暴露 scrollbar 语义并指回内容元素', () => {
+    const wrapper = mount(FluereScrollView, {
+      props: {
+        horizontalScrollBarVisibility: 'visible',
+        verticalScrollBarVisibility: 'visible',
+      },
+    })
+    const contentId = wrapper.get('.fui-scrollview__content').attributes('id')
+    expect(contentId).toBeTruthy()
+
+    const vertical = wrapper.get('.fui-scrollview__thumb--vertical')
+    expect(vertical.attributes('role')).toBe('scrollbar')
+    expect(vertical.attributes('aria-orientation')).toBe('vertical')
+    expect(vertical.attributes('aria-controls')).toBe(contentId)
+    // 与步进按钮一致：可被程序化聚焦，但不进 Tab 序列
+    expect(vertical.attributes('tabindex')).toBe('-1')
+    expect(vertical.attributes('aria-valuemin')).toBe('0')
+    // jsdom 无布局 ⇒ 可滚动范围为 0
+    expect(vertical.attributes('aria-valuemax')).toBe('0')
+    expect(vertical.attributes('aria-valuenow')).toBe('0')
+
+    const horizontal = wrapper.get('.fui-scrollview__thumb--horizontal')
+    expect(horizontal.attributes('aria-orientation')).toBe('horizontal')
+    expect(horizontal.attributes('aria-controls')).toBe(contentId)
+    wrapper.unmount()
+  })
+
+  it('反射属性跟随视图，DOM 命令可驱动滚动并回执', async () => {
+    const wrapper = await mountWithMetrics()
+    const root = wrapper.get('.fui-scrollview')
+
+    expect(root.attributes('data-scroll-x')).toBe('0')
+    expect(root.attributes('data-scroll-y')).toBe('0')
+    expect(root.attributes('data-scroll-max-y')).toBe('900')
+    expect(root.attributes('data-zoom-factor')).toBe('1')
+    expect(root.attributes('data-scroll-state')).toBe('idle')
+
+    const settled = vi.fn()
+    root.element.addEventListener(SCROLL_VIEW_AGENT_EVENTS.settled, settled)
+    dispatchAgentCommand(root.element, SCROLL_VIEW_AGENT_EVENTS.scrollBy, {
+      y: 300,
+      animationMode: 'disabled',
+    })
+    await nextTick()
+
+    expect(root.attributes('data-scroll-y')).toBe('300')
+    expect(root.attributes('data-scroll-max-y')).toBe('900')
+    expect(root.attributes('data-scroll-state')).toBe('idle')
+    expect(settled).toHaveBeenCalledTimes(1)
+    expect(settled.mock.calls.map(([event]) => (event as CustomEvent).detail)).toEqual([
+      { x: 0, y: 300, zoomFactor: 1 },
+    ])
+    wrapper.unmount()
+  })
+
+  it('agentCommands=false 时忽略 DOM 命令（反射仍保留）', async () => {
+    const wrapper = await mountWithMetrics({ agentCommands: false })
+    const root = wrapper.get('.fui-scrollview')
+    expect(root.attributes('data-scroll-max-y')).toBe('900')
+
+    const settled = vi.fn()
+    root.element.addEventListener(SCROLL_VIEW_AGENT_EVENTS.settled, settled)
+    dispatchAgentCommand(root.element, SCROLL_VIEW_AGENT_EVENTS.scrollBy, {
+      y: 300,
+      animationMode: 'disabled',
+    })
+    await nextTick()
+
+    expect(root.attributes('data-scroll-y')).toBe('0')
+    expect(settled).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('反射属性不被任何样式选择器匹配（否则动画期间逐帧样式重算）', () => {
+    // 故意写成「不包含」断言：一旦有人用 [data-scroll-x] 之类做样式，这里立刻失败
+    expect(scrollViewCss).not.toContain('data-scroll')
+    expect(scrollViewCss).not.toContain('data-zoom')
+    expect(scrollViewCss).not.toContain('[role=')
   })
 })

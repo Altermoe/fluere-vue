@@ -138,6 +138,45 @@ interface ScrollingAnchorRequestedEventArgs {
 }
 
 /* ------------------------------------------------------------------ */
+/* Agent 交互面（Web 侧扩展，不对应 WinUI 依赖属性）                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * DOM 命令 `fluere:scroll-to` / `fluere:scroll-by` 的载荷。
+ *
+ * 缺省分量按「保持不变」（scroll-to）/「不移动」（scroll-by）处理，
+ * 非有限数与错误类型一律忽略（不抛错、不改动视图）。
+ */
+interface ScrollingAgentScrollDetail {
+  /** 目标绝对偏移（scroll-to）/ 偏移增量（scroll-by） */
+  x?: number
+  y?: number
+  /**
+   * 是否允许动画，默认 `'auto'`（与程序化 API 一致，尊重 prefers-reduced-motion）
+   */
+  animationMode?: ScrollingAnimationMode
+}
+
+/**
+ * DOM 命令 `fluere:bring-into-view` 的载荷。
+ * `element` 优先；未给时用 `selector` 在组件根内查询。
+ * 目标必须位于内容区内，否则本次命令为空操作。
+ */
+interface ScrollingAgentBringIntoViewDetail {
+  element?: HTMLElement
+  selector?: string
+  /** 目标进入视口时保留的边距（像素），默认 0 */
+  margin?: number
+}
+
+/** DOM 回执 `fluere:scroll-settled` 的载荷（像素值取整，与反射属性一致） */
+interface ScrollingAgentSettledDetail {
+  x: number
+  y: number
+  zoomFactor: number
+}
+
+/* ------------------------------------------------------------------ */
 /* 组件 Props（对应 ScrollView 依赖属性）                               */
 /* ------------------------------------------------------------------ */
 
@@ -193,6 +232,8 @@ interface ResolvedScrollViewProps {
   verticalAnchorRatio: number
   background: string | undefined
   tabIndex: number
+  label: string | undefined
+  agentCommands: boolean
 }
 
 interface FluereScrollViewProps {
@@ -272,12 +313,31 @@ interface FluereScrollViewProps {
 
   /** 键盘可聚焦（Arrow / PageUp / Home 等方向键滚动） */
   tabIndex?: number
+
+  /**
+   * 可访问名。设置后根元素带上 `role="region"`，屏幕阅读器与「无障碍树型」
+   * Agent 才能把该滚动区域识别为一个具名区域。
+   *
+   * 只在提供名称时才加 role：未命名的 region 会污染地标列表，不如不加。
+   */
+  label?: string
+
+  /**
+   * 是否响应 DOM 命令事件（`fluere:scroll-to` / `fluere:scroll-by` /
+   * `fluere:bring-into-view`），供页面自动化与 Agent 驱动滚动。
+   * 关闭后只读状态反射（`data-scroll-*`）仍然保留，因为它是纯观测面。
+   * @default true
+   */
+  agentCommands?: boolean
 }
 
 export type {
   FluereScrollViewProps,
   ResolvedScrollViewProps,
   ScrollViewEmits,
+  ScrollingAgentBringIntoViewDetail,
+  ScrollingAgentScrollDetail,
+  ScrollingAgentSettledDetail,
   ScrollingAnchorRequestedEventArgs,
   ScrollingAnimationMode,
   ScrollingBringingIntoViewEventArgs,
