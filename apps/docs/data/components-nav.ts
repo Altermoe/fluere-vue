@@ -106,6 +106,7 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'drawer', name: 'Drawer', implemented: false },
       { slug: 'dropdown-menu', name: 'Dropdown Menu', implemented: false },
       { slug: 'hover-card', name: 'Hover Card', implemented: false },
+      { slug: 'infobar', name: 'Info Bar', implemented: true },
       { slug: 'menubar', name: 'Menubar', implemented: false },
       { slug: 'navigation-menu', name: 'Navigation Menu', implemented: false },
       { slug: 'pagination', name: 'Pagination', implemented: false },

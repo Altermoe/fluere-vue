@@ -4,6 +4,7 @@ import '@fluere-vue/designs/tokens.css'
 import FluereButton from './src/button/button.vue'
 import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
+import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
 import FluereNumberBox from './src/number-box/number-box.vue'
 import FluereProgressBar from './src/progress-bar/progress-bar.vue'
@@ -18,6 +19,7 @@ export {
   FluereButton,
   FluereCheckbox,
   FluereCombobox,
+  FluereInfoBar,
   FluereInput,
   FluereNumberBox,
   FluereProgressBar,
@@ -37,6 +39,13 @@ export type {
   FluereComboboxSelectionChangedTrigger,
   FluereComboboxTextSubmittedEventArgs,
 } from './src/combobox/types'
+export type {
+  FluereInfoBarClosedEventArgs,
+  FluereInfoBarClosingEventArgs,
+  FluereInfoBarCloseReason,
+  FluereInfoBarProps,
+  FluereInfoBarSeverity,
+} from './src/infobar/types'
 export type { FluereInputProps } from './src/input/input.vue'
 export type {
   FluereNumberBoxProps,

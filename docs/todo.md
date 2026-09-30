@@ -23,7 +23,7 @@
 
 - [x] 7. `ProgressRing`（ProgressRing，不确定转圈；自定义实现，参考 ScrollView 动效基建）
 - [x] 8. `ProgressBar`（ProgressBar，复用 reka Progress）
-- [ ] 9. `InfoBar`（InfoBar，信息横幅，自定义实现）
+- [x] 9. `InfoBar`（InfoBar，信息横幅，自定义实现）—— 规格源 `microsoft-ui-xaml` `winui3/release/2.5.1` `src/controls/dev/InfoBar/`（与 Gallery v2.9.3 所用 WASDK 2.0.1 逐字节一致）；资源映射：`InfoBar*SeverityBackgroundBrush`（`SystemFillColor{Attention,Success,Caution,Critical}Background`）→ `colorNeutralCardBackground` / `colorPaletteLightGreenBackground1` / `colorPaletteYellowBackground1` / `colorPaletteRedBackground1`，`InfoBar*SeverityIconBackground` → `colorCompoundBrandBackground` / `colorStatusSuccessForeground3` / `colorPaletteYellowForeground1` / `colorStatusDangerForeground3`，`InfoBar*SeverityIconForeground`（`TextFillColorInverse`）→ `colorNeutralForegroundInverted2`，`InfoBarTitle/MessageForeground`（`TextFillColorPrimary`）→ `colorNeutralForeground1`，`InfoBarBorderBrush`（`CardStrokeColorDefault`）→ `colorNeutralStrokeAlpha`；排版方向按 `InfoBarPanel.cpp#MeasureOverride` 的三条判据实时判定（隐藏测量层，非固定断点）
 - [ ] 10. `Badge`（Badge，自定义实现）
 
 ## Wave 3 · 必要弹层与微交互

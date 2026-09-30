@@ -17,6 +17,7 @@ import { renderToString } from 'vue/server-renderer'
 import FluereButton from '../button/button.vue'
 import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
+import FluereInfoBar from '../infobar/infobar.vue'
 import FluereInput from '../input/input.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
 import FluereProgressBar from '../progress-bar/progress-bar.vue'
@@ -151,6 +152,36 @@ describe('SSR 兼容性冒烟测试', () => {
     expect(indeterminateHtml).toContain('data-state="indeterminate"')
     expect(indeterminateHtml).not.toContain('aria-valuenow')
     expect(indeterminateHtml).not.toContain('aria-valuemin')
+  })
+
+  it('FluereInfoBar 可服务端渲染（方向测量只在 onMounted 内建 ResizeObserver，SSR 落横排）', async () => {
+    const closed = createSSRApp({
+      render: () => h(FluereInfoBar, { title: '默认收起' }),
+    })
+    const closedHtml = await renderToString(closed)
+    expect(closedHtml).toContain('fui-infobar')
+    // 缺省 IsOpen=false ⇒ 内容不渲染（对齐 ContentRoot.Visibility=Collapsed）
+    expect(closedHtml).toContain('data-orientation="horizontal"')
+    expect(closedHtml).not.toContain('fui-infobar__content')
+
+    const app = createSSRApp({
+      render: () =>
+        h(
+          FluereInfoBar,
+          { open: true, title: '标题', message: '正文', severity: 'warning', label: '系统提示' },
+          { content: () => '补充内容' },
+        ),
+    })
+    const html = await renderToString(app)
+    expect(html).toContain('role="status"')
+    expect(html).toContain('data-severity="warning"')
+    expect(html).toContain('aria-label="系统提示"')
+    expect(html).toContain('标题')
+    expect(html).toContain('正文')
+    expect(html).toContain('补充内容')
+    expect(html).toContain('fui-infobar__close')
+    // 隐藏测量层承担方向判定，SSR 阶段同样输出（不影响布局、不进无障碍树）
+    expect(html).toContain('aria-hidden="true"')
   })
 
   it('FluereCombobox 可服务端渲染（弹层走 Teleport + Presence，收起时不进首帧）', async () => {
