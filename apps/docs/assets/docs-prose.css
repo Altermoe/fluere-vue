@@ -1,0 +1,226 @@
+/*
+ * 文档站正文（prose）排版。
+ *
+ * 为什么需要这个文件：文档正文由 @nuxt/content + @nuxtjs/mdc 渲染，
+ * 而 MDC 的 `runtime/components/prose/*` 是**纯语义壳**（`ProseP.vue` 全文就是
+ * `<template><p><slot /></p></template>`，26 个文件 302 行，一个 class 都没有）。
+ * 正文的实际外观因此完全由 UnoCSS `presetWind4` 的 preflight 决定，而它是一条
+ * 面向「工具类优先」的 reset，恰好把富文本最需要的几条默认样式全部抹平：
+ *
+ *   - `*,::before,::after { margin: 0; padding: 0; border: 0 solid }`
+ *     → 段落、标题、列表全部零外边距，挤成一坨；
+ *   - `h1..h6 { font-size: inherit; font-weight: inherit }`
+ *     → 标题与正文同号同粗细，层级完全塌陷；
+ *   - `a { color: inherit; text-decoration: inherit }`
+ *     → 链接与正文同色、无下划线，无法识别；
+ *   - `ol,ul,menu { list-style: none }`
+ *     → 列表没有圆点也没有缩进；
+ *   - `table` 只保留 `border-collapse`，无内边距无线框（表格样式另见
+ *     `components/content/ProseTable.vue`，它需要额外的滚动包裹层）。
+ *
+ * 作用域：由 `pages/components/[...slug].vue` 在 `<ContentRenderer>` 上挂 `.docs-prose`。
+ * 只覆盖文档正文，不影响文档站的导航 / 首页 / 组件 demo（demo 里用到的 `p`、
+ * `ul` 等由组件库自己的 scoped 样式负责）。
+ *
+ * 层级策略：选择器统一用 `.docs-prose :where(...)`（`:where()` 权重为 0），
+ * 让整条规则停留在「一个 class」的权重上。这样页面里任何 UnoCSS 工具类
+ * （同样一个 class、且注入更晚）仍能覆盖本文件，不会出现「排版样式压过工具类」
+ * 的反直觉行为。
+ *
+ * 视觉值一律取 Fluent 语义 token（`packages/designs/generated/tokens.css`），
+ * 不写硬编码色值；字号 / 行高成对取自 `fluent-tokens.json` 的 `typographyStyles`
+ * 标度（body1 = 14/20、subtitle2 = 16/22、title3 = 24/32、title1 = 32/40）。
+ */
+
+/* ---- 正文 ---- */
+
+.docs-prose :where(p) {
+  margin-block: var(--spacingVerticalM);
+  font-size: var(--fontSizeBase300);
+  line-height: var(--lineHeightBase300);
+  color: var(--colorNeutralForeground2);
+}
+
+/* 收紧相邻块之间的空档：段落后接标题、或紧随标题的段落，
+   都不需要上下双份间距（标题自带较大的 margin-block-start） */
+.docs-prose :where(p:first-child) {
+  margin-block-start: var(--spacingVerticalNone);
+}
+
+/* ---- 标题 ---- */
+/* 节奏：block-start > block-end（分段靠「上方留白」表达），
+   与 Fluent / WinUI 文档标题的动作一致；h1 作为页面主标题不额外加上间距。 */
+
+.docs-prose :where(h1) {
+  margin-block: var(--spacingVerticalNone) var(--spacingVerticalXXL);
+  font-size: var(--fontSizeHero800); /* 32 */
+  line-height: var(--lineHeightHero800); /* 40 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-prose :where(h2) {
+  margin-block: var(--spacingVerticalXXXL) var(--spacingVerticalM); /* 32 / 12 */
+  font-size: var(--fontSizeBase600); /* 24 */
+  line-height: var(--lineHeightBase600); /* 32 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-prose :where(h3) {
+  margin-block: var(--spacingVerticalXXL) var(--spacingVerticalS); /* 24 / 8 */
+  font-size: var(--fontSizeBase500); /* 20 */
+  line-height: var(--lineHeightBase500); /* 28 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-prose :where(h4) {
+  margin-block: var(--spacingVerticalXL) var(--spacingVerticalS); /* 20 / 8 */
+  font-size: var(--fontSizeBase400); /* 16 */
+  line-height: var(--lineHeightBase400); /* 22 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-prose :where(h5, h6) {
+  margin-block: var(--spacingVerticalL) var(--spacingVerticalXS); /* 16 / 4 */
+  font-size: var(--fontSizeBase300); /* 14 */
+  line-height: var(--lineHeightBase300); /* 20 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+/* 标题紧跟标题时（如 h2 下直接接 h3）不需要双份上间距 */
+.docs-prose :where(h1 + h2, h2 + h3, h3 + h4, h4 + h5, h5 + h6) {
+  margin-block-start: var(--spacingVerticalS);
+}
+
+/* ---- 链接 ---- */
+/* reset 把 `a` 抹成 `color: inherit; text-decoration: inherit`，
+   这里恢复「品牌链接色 + 下划线」，并补齐 hover / pressed / focus-visible 三态
+   （对应 Fluent 链接的 rest / hover / pressed / focus 状态）。 */
+
+.docs-prose :where(a) {
+  color: var(--colorBrandForegroundLink);
+  text-decoration-line: underline;
+  text-decoration-thickness: var(--strokeWidthThin);
+  text-underline-offset: 0.2em;
+}
+
+.docs-prose :where(a:hover) {
+  color: var(--colorBrandForegroundLinkHover);
+}
+
+.docs-prose :where(a:active) {
+  color: var(--colorBrandForegroundLinkPressed);
+}
+
+.docs-prose :where(a:focus-visible) {
+  outline: var(--strokeWidthThick) solid var(--colorStrokeFocus2);
+  outline-offset: var(--spacingHorizontalXXS);
+  border-radius: var(--borderRadiusSmall);
+}
+
+/* 标题锚点：MDC 默认给 h1~h4 生成锚点链接（`heading.anchorLinks` 默认
+   h1~h4 为 true，本项目未覆盖该默认值），渲染成
+   `<h2><a href="#…">标题文字</a></h2>`。锚点必须与标题同色、去掉下划线，
+   否则 h2 会整条变成链接蓝、把刚刚建立的标题层级又打乱。
+
+   注意**规则顺序**：`:where()` 权重为 0，这条与上面的 `.docs-prose :where(a)`
+   权重完全相同，全靠源码先后决胜 —— 所以必须写在链接规则**之后**。
+   颜色交给 `color: inherit` 从标题继承（标题已由上面的 h1~h6 规则着色），
+   因此也不会被上面 `a:hover` 的品牌色带跑。 */
+.docs-prose :where(h1 a, h2 a, h3 a, h4 a) {
+  color: inherit;
+  text-decoration-line: none;
+}
+
+/* ---- 列表 ---- */
+/* 恢复标记与缩进（reset 的 `list-style: none`），并给出列表内 / 列表间的节奏。
+   `li` 内若含多段（markdown 里缩进书写），段落间距收紧到 4px，
+   避免列表项内部比列表项之间还松散。 */
+
+.docs-prose :where(ul, ol) {
+  margin-block: var(--spacingVerticalM);
+  padding-inline-start: var(--spacingHorizontalXXL); /* 24：容纳标记 + 间隙 */
+  font-size: var(--fontSizeBase300);
+  line-height: var(--lineHeightBase300);
+  color: var(--colorNeutralForeground2);
+}
+
+.docs-prose :where(ul) {
+  list-style-type: disc;
+}
+
+.docs-prose :where(ol) {
+  list-style-type: decimal;
+}
+
+/* 嵌套层级换标记形状，与浏览器默认一致，便于区分层级 */
+.docs-prose :where(ul ul) {
+  list-style-type: circle;
+}
+
+.docs-prose :where(ul ul ul) {
+  list-style-type: square;
+}
+
+.docs-prose :where(li) {
+  margin-block: var(--spacingVerticalXS);
+}
+
+.docs-prose :where(li > p) {
+  margin-block: var(--spacingVerticalXS);
+}
+
+/* 列表项内的嵌套列表：不再额外增加与父项之间的空档 */
+.docs-prose :where(li > ul, li > ol) {
+  margin-block: var(--spacingVerticalXS);
+}
+
+/* ---- 引用 ---- */
+/* InfoBar / NumberBox 等文档用引用块承载「实现要点、与 WinUI 的差异」长段落，
+   给左侧描边 + 次级前景色；内部段落间距收紧，避免引用块被撑得过散。 */
+
+.docs-prose :where(blockquote) {
+  margin-block: var(--spacingVerticalL);
+  padding-inline: var(--spacingHorizontalL);
+  border-inline-start: var(--strokeWidthThick) solid var(--colorNeutralStroke1);
+  color: var(--colorNeutralForeground3);
+}
+
+.docs-prose :where(blockquote > :first-child) {
+  margin-block-start: var(--spacingVerticalNone);
+}
+
+.docs-prose :where(blockquote > :last-child) {
+  margin-block-end: var(--spacingVerticalNone);
+}
+
+/* ---- 分隔线 ---- */
+/* reset 只给了 `hr { border-top-width: 1px }`，颜色仍是 currentColor（偏黑）。 */
+
+.docs-prose :where(hr) {
+  margin-block: var(--spacingVerticalXXL);
+  border-block-start: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+}
+
+/* ---- 表格 ---- */
+/* 单元格内的线框与内边距由 ProseTable.vue 负责（它要额外包一层横向滚动容器），
+   这里只给表格本身在正文流里的上下间距。 */
+
+.docs-prose :where(table) {
+  margin-block: var(--spacingVerticalL);
+}
+
+/* ---- 图片 ---- */
+/* markdown 里若插入截图（如 InfoBar 的参考图），限制最大宽度并居中，
+   避免超宽图片把正文容器撑出横向滚动。 */
+
+.docs-prose :where(img) {
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+  border-radius: var(--borderRadiusMedium);
+}

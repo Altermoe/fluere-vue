@@ -65,3 +65,17 @@ nav:
 ```
 
 ::
+
+## API
+
+| 属性（Props） | 类型                                                                        | 默认        | 说明                                                                                              |
+| ------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
+| `modelValue`  | `string`                                                                    | `—`         | 输入值（`v-model`）                                                                               |
+| `size`        | `'small' \| 'medium' \| 'large'`                                            | `'medium'`  | 尺寸，高度分别为 24 / 32 / 40 px（WinUI 默认 32）                                                 |
+| `appearance`  | `'outline' \| 'underline'`                                                  | `'outline'` | 外观；`outline` 对应对齐 WinUI 的「抬升描边」，`underline` 为库扩展（只保留底边，WinUI 无此形态） |
+| `disabled`    | `boolean`                                                                   | `false`     | 是否禁用                                                                                          |
+| `invalid`     | `boolean`                                                                   | `false`     | 无效 / 错误态；库扩展（WinUI TextBox 无内建错误态），同时渲染 `aria-invalid`                      |
+| `type`        | `'text' \| 'password' \| 'email' \| 'number' \| 'search' \| 'tel' \| 'url'` | `'text'`    | 原生 `type`                                                                                       |
+| `placeholder` | `string`                                                                    | `—`         | 占位符                                                                                            |
+
+> **本组件没有 Events 与 Slots**：模板就是单个原生 `<input>`，`defineModel` 只提供 `modelValue` / `update:modelValue` 一对，没有额外 `emits`；原生 input 不支持子内容，因此也没有插槽。`input` / `change` / `focus` / `blur` 等事件与 `autocomplete`、`maxlength`、`aria-describedby` 等属性直接落到原生 `<input>` 上，按原生用法传即可。

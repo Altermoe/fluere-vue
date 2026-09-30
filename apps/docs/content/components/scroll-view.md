@@ -127,8 +127,9 @@ overlay 样式（2px 细滑块，指针进入容器即显示；指针移到滚�
 
 ## 程序化 API
 
-对齐 WinUI 方法：`scrollTo / scrollBy / zoomTo / zoomBy / bringIntoView`（支持动画与 correlation ID），以及只读属性
-`horizontalOffset / verticalOffset / zoomFactor / scrollableWidth / scrollableHeight / state`。
+对齐 WinUI 方法：`scrollTo / scrollBy / zoomTo / zoomBy / addScrollVelocity / addZoomVelocity / bringIntoView`（支持动画与 correlation ID），
+以及只读属性 `horizontalOffset / verticalOffset / zoomFactor / extentWidth / extentHeight / viewportWidth / viewportHeight /
+scrollableWidth / scrollableHeight / state / currentAnchor`。完整签名见下方「方法」与「只读属性」两张表。
 
 ::demo-block{title="程序化 API"}
 #preview
@@ -159,7 +160,8 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 
 ## 事件
 
-`view-changed / extent-changed / state-changed / scroll-completed / zoom-completed`。
+`view-changed / extent-changed / state-changed / scroll-animation-starting / scroll-completed / zoom-animation-starting / zoom-completed / anchor-requested / bring-into-view`，
+载荷见下方「事件」表。
 
 ::demo-block{title="事件"}
 #preview
@@ -177,3 +179,84 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 ```
 
 ::
+
+## API
+
+### 属性（Props）
+
+| 属性（Props）                   | 类型                                             | 默认         | 说明                                                                                          |
+| ------------------------------- | ------------------------------------------------ | ------------ | --------------------------------------------------------------------------------------------- |
+| `contentOrientation`            | `'vertical' \| 'horizontal' \| 'none' \| 'both'` | `'vertical'` | 内容布局方向，决定内容如何受视口约束                                                          |
+| `horizontalScrollMode`          | `'enabled' \| 'disabled'`                        | `'enabled'`  | 是否允许用户水平滚动                                                                          |
+| `verticalScrollMode`            | `'enabled' \| 'disabled'`                        | `'enabled'`  | 是否允许用户垂直滚动                                                                          |
+| `horizontalScrollBarVisibility` | `'auto' \| 'visible' \| 'hidden'`                | `'auto'`     | 水平滚动条展示策略（`auto` 为 overlay，指针进入容器才显示）                                   |
+| `verticalScrollBarVisibility`   | `'auto' \| 'visible' \| 'hidden'`                | `'auto'`     | 垂直滚动条展示策略                                                                            |
+| `horizontalScrollChainMode`     | `'auto' \| 'always' \| 'never'`                  | `'auto'`     | 水平滚动的链式传递；见下方「滚轮归属」说明                                                    |
+| `verticalScrollChainMode`       | `'auto' \| 'always' \| 'never'`                  | `'auto'`     | 垂直滚动的链式传递，语义同上                                                                  |
+| `horizontalScrollRailMode`      | `'enabled' \| 'disabled'`                        | `'enabled'`  | 水平触控平移导轨                                                                              |
+| `verticalScrollRailMode`        | `'enabled' \| 'disabled'`                        | `'enabled'`  | 垂直触控平移导轨                                                                              |
+| `zoomMode`                      | `'enabled' \| 'disabled'`                        | `'disabled'` | 是否允许用户缩放                                                                              |
+| `zoomChainMode`                 | `'auto' \| 'always' \| 'never'`                  | `'auto'`     | 缩放的链式传递                                                                                |
+| `ignoredInputKinds`             | `ScrollingInputKinds \| ScrollingInputKinds[]`   | `[]`         | 需要忽略的输入种类，可传单个值或数组；命中则对该输入不响应                                    |
+| `minZoomFactor`                 | `number`                                         | `0.1`        | 最小缩放系数                                                                                  |
+| `maxZoomFactor`                 | `number`                                         | `10`         | 最大缩放系数                                                                                  |
+| `horizontalAnchorRatio`         | `number`                                         | `NaN`        | 水平锚点比例（0~1），`NaN` 表示不启用水平锚定；`0` 让内容左缘贴住视口左缘、`1` 让右缘贴住右缘 |
+| `verticalAnchorRatio`           | `number`                                         | `NaN`        | 垂直锚点比例（0~1），`NaN` 表示不启用垂直锚定                                                 |
+| `background`                    | `string`                                         | `—`          | 内容区背景色                                                                                  |
+| `tabIndex`                      | `number`                                         | `0`          | 键盘可聚焦（Arrow / PageUp / Home 等方向键滚动）                                              |
+
+### 事件（Events）
+
+| 事件（Events）              | 载荷                                                  | 说明                                         |
+| --------------------------- | ----------------------------------------------------- | -------------------------------------------- |
+| `view-changed`              | —                                                     | 视口偏移或缩放发生变化（交互过程中连续触发） |
+| `extent-changed`            | —                                                     | 内容区尺寸发生变化                           |
+| `state-changed`             | `'idle' \| 'interaction' \| 'inertia' \| 'animation'` | 交互状态变化                                 |
+| `scroll-animation-starting` | `ScrollingScrollAnimationStartingEventArgs`           | 滚动动画即将开始，可改写目标偏移             |
+| `scroll-completed`          | `ScrollingScrollCompletedEventArgs`                   | 一次滚动结束（含 `correlationId`）           |
+| `zoom-animation-starting`   | `ScrollingZoomAnimationStartingEventArgs`             | 缩放动画即将开始                             |
+| `zoom-completed`            | `ScrollingZoomCompletedEventArgs`                     | 一次缩放结束（含 `correlationId`）           |
+| `anchor-requested`          | `ScrollingAnchorRequestedEventArgs`                   | 请求锚点（可返回自定义锚点元素）             |
+| `bring-into-view`           | `ScrollingBringingIntoViewEventArgs`                  | 即将把元素滚入视口，可改写目标偏移           |
+
+### 方法（Methods）
+
+通过模板 ref 调用；都返回本次操作的 `correlationId`，用于与 `scroll-completed` / `zoom-completed` 的载荷对应。
+
+| 方法（Methods）             | 签名                                                                                                        | 说明                                                     |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `scrollTo`                  | `(horizontalOffset: number, verticalOffset: number, options?: ScrollingScrollOptions) => number`            | 滚动到绝对偏移                                           |
+| `scrollBy`                  | `(horizontalOffsetDelta: number, verticalOffsetDelta: number, options?: ScrollingScrollOptions) => number`  | 按增量滚动                                               |
+| `zoomTo`                    | `(zoom: number, centerPoint?: { x, y } \| null, options?: ScrollingZoomOptions) => number`                  | 缩放到指定系数，`centerPoint` 为缩放中心（默认视口中心） |
+| `zoomBy`                    | `(zoomFactorDelta: number, centerPoint?: { x, y } \| null, options?: ScrollingZoomOptions) => number`       | 按增量缩放                                               |
+| `addScrollVelocity`         | `(offsetsVelocity: { x, y }, inertiaDecayRate?: { x, y } \| null) => number`                                | 追加滚动速度（惯性滚动）                                 |
+| `addZoomVelocity`           | `(zoomFactorVelocity: number, centerPoint?: { x, y } \| null, inertiaDecayRate?: number \| null) => number` | 追加缩放速度                                             |
+| `bringIntoView`             | `(element: HTMLElement, options?: { margin?: number }) => number`                                           | 把元素滚入视口（焦点元素自动触发）                       |
+| `registerAnchorCandidate`   | `(element: HTMLElement) => void`                                                                            | 注册锚点候选（也可用 `data-can-scroll-anchor` 标记）     |
+| `unregisterAnchorCandidate` | `(element: HTMLElement) => void`                                                                            | 注销锚点候选                                             |
+
+`ScrollingScrollOptions` / `ScrollingZoomOptions` 的 `animationMode` 取 `'disabled' \| 'enabled' \| 'auto'`（默认 `'auto'`），另有 `snapPointsMode` 占位。
+
+### 只读属性（Readonly）
+
+| 属性（Readonly）   | 类型                                                  | 说明                      |
+| ------------------ | ----------------------------------------------------- | ------------------------- |
+| `horizontalOffset` | `number`                                              | 当前水平偏移              |
+| `verticalOffset`   | `number`                                              | 当前垂直偏移              |
+| `zoomFactor`       | `number`                                              | 当前缩放系数              |
+| `extentWidth`      | `number`                                              | 内容区宽度                |
+| `extentHeight`     | `number`                                              | 内容区高度                |
+| `viewportWidth`    | `number`                                              | 视口宽度                  |
+| `viewportHeight`   | `number`                                              | 视口高度                  |
+| `scrollableWidth`  | `number`                                              | 可滚动宽度（内容 − 视口） |
+| `scrollableHeight` | `number`                                              | 可滚动高度（内容 − 视口） |
+| `state`            | `'idle' \| 'interaction' \| 'inertia' \| 'animation'` | 当前交互状态              |
+| `currentAnchor`    | `HTMLElement \| null`                                 | 当前生效的锚点元素        |
+
+### 插槽（Slots）
+
+| 插槽（Slots） | 说明     |
+| ------------- | -------- |
+| `default`     | 滚动内容 |
+
+> **滚轮归属**（对齐 WinUI 3）：指针位于本组件内、且该方向确实可滚动时，本次滚轮由本组件独占——即使已到滚动极限也不会滚到外层 ScrollView；`horizontal/verticalScrollChainMode` 为 `auto` / `never` 时到极限即吞掉滚轮（等价 `overscroll-behavior: contain`），为 `always` 时才把未消化的剩余增量显式交给外层。本方向没有可滚动内容、或该方向被禁用时不占有滚轮，冒泡交给外层。触控 / 笔由指针捕获独占，不走这套判定。

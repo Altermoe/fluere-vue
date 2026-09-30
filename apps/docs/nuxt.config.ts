@@ -43,8 +43,10 @@ export default defineNuxtConfig({
       },
     },
   },
-  // content-code.css：Shiki 代码块明暗增强；theme-transition.css：主题切换的圆形揭示
-  css: ['~/assets/content-code.css', '~/assets/theme-transition.css'],
+  // content-code.css：Shiki 代码块明暗增强；theme-transition.css：主题切换的圆形揭示；
+  // docs-prose.css：正文（MDC prose）排版——回补 presetWind4 preflight 抹平的
+  // 标题层级 / 段落间距 / 列表标记 / 链接三态（作用域 .docs-prose）
+  css: ['~/assets/content-code.css', '~/assets/theme-transition.css', '~/assets/docs-prose.css'],
   vite: {
     plugins: [
       {

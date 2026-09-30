@@ -16,10 +16,17 @@ const { data: doc } = await useAsyncData(
 
 <template>
   <div>
+    <!--
+      `docs-prose` 是正文排版的唯一锚点（规则见 assets/docs-prose.css）。
+      原先这里挂的是 `space-y-fluent-xxl`：它只给「一级子元素」补 32px 上边距，
+      管不到 li / td 内部，还会把标题的「上间距 > 下间距」压成等距，
+      并与 demo-block 自带的 `my-fluent-xxl` 叠加成双倍留白。
+      正文节奏改由 prose 规则按元素分别给出，这里只留类名。
+    -->
     <ContentRenderer
       v-if="doc"
       :value="doc"
-      class="space-y-fluent-xxl"
+      class="docs-prose"
     />
     <p
       v-else
