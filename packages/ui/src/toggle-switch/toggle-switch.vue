@@ -79,9 +79,14 @@ export interface FluereToggleSwitchProps {
 </script>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
 
-const instanceId = getCurrentInstance()?.uid ?? 'x'
+/**
+ * 唯一 id 用 Vue 的 `useId()`（SSR / 水合一致）。
+ * 不能用 `getCurrentInstance().uid`：它依赖实例创建顺序，服务端与客户端不一致，
+ * 会让 label / aria-labelledby 指向的 id 在水合时报 attribute mismatch（见 docs/ssr-guide.md）。
+ */
+const instanceId = useId()
 const labelId = computed(() => `fui-sw-${instanceId}-label`)
 const headerId = computed(() => `fui-sw-${instanceId}-header`)
 

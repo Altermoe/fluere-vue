@@ -69,7 +69,7 @@ import {
   SliderThumb as RekaSliderThumb,
   SliderTrack as RekaSliderTrack,
 } from 'reka-ui'
-import { computed, getCurrentInstance, useSlots } from 'vue'
+import { computed, useId, useSlots } from 'vue'
 import { DEFAULT_VERTICAL_LENGTH } from './constants'
 import { getHostStyle, getTickBars, getTickPercents, getTickStyle } from './geometry'
 import type { FluereSliderProps } from './types'
@@ -78,8 +78,13 @@ import { useSliderValue } from './use-slider-value'
 import type { SliderValueEvents } from './use-slider-value'
 
 const slots = useSlots()
-const instance = getCurrentInstance()
-const headerId = computed(() => `fui-slider-${instance?.uid ?? 'x'}-header`)
+/**
+ * 唯一 id 用 Vue 的 `useId()`（SSR / 水合一致）。
+ * 不能用 `getCurrentInstance().uid`：它依赖实例创建顺序，服务端与客户端不一致，
+ * 会让 `aria-labelledby` 指向的 id 在水合时报 attribute mismatch（见 docs/ssr-guide.md）。
+ */
+const sliderId = useId()
+const headerId = computed(() => `fui-slider-${sliderId}-header`)
 
 const props = withDefaults(defineProps<FluereSliderProps>(), {
   modelValue: undefined,
