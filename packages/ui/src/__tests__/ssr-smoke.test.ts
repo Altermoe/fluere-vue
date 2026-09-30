@@ -17,10 +17,12 @@ import { renderToString } from 'vue/server-renderer'
 import FluereButton from '../button/button.vue'
 import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
+import FluereContentDialog from '../content-dialog/content-dialog.vue'
 import FluereInfoBadge from '../info-badge/info-badge.vue'
 import FluereInfoBar from '../infobar/infobar.vue'
 import FluereInput from '../input/input.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
+import FluereSmokeLayer from '../overlay/smoke-layer.vue'
 import FluereProgressBar from '../progress-bar/progress-bar.vue'
 import FluereProgressRing from '../progress-ring/progress-ring.vue'
 import FluereRadioButton from '../radio/radio-button.vue'
@@ -239,5 +241,37 @@ describe('SSR 兼容性冒烟测试', () => {
     expect(html).toContain('水果')
     // 收起态不渲染下拉内容
     expect(html).not.toContain('fui-combobox__popup')
+  })
+
+  it('FluereContentDialog 可服务端渲染（门户 + Presence 都延迟到客户端，SSR 输出为空）', async () => {
+    // 关闭态：什么都不输出
+    const closed = createSSRApp({
+      render: () => h(FluereContentDialog, { title: '标题', primaryButtonText: '确定' }),
+    })
+    const closedHtml = await renderToString(closed)
+    expect(closedHtml).not.toContain('role="dialog"')
+    expect(closedHtml).not.toContain('fui-content-dialog')
+    expect(closedHtml).not.toContain('fui-smoke')
+
+    // 打开态：reka 的 Teleport 与 FluerePortal 都在 mounted 之前不渲染，
+    // 服务端因此不会出现 teleport 占位，也就没有水合不匹配
+    const opened = createSSRApp({
+      render: () =>
+        h(FluereContentDialog, {
+          open: true,
+          title: '标题',
+          primaryButtonText: '确定',
+          secondaryButtonText: '取消',
+        }),
+    })
+    const openedHtml = await renderToString(opened)
+    expect(openedHtml).not.toContain('role="dialog"')
+    expect(openedHtml).not.toContain('fui-content-dialog')
+  })
+
+  it('FluereSmokeLayer 可服务端渲染（浮层属纯客户端，SSR 不输出）', async () => {
+    const app = createSSRApp({ render: () => h(FluereSmokeLayer, { open: true }) })
+    const html = await renderToString(app)
+    expect(html).not.toContain('fui-smoke')
   })
 })

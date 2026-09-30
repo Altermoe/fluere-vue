@@ -30,9 +30,9 @@
 
 > 先补齐共享原语，再实现弹层，避免后续所有弹层组件返工。
 
-- [ ] 11. 共享原语：`use-disclosure` / 门户 `Teleport` / 遮罩层（放入 `hooks` / `utils`）
+- [x] 11. 共享原语：`use-disclosure` / 门户 `Teleport` / 遮罩层（放入 `hooks` / `utils`）—— 状态机 `useDisclosure` 落在 `packages/hooks`；需要渲染的两件原语（`FluerePortal` 门户、`FluereSmokeLayer` 遮罩层）落在 `packages/ui/src/overlay/`，因为 `hooks` / `utils` 是框架无关包、不放 Vue SFC；门户 Teleport 的 SSR 策略 = 挂载后才 Teleport（服务端与首次水合都为空），滚动锁复用 reka 的 `useBodyScrollLock`
 - [ ] 12. `Tooltip`（ToolTip，复用 reka Tooltip + Popper）
-- [ ] 13. `ContentDialog`（ContentDialog，复用 reka Dialog）
+- [x] 13. `ContentDialog`（ContentDialog，复用 reka Dialog）—— 规格源 `microsoft-ui-xaml` `winui3/release/2.5.1`：`src/controls/dev/CommonStyles/ContentDialog_themeresources.xaml`（尺寸 320/548/184/756、圆角 8、描边 1、内边距 24、标题下间距 12、按钮间距 8、5 列命令区网格、ButtonsVisibilityStates / DefaultButtonStates / FullDialogSizing）、`src/dxaml/xcp/dxaml/lib/ContentDialog_Partial.cpp`（状态推导、初始焦点三级优先、Escape→ExecuteCloseAction、ButtonClick 可 Cancel、Closing 可 Cancel、Closed(result)、标题位折叠、baseElevation 128 阴影）、`src/dxaml/xcp/dxaml/lib/LayoutTransition_partial.cpp#ContentDialogOpenCloseThemeTransition::CreateStoryboardImpl`（进入 scale 1.05→1 / 250ms / cubic-bezier(0,0,0,1) + opacity 0→1 / 83ms linear；退出 scale 1→1.05 / 167ms + opacity 1→0 / 83ms；遮罩层只做 83ms linear 透明度）、`src/dxaml/xcp/dxaml/lib/ContentDialogOpenCloseThemeTransition_Partial.h`（s_OpenScaleDuration 250 / s_CloseScaleDuration 167 / s_OpacityChangeDuration 83）、`src/controls/test/MUXControlsTestApp/verification/ContentDialog.xml`（几何复核）；资源映射：`ContentDialogBackground` ← `SolidBackgroundFillColorBase` → `colorNeutralBackground2`（ΔE 2.3/0.6），`ContentDialogTopOverlay` ← `LayerFillColorAlt` 叠底后 → `colorNeutralBackground1`（ΔE 0/1.4），`ContentDialogBorderBrush` ← `SurfaceStrokeColorDefault` 合成值 → `colorNeutralStroke2`（ΔE 31/16），`ContentDialogSeparatorBorderBrush` ← `CardStrokeColorDefault` → `colorNeutralStrokeAlpha`，`ContentDialogSmokeFill` ← `SmokeFillColorDefault` → `colorBackgroundOverlay`，250ms / cubic-bezier(0,0,0,1) → `durationGentle` / `curveDecelerateMid`（167ms / 83ms 无同值 token，落组件局部变量）
 
 ---
 

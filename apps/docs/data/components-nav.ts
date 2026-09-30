@@ -101,6 +101,7 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'aspect-ratio', name: 'Aspect Ratio', implemented: false },
       { slug: 'avatar', name: 'Avatar', implemented: false },
       { slug: 'collapsible', name: 'Collapsible', implemented: false },
+      { slug: 'content-dialog', name: 'Content Dialog', implemented: true },
       { slug: 'context-menu', name: 'Context Menu', implemented: false },
       { slug: 'dialog', name: 'Dialog', implemented: false },
       { slug: 'drawer', name: 'Drawer', implemented: false },

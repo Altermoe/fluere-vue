@@ -18,6 +18,7 @@
     "@fluere-vue/hooks": "workspace:*",
     "@fluere-vue/icons": "workspace:*",
     "@fluere-vue/themes": "workspace:*",
+    "@fluere-vue/utils": "workspace:*",
     "reka-ui": "catalog:"
   },
   "devDependencies": {

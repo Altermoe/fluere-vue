@@ -4,10 +4,12 @@ import '@fluere-vue/designs/tokens.css'
 import FluereButton from './src/button/button.vue'
 import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
+import FluereContentDialog from './src/content-dialog/content-dialog.vue'
 import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
 import FluereNumberBox from './src/number-box/number-box.vue'
+import FluereSmokeLayer from './src/overlay/smoke-layer.vue'
 import FluereProgressBar from './src/progress-bar/progress-bar.vue'
 import FluereProgressRing from './src/progress-ring/progress-ring.vue'
 import FluereRadioButton from './src/radio/radio-button.vue'
@@ -20,6 +22,7 @@ export {
   FluereButton,
   FluereCheckbox,
   FluereCombobox,
+  FluereContentDialog,
   FluereInfoBadge,
   FluereInfoBar,
   FluereInput,
@@ -30,6 +33,7 @@ export {
   FluereRadioGroup,
   FluereScrollView,
   FluereSlider,
+  FluereSmokeLayer,
   FluereToggleSwitch,
 }
 export type { FluereButtonProps } from './src/button/button.vue'
@@ -41,6 +45,16 @@ export type {
   FluereComboboxSelectionChangedTrigger,
   FluereComboboxTextSubmittedEventArgs,
 } from './src/combobox/types'
+export type {
+  FluereContentDialogButton,
+  FluereContentDialogButtonClickEventArgs,
+  FluereContentDialogButtonKind,
+  FluereContentDialogButtonVisibility,
+  FluereContentDialogClosedEventArgs,
+  FluereContentDialogClosingEventArgs,
+  FluereContentDialogProps,
+  FluereContentDialogResult,
+} from './src/content-dialog/types'
 export type {
   FluereInfoBadgeDisplayKind,
   FluereInfoBadgeIconSeverity,
@@ -62,6 +76,7 @@ export type {
   FluereNumberBoxValueChangedEventArgs,
 } from './src/number-box/types'
 export type { FluereProgressBarProps } from './src/progress-bar/progress-bar.vue'
+export type { FluereSmokeLayerProps } from './src/overlay/smoke-layer.vue'
 export type {
   FluereProgressRingProps,
   FluereProgressRingSize,

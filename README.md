@@ -74,6 +74,7 @@ import { FluereButton } from '@fluere-vue/ui'
 | `FluereSlider`                           | Slider                | 已完成 |
 | `FluereNumberBox`                        | NumberBox             | 已完成 |
 | `FluereCombobox`                         | ComboBox              | 已完成 |
+| `FluereContentDialog`                    | ContentDialog         | 已完成 |
 | `FluereInfoBadge`                        | InfoBadge             | 已完成 |
 | `FluereInfoBar`                          | InfoBar               | 已完成 |
 | `FluereProgressBar`                      | ProgressBar           | 已完成 |
@@ -87,7 +88,7 @@ import { FluereButton } from '@fluere-vue/ui'
 
 - **Wave 1 · 核心表单**：Checkbox、ToggleSwitch、RadioButton / RadioGroup、Slider、NumberBox、Combobox
 - **Wave 2 · 反馈与状态**：ProgressRing、ProgressBar、InfoBar、Badge
-- **Wave 3 · 弹层与微交互**：Tooltip、ContentDialog（含共享弹层原语）
+- **Wave 3 · 弹层与微交互**：ContentDialog（含共享弹层原语 `FluereSmokeLayer` / `useDisclosure`）、Tooltip
 - **Wave 4 · 高级交互**：ToggleButton / ToggleGroup、Avatar / Persona、DropDownButton
 - **rc.1 不做**（推给 0.2）：NavigationView、ListView / GridView / DataGrid、TreeView、CalendarDatePicker / TimePicker、MenuBar 完整版、RatingControl、CommandBar
 
