@@ -4,6 +4,7 @@ import '@fluere-vue/designs/tokens.css'
 import FluereButton from './src/button/button.vue'
 import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
+import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
 import FluereNumberBox from './src/number-box/number-box.vue'
@@ -19,6 +20,7 @@ export {
   FluereButton,
   FluereCheckbox,
   FluereCombobox,
+  FluereInfoBadge,
   FluereInfoBar,
   FluereInput,
   FluereNumberBox,
@@ -39,6 +41,12 @@ export type {
   FluereComboboxSelectionChangedTrigger,
   FluereComboboxTextSubmittedEventArgs,
 } from './src/combobox/types'
+export type {
+  FluereInfoBadgeDisplayKind,
+  FluereInfoBadgeIconSeverity,
+  FluereInfoBadgeProps,
+  FluereInfoBadgeSeverity,
+} from './src/info-badge/types'
 export type {
   FluereInfoBarClosedEventArgs,
   FluereInfoBarClosingEventArgs,

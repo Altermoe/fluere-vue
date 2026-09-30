@@ -136,17 +136,22 @@ curl -sS "https://raw.githubusercontent.com/microsoft/WinUI-Gallery/v2.9.3/WinUI
 
 已核对的映射（示例，随组件增加而扩充）：
 
-| WinUI 资源（Light/Default）                                                                                 | 本库 token                               | 说明                                                                                                      |
-| ----------------------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `ProgressRingForegroundThemeBrush` → `AccentFillColorDefaultBrush`                                          | `var(--colorCompoundBrandBackground)`    | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
-| `ProgressRingBackgroundThemeBrush` → `ControlFillColorTransparentBrush`                                     | 无（`#00FFFFFF`，缺省不绘制）            | 对应 ProgressRing 的 `backgroundColor` Prop 缺省值                                                        |
-| `ProgressRingForegroundThemeBrush`（HighContrast） → `SystemControlHighlightAccentBrush`                    | 待接入 HC 主题时统一处理                 | 目前仅记录，未实现 HC 分支                                                                                |
-| 前景降级（本库约定，非 WinUI 资源）                                                                         | `var(--colorNeutralForegroundDisabled)`  | `disabled` 时的前景                                                                                       |
-| `ProgressBarForeground` → `AccentFillColorDefaultBrush`                                                     | `var(--colorCompoundBrandBackground)`    | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
-| `ProgressBarBackground` → `ControlStrongStrokeColorDefault`（Light `#72000000` / Dark `#8BFFFFFF`，半透明） | `var(--colorNeutralStrokeAccessible)`    | 中性强描边位；Fluent 2 Web 无同值 token，取值差异记录在组件注释（可用 `backgroundColor` 传入 WinUI 原值） |
-| `ProgressBarPausedForegroundColor` → `SystemFillColorCaution`（Light `#9D5D00` / Dark `#FCE100`）           | `var(--colorPaletteYellowForeground1)`   | 黄色警示家族中取值最接近者（Light `#817400` / Dark `#feee66`）；status warning 家族为橙色系，色相偏差更大 |
-| `ProgressBarErrorForegroundColor` → `SystemFillColorCritical`（Light `#C42B1C` / Dark `#FF99A4`）           | `var(--colorStatusDangerForeground3)`    | Light `#c50f1f` ≈ `#C42B1C`、Dark `#eeacb2` ≈ `#FF99A4`，两个主题都最接近                                 |
-| `ProgressBarMinHeight`/`TrackHeight`/`CornerRadius`/`TrackCornerRadius` = 3 / 1 / 1.5 / 0.5                 | 无同值 token（组件内 `--pb-*` 局部变量） | Fluent token 表无 1.5 / 0.5 档圆角与 3px 高度，按 WinUI 资源名落成组件局部变量                            |
+| WinUI 资源（Light/Default）                                                                                 | 本库 token                                  | 说明                                                                                                      |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `ProgressRingForegroundThemeBrush` → `AccentFillColorDefaultBrush`                                          | `var(--colorCompoundBrandBackground)`       | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
+| `ProgressRingBackgroundThemeBrush` → `ControlFillColorTransparentBrush`                                     | 无（`#00FFFFFF`，缺省不绘制）               | 对应 ProgressRing 的 `backgroundColor` Prop 缺省值                                                        |
+| `ProgressRingForegroundThemeBrush`（HighContrast） → `SystemControlHighlightAccentBrush`                    | 待接入 HC 主题时统一处理                    | 目前仅记录，未实现 HC 分支                                                                                |
+| 前景降级（本库约定，非 WinUI 资源）                                                                         | `var(--colorNeutralForegroundDisabled)`     | `disabled` 时的前景                                                                                       |
+| `ProgressBarForeground` → `AccentFillColorDefaultBrush`                                                     | `var(--colorCompoundBrandBackground)`       | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
+| `ProgressBarBackground` → `ControlStrongStrokeColorDefault`（Light `#72000000` / Dark `#8BFFFFFF`，半透明） | `var(--colorNeutralStrokeAccessible)`       | 中性强描边位；Fluent 2 Web 无同值 token，取值差异记录在组件注释（可用 `backgroundColor` 传入 WinUI 原值） |
+| `ProgressBarPausedForegroundColor` → `SystemFillColorCaution`（Light `#9D5D00` / Dark `#FCE100`）           | `var(--colorPaletteYellowForeground1)`      | 黄色警示家族中取值最接近者（Light `#817400` / Dark `#feee66`）；status warning 家族为橙色系，色相偏差更大 |
+| `ProgressBarErrorForegroundColor` → `SystemFillColorCritical`（Light `#C42B1C` / Dark `#FF99A4`）           | `var(--colorStatusDangerForeground3)`       | Light `#c50f1f` ≈ `#C42B1C`、Dark `#eeacb2` ≈ `#FF99A4`，两个主题都最接近                                 |
+| `ProgressBarMinHeight`/`TrackHeight`/`CornerRadius`/`TrackCornerRadius` = 3 / 1 / 1.5 / 0.5                 | 无同值 token（组件内 `--pb-*` 局部变量）    | Fluent token 表无 1.5 / 0.5 档圆角与 3px 高度，按 WinUI 资源名落成组件局部变量                            |
+| `InfoBadgeBackground` → `AccentFillColorDefaultBrush`                                                       | `var(--colorCompoundBrandBackground)`       | 强调色填充位；系统强调色 → Fluent 默认强调色                                                              |
+| `SystemFillColorSolidNeutralBrush`（Light `#8A8A8A` / Dark `#9D9D9D`）                                      | `var(--colorNeutralForeground4)`            | 中性 4 级实色档（`#707070` / `#999999`），ΔE 10.2 / 1.5；Fluent 2 Web 无「实心中性填充」家族              |
+| `InfoBadgeForeground` → `TextOnAccentFillColorPrimaryBrush`（Light `#FFFFFF` / Dark `#000000`）             | `var(--colorNeutralForegroundInverted2)`    | 反白前景位（`#ffffff` / `#242424`），与 InfoBar 的 `TextFillColorInverse` 沿用同一映射                    |
+| `InfoBadgeMinWidth`/`MinHeight`/`MaxHeight`/`ValueFontSize` = 4 / 4 / 16 / 11                               | 无同值 token（组件内 `--fui-info-badge-*`） | Fluent token 表无 4 / 16 / 11 这几个档位，按 WinUI 资源名落成组件局部变量                                 |
+| `CornerRadius` = `ActualHeight / 2`（`InfoBadge.cpp#OnSizeChanged`）                                        | `var(--borderRadiusCircular)`               | 全圆角 token 与「高的一半」在任意高度下几何等价；消费方显式设过 `CornerRadius` 时不接管                   |
 
 ## 7. 验证证据链（结论必须有证据）
 

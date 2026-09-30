@@ -74,6 +74,7 @@ import { FluereButton } from '@fluere-vue/ui'
 | `FluereSlider`                           | Slider                | 已完成 |
 | `FluereNumberBox`                        | NumberBox             | 已完成 |
 | `FluereCombobox`                         | ComboBox              | 已完成 |
+| `FluereInfoBadge`                        | InfoBadge             | 已完成 |
 | `FluereInfoBar`                          | InfoBar               | 已完成 |
 | `FluereProgressBar`                      | ProgressBar           | 已完成 |
 | `FluereProgressRing`                     | ProgressRing          | 已完成 |

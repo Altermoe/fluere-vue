@@ -17,6 +17,7 @@ import { renderToString } from 'vue/server-renderer'
 import FluereButton from '../button/button.vue'
 import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
+import FluereInfoBadge from '../info-badge/info-badge.vue'
 import FluereInfoBar from '../infobar/infobar.vue'
 import FluereInput from '../input/input.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
@@ -182,6 +183,38 @@ describe('SSR 兼容性冒烟测试', () => {
     expect(html).toContain('fui-infobar__close')
     // 隐藏测量层承担方向判定，SSR 阶段同样输出（不影响布局、不进无障碍树）
     expect(html).toContain('aria-hidden="true"')
+  })
+
+  it('FluereInfoBadge 可服务端渲染（形态推导是纯 computed，setup 无浏览器 API 依赖）', async () => {
+    // 缺省：Value=-1 且无 IconSource ⇒ Dot 形态，且不进无障碍树（对齐没有 AutomationPeer）
+    const dot = createSSRApp({ render: () => h(FluereInfoBadge) })
+    const dotHtml = await renderToString(dot)
+    expect(dotHtml).toContain('fui-info-badge')
+    expect(dotHtml).toContain('data-display-kind="dot"')
+    expect(dotHtml).toContain('data-severity="accent"')
+    expect(dotHtml).toContain('aria-hidden="true"')
+
+    // Value 形态 + 可访问名
+    const value = createSSRApp({
+      render: () =>
+        h(FluereInfoBadge, { value: 5, severity: 'critical', label: '收件箱，5 条通知' }),
+    })
+    const valueHtml = await renderToString(value)
+    expect(valueHtml).toContain('data-display-kind="value"')
+    expect(valueHtml).toContain('data-severity="critical"')
+    expect(valueHtml).toContain('role="img"')
+    expect(valueHtml).toContain('aria-label="收件箱，5 条通知"')
+    expect(valueHtml).toContain('fui-info-badge__value')
+    expect(valueHtml).toContain('>5<')
+
+    // Icon 形态：`icon: true` 取 severity 的内建字形（SSR 直出 svg）
+    const icon = createSSRApp({
+      render: () => h(FluereInfoBadge, { severity: 'attention', icon: true }),
+    })
+    const iconHtml = await renderToString(icon)
+    expect(iconHtml).toContain('data-display-kind="icon"')
+    expect(iconHtml).toContain('fui-info-badge__icon')
+    expect(iconHtml).toContain('<svg')
   })
 
   it('FluereCombobox 可服务端渲染（弹层走 Teleport + Presence，收起时不进首帧）', async () => {
