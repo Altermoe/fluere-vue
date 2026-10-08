@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@nuxt/content": "^3.16.0",
+    "@nuxtjs/i18n": "catalog:",
     "vue": "catalog:"
   },
   "devDependencies": {

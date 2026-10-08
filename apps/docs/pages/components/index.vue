@@ -15,33 +15,29 @@
  *     这里取文档站正文 `<h1>` 同档（docs-prose：fontSizeHero800 / 32 + Semibold），
  *     让 Overview 与各组件页的页标题视觉一致。
  */
-import { componentNavGroups } from '~/data/components-nav'
+import { useComponentNav } from '~/composables/use-component-nav'
+import { useDocsI18n } from '~/composables/use-docs-i18n'
 
 definePageMeta({
   layout: 'components',
 })
 
-/**
- * 卡片列表 = 注册表里的已实现项，顺序与侧边栏一致（分组顺序 → 组内顺序）。
- * `implemented` 为 true 的条目在类型上必须带 `summary` / `icon`，故这里不会出现半成品卡片。
- */
-const cards = componentNavGroups.flatMap((group) =>
-  group.items.flatMap((item) => (item.implemented ? [{ ...item, palette: group.palette }] : [])),
-)
+const { t } = useDocsI18n()
+const { implementedCards } = useComponentNav()
 </script>
 
 <template>
   <div>
     <header>
-      <h1 class="docs-components-overview__title">组件总览</h1>
+      <h1 class="docs-components-overview__title">{{ t('components.overviewTitle') }}</h1>
       <p class="docs-components-overview__lead">
-        已实现 {{ cards.length }} 个组件，点击卡片查看用法、示例与 API。
+        {{ t('components.overviewLead', { count: implementedCards.length }) }}
       </p>
     </header>
 
     <ul class="docs-component-grid">
       <li
-        v-for="card in cards"
+        v-for="card in implementedCards"
         :key="card.slug"
       >
         <ComponentCard

@@ -18,6 +18,7 @@ import { FluereScrollView } from '@fluere-vue/ui'
 
 const route = useRoute()
 const { open, close } = useDocsSidebar()
+const { t } = useDocsI18n()
 
 /** lg 断点（与 CSS `lg:` 同一阈值 1024px）。 */
 const isDesktop = useMediaQuery('(min-width: 1024px)')
@@ -66,7 +67,7 @@ onScopeDispose(() => {
       class="fixed inset-0 z-30 lg:hidden"
       role="dialog"
       aria-modal="true"
-      aria-label="组件导航"
+      :aria-label="t('nav.componentNavDialog')"
     >
       <div
         class="docs-nav-drawer__mask absolute inset-0 bg-colorNeutralBackground1/60 backdrop-blur-sm"

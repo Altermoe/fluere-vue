@@ -27,7 +27,28 @@ function resolveOptimizeDepsEntry(id: string, rootDir: string) {
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: false },
-  modules: ['@unocss/nuxt', '@nuxt/content'],
+  modules: ['@nuxtjs/i18n', '@unocss/nuxt', '@nuxt/content'],
+  i18n: {
+    // 路由策略：默认语种（zh-Hans）不带前缀，其余语种（en）走 /en 前缀。
+    // 一期语言固定 zh-Hans（作为 zh-CN 的默认呈现）+ en。
+    strategy: 'prefix_except_default',
+    defaultLocale: 'zh-Hans',
+    locales: [
+      { code: 'zh-Hans', language: 'zh-CN', name: '简体中文', file: 'zh-Hans.json' },
+      { code: 'en', language: 'en', name: 'English', file: 'en.json' },
+    ],
+    // v10 起语言文件按需懒加载（lazy 选项已被移除，不再需要显式声明）
+    // fallbackLocale 属 vue-i18n 配置，见 i18n/configs/i18n.config.ts
+    baseUrl: 'https://fluere-vue.nahida.website',
+    // 记住上次语言选择；key 命名风格与既有的 fluere-docs-color-mode 保持一致。
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'fluere-docs-locale',
+      cookieSecure: false,
+      redirectOn: 'root',
+    },
+    vueI18n: './configs/i18n.config.ts',
+  },
   content: {
     // 用 Node 原生 sqlite（v22.5+），避免 pnpm 原生构建脚本被禁导致的 better-sqlite3 绑定问题
     experimental: { sqliteConnector: 'native' },
@@ -94,9 +115,8 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      htmlAttrs: {
-        lang: 'zh-CN',
-      },
+      // 说明：<html lang> 不再在这里硬编码，改由 @nuxtjs/i18n 的 useLocaleHead
+      // 按路由前缀输出（zh-Hans→zh-CN、en→en），保证 SSR 与水合一致。
       title: 'FluereVue',
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
       // 首帧前按已保存偏好（或系统偏好）写入 <html>，避免明暗切换闪烁。

@@ -10,63 +10,47 @@ import { FluereScrollView } from '@fluere-vue/ui'
  * 当前仍挂着的这一页，遮罩因此也要挂在首页自己身上（另一半在 layouts/components.vue）。
  */
 const routeLoading = useDocsRouteLoading()
+const { t, tm } = useDocsI18n()
+const localePath = useLocalePath()
 
-const navLinks = [
-  { label: 'Docs', to: '/components' },
-  { label: 'Components', to: '/components/button' },
-]
+/** 顶部导航链接：标题随语种解析，链接按 locale 前缀化 */
+const navLinks = computed(() => [
+  { label: t('nav.docs'), to: localePath('/components') },
+  { label: t('nav.components'), to: localePath('/components/button') },
+])
 
-const features = [
-  {
-    title: 'Accessibility out of the box.',
-    subtitle: '遵循 WAI-ARIA 设计规范',
-    items: [
-      'WAI-ARIA compliant',
-      'Keyboard navigation',
-      'Focus management',
-      'Screen reader support',
-    ],
-  },
-  {
-    title: 'Save time. Ship faster.',
-    subtitle: '精心打磨的组件体系',
-    items: ['丰富的基础组件', '一致的 API 设计', '开箱即用', '可组合的结构'],
-  },
-  {
-    title: 'Developer Experience First.',
-    subtitle: 'Unstyled, Customizable, Familiar API',
-    items: [
-      '完全可定制的样式',
-      '与 UnoCSS 无缝集成',
-      'TypeScript 类型友好',
-      'Fluent Design 令牌系统',
-    ],
-  },
-]
+/** Hero feature 卡片：文案全走 i18n key（home.features.*），用 tm 取对象值 */
+const features = computed(() => [
+  tm('home.features.accessibility'),
+  tm('home.features.saveTime'),
+  tm('home.features.developerExperience'),
+])
 
-const stats = [
-  { value: '40+', label: 'Components 组件' },
-  { value: '100%', label: 'TypeScript 类型' },
-  { value: 'MIT', label: 'License 许可' },
-]
+/** 首页统计条 */
+const stats = computed(() => [
+  { value: '40+', label: t('home.stats.components') },
+  { value: '100%', label: t('home.stats.typescript') },
+  { value: 'MIT', label: t('home.stats.license') },
+])
 
-const ctLinks = [
+/** CTA 卡片 */
+const ctLinks = computed(() => [
   {
-    title: 'Install and Setup',
-    desc: '了解如何在项目中安装和配置 FluereVue，并构建和样式化你的第一个组件。',
-    to: '/components',
+    title: t('home.ctaCards.install.title'),
+    desc: t('home.ctaCards.install.desc'),
+    to: localePath('/components'),
   },
   {
-    title: 'Browse components',
-    desc: '查看 FluereVue 提供的所有组件和工具。',
-    to: '/components/button',
+    title: t('home.ctaCards.browse.title'),
+    desc: t('home.ctaCards.browse.desc'),
+    to: localePath('/components/button'),
   },
   {
-    title: 'Explore Themes',
-    desc: '探索 Fluent Design 主题系统和设计令牌。',
-    to: '/components',
+    title: t('home.ctaCards.themes.title'),
+    desc: t('home.ctaCards.themes.desc'),
+    to: localePath('/components'),
   },
-]
+])
 </script>
 
 <template>
@@ -91,7 +75,7 @@ const ctLinks = [
             <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
               <div class="flex items-center gap-8">
                 <NuxtLink
-                  to="/"
+                  :to="localePath('/')"
                   class="flex items-center gap-2 font-semibold text-lg"
                 >
                   <div
@@ -116,6 +100,7 @@ const ctLinks = [
                 <span class="text-colorNeutralForeground3">v0.0.1</span>
                 <!-- 与 /components 布局同款：主题切换用组件库 Button，GitHub 入口是图标链接 -->
                 <GithubLink />
+                <LocaleSwitch />
                 <ThemeToggle />
               </div>
             </div>
@@ -135,47 +120,47 @@ const ctLinks = [
                   class="inline-flex items-center gap-2 px-3 py-1 rounded-fluent-circular border border-colorNeutralStroke1 bg-colorNeutralBackground2 text-xs text-colorNeutralForeground2 mb-8 hover:border-colorBrandStroke1 transition-colors"
                 >
                   <span class="w-1.5 h-1.5 rounded-fluent-circular bg-colorBrandBackground"></span>
-                  WinUI 3 原生质感还原
+                  {{ t('home.badge') }}
                   <span class="text-colorNeutralForeground3">→</span>
                 </a>
                 <h1 class="text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6">
-                  WinUI 3 native quality,
+                  {{ t('home.heroTitle1') }}
                   <br />
                   <span
                     class="bg-gradient-to-r from-colorBrandForeground1 to-colorCompoundBrandForeground1 bg-clip-text text-transparent"
                   >
-                    rebuilt in your browser
+                    {{ t('home.heroTitle2') }}
                   </span>
                 </h1>
                 <p
                   class="text-lg text-colorNeutralForeground2 max-w-2xl mx-auto mb-10 leading-relaxed"
                 >
-                  以
+                  {{ t('home.heroIntroBefore') }}
                   <a
                     href="#"
                     class="text-colorBrandForegroundLink hover:underline"
-                    >WinUI 3</a
+                    >{{ t('home.heroIntroLinkWinui') }}</a
                   >
-                  原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机逐项复刻每个控件的尺寸、圆角、按压力感与动效，并还原
+                  {{ t('home.heroIntroAfter1') }}
                   <a
                     href="#"
                     class="text-colorBrandForegroundLink hover:underline"
-                    >Mica / Acrylic</a
+                    >{{ t('home.heroIntroLinkMica') }}</a
                   >
-                  的透光质感——你在浏览器里看到的，就是 Windows 上那一个控件，而不是它的 Web 仿冒品。
+                  {{ t('home.heroIntroAfter2') }}
                 </p>
                 <div class="flex items-center justify-center gap-4">
                   <NuxtLink
-                    to="/components"
+                    :to="localePath('/components')"
                     class="px-5 py-2.5 rounded-fluent-md bg-colorBrandBackground text-colorNeutralForegroundOnBrand font-medium hover:bg-colorBrandBackgroundHover active:bg-colorBrandBackgroundPressed transition-colors"
                   >
-                    Get started
+                    {{ t('home.getStarted') }}
                   </NuxtLink>
                   <NuxtLink
-                    to="/components/button"
+                    :to="localePath('/components/button')"
                     class="px-5 py-2.5 rounded-fluent-md border border-colorNeutralStroke1 text-colorNeutralForeground1 font-medium hover:bg-colorNeutralBackground1Hover transition-colors"
                   >
-                    Explore components
+                    {{ t('home.exploreComponents') }}
                   </NuxtLink>
                 </div>
               </div>
@@ -347,16 +332,15 @@ const ctLinks = [
             <!-- CTA cards -->
             <section class="border-t border-colorNeutralStroke1 py-24">
               <div class="max-w-6xl mx-auto px-6">
-                <h2 class="text-3xl font-bold text-center mb-4">Ready to get started?</h2>
+                <h2 class="text-3xl font-bold text-center mb-4">{{ t('home.readyTitle') }}</h2>
                 <p class="text-colorNeutralForeground2 text-center mb-12 max-w-xl mx-auto">
-                  无论你是在构建内部工具还是面向客户的产品，FluereVue
-                  都能让你在 Web 上获得接近 Windows 原生应用的顺滑手感。
+                  {{ t('home.ctaIntro') }}
                 </p>
                 <div class="grid md:grid-cols-3 gap-6">
                   <NuxtLink
                     v-for="card in ctLinks"
                     :key="card.title"
-                    to="/components"
+                    :to="card.to"
                     class="group p-6 rounded-fluent-xl border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover hover:border-colorBrandStroke1 transition-all"
                   >
                     <h3
@@ -386,7 +370,7 @@ const ctLinks = [
                 </div>
                 FluereVue
               </div>
-              <div>© 2026 FluereVue. MIT License.</div>
+              <div>{{ t('home.footer') }}</div>
             </div>
           </footer>
         </div>

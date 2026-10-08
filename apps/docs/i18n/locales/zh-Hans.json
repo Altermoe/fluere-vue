@@ -1,0 +1,112 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "components": "组件",
+    "overview": "全部组件",
+    "toggleNavOpen": "打开组件导航",
+    "toggleNavClose": "关闭组件导航",
+    "componentNavDialog": "组件导航",
+    "unimplemented": "未实现",
+    "groups": {
+      "basic": "基础",
+      "form": "表单",
+      "color": "颜色",
+      "dates": "日期",
+      "general": "通用"
+    },
+    "summary": {
+      "button": "触发操作的按钮，五档外观与三种尺寸。",
+      "input": "单行 / 多行文本输入，支持标题、说明与密码形态。",
+      "scroll-view": "内容超出视口时可滚动、平移与缩放的容器。",
+      "icons": "WinUI 3 / Fluent System Icons 图标组件。",
+      "checkbox": "在若干项中选择一个或多个，支持不确定态。",
+      "combobox": "从一组选项中选一项，支持文本搜索与可编辑。",
+      "number-box": "录入数字，支持区间校验、步进与内联表达式。",
+      "radio-group": "在一组互斥选项中选择一个。",
+      "slider": "在连续区间内拖动取值。",
+      "switch": "在「开 / 关」两个状态间切换。",
+      "content-dialog": "模态对话框：标题 + 正文 + 主 / 次 / 关闭按钮。",
+      "info-badge": "非打断式小徽章：圆点 / 数值 / 图标三态。",
+      "infobar": "应用级状态提示横幅，四档 Severity、可关闭。",
+      "progress": "线性进度指示：不确定滑块与确定填充。",
+      "progress-ring": "环形进度指示：不确定转圈与确定弧长。",
+      "tooltip": "悬停或聚焦时显示的补充信息浮层。"
+    }
+  },
+  "theme": {
+    "switchToLight": "切换到亮色模式",
+    "switchToDark": "切换到暗色模式"
+  },
+  "github": {
+    "openInNewTab": "在新标签页打开 GitHub 仓库"
+  },
+  "home": {
+    "badge": "WinUI 3 原生质感还原",
+    "heroTitle1": "WinUI 3 native quality,",
+    "heroTitle2": "rebuilt in your browser",
+    "heroIntroBefore": "以",
+    "heroIntroLinkWinui": "WinUI 3",
+    "heroIntroAfter1": "原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机逐项复刻每个控件的尺寸、圆角、按压力感与动效，并还原",
+    "heroIntroLinkMica": "Mica / Acrylic",
+    "heroIntroAfter2": "的透光质感——你在浏览器里看到的，就是 Windows 上那一个控件，而不是它的 Web 仿冒品。",
+    "getStarted": "立即开始",
+    "exploreComponents": "浏览组件",
+    "readyTitle": "准备好了吗？",
+    "ctaIntro": "无论你是在构建内部工具还是面向客户的产品，FluereVue 都能让你在 Web 上获得接近 Windows 原生应用的顺滑手感。",
+    "footer": "© 2026 FluereVue. MIT 许可证。",
+    "features": {
+      "accessibility": {
+        "title": "Accessibility out of the box.",
+        "subtitle": "遵循 WAI-ARIA 设计规范",
+        "items": ["WAI-ARIA compliant", "键盘导航", "焦点管理", "屏幕阅读器支持"]
+      },
+      "saveTime": {
+        "title": "Save time. Ship faster.",
+        "subtitle": "精心打磨的组件体系",
+        "items": ["丰富的基础组件", "一致的 API 设计", "开箱即用", "可组合的结构"]
+      },
+      "developerExperience": {
+        "title": "Developer Experience First.",
+        "subtitle": "Unstyled, Customizable, Familiar API",
+        "items": [
+          "完全可定制的样式",
+          "与 UnoCSS 无缝集成",
+          "TypeScript 类型友好",
+          "Fluent Design 令牌系统"
+        ]
+      }
+    },
+    "stats": {
+      "components": "Components 组件",
+      "typescript": "TypeScript 类型",
+      "license": "License 许可"
+    },
+    "ctaCards": {
+      "install": {
+        "title": "Install and Setup",
+        "desc": "了解如何在项目中安装和配置 FluereVue，并构建和样式化你的第一个组件。"
+      },
+      "browse": {
+        "title": "Browse components",
+        "desc": "查看 FluereVue 提供的所有组件和工具。"
+      },
+      "themes": {
+        "title": "Explore Themes",
+        "desc": "探索 Fluent Design 主题系统和设计令牌。"
+      }
+    }
+  },
+  "components": {
+    "overviewTitle": "组件总览",
+    "overviewLead": "已实现 {count} 个组件，点击卡片查看用法、示例与 API。",
+    "notFound": "未找到内容：{path}",
+    "missingEnglishNotice": "该页暂无英文版，当前显示中文内容。"
+  },
+  "demo": {
+    "title": "示例",
+    "copy": "复制",
+    "copied": "已复制",
+    "viewCode": "查看代码",
+    "hideCode": "收起代码"
+  }
+}

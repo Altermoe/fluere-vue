@@ -28,6 +28,7 @@
  * 宽度 `w-auto` 按 viewBox 等比推导，不做拉伸 / 压扁（品牌规范禁止变形）。
  */
 const REPOSITORY_URL = 'https://github.com/Altermoe/fluere-vue'
+const { t } = useDocsI18n()
 </script>
 
 <template>
@@ -42,8 +43,8 @@ const REPOSITORY_URL = 'https://github.com/Altermoe/fluere-vue'
     target="_blank"
     rel="noopener noreferrer"
     class="docs-github-link inline-flex h-8 w-8 items-center justify-center text-colorNeutralForeground2 transition-colors duration-fluent-faster hover:text-colorNeutralForeground1 active:text-colorNeutralForeground1"
-    aria-label="在新标签页打开 GitHub 仓库"
-    title="在新标签页打开 GitHub 仓库"
+    :aria-label="t('github.openInNewTab')"
+    :title="t('github.openInNewTab')"
   >
     <svg
       class="h-5 w-auto"

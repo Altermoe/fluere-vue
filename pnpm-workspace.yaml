@@ -7,6 +7,7 @@ allowBuilds:
 catalog:
   '@fluentui/svg-icons': 1.1.334
   '@fluentui/tokens': 1.0.0-alpha.23
+  '@nuxtjs/i18n': 10.6.0
   '@unocss/nuxt': 66.7.5
   '@vitejs/plugin-vue': 6.0.8
   '@vitest/coverage-v8': 5.0.1

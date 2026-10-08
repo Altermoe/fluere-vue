@@ -4,6 +4,8 @@ import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 
 const route = useRoute()
 const { open, toggle } = useDocsSidebar()
+const { t } = useDocsI18n()
+const localePath = useLocalePath()
 
 /**
  * 路由加载态（写入方见 plugins/docs-route-loading.client.ts）：
@@ -97,8 +99,8 @@ watch(
               appearance="outline"
               size="medium"
               icon-only
-              :aria-label="open ? '关闭组件导航' : '打开组件导航'"
-              :title="open ? '关闭组件导航' : '打开组件导航'"
+              :aria-label="open ? t('nav.toggleNavClose') : t('nav.toggleNavOpen')"
+              :title="open ? t('nav.toggleNavClose') : t('nav.toggleNavOpen')"
               @click="toggle"
             >
               <template #icon>
@@ -107,7 +109,7 @@ watch(
             </FluereButton>
           </div>
           <NuxtLink
-            to="/"
+            :to="localePath('/')"
             class="flex items-center gap-2 font-semibold text-lg"
           >
             <div
@@ -119,16 +121,16 @@ watch(
           </NuxtLink>
           <nav class="hidden items-center gap-6 text-sm text-colorNeutralForeground2 md:flex">
             <NuxtLink
-              to="/components"
+              :to="localePath('/components')"
               class="hover:text-colorNeutralForeground1 transition-colors"
             >
-              Docs
+              {{ t('nav.docs') }}
             </NuxtLink>
             <NuxtLink
-              to="/components/button"
+              :to="localePath('/components/button')"
               class="hover:text-colorNeutralForeground1 transition-colors"
             >
-              Components
+              {{ t('nav.components') }}
             </NuxtLink>
           </nav>
         </div>
@@ -139,6 +141,7 @@ watch(
             图标用 GitHub 官方 Invertocat，实现与地址见 components/github-link.vue。
           -->
           <GithubLink />
+          <LocaleSwitch />
           <ThemeToggle />
         </div>
       </div>

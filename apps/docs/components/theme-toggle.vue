@@ -3,6 +3,7 @@ import { FluentIconWeatherMoon24Regular, FluentIconWeatherSunny24Regular } from 
 import { FluereButton } from '@fluere-vue/ui'
 
 const { isDark, toggle } = useColorMode()
+const { t } = useDocsI18n()
 </script>
 
 <template>
@@ -14,8 +15,8 @@ const { isDark, toggle } = useColorMode()
     appearance="outline"
     size="medium"
     icon-only
-    :aria-label="isDark ? '切换到亮色模式' : '切换到暗色模式'"
-    :title="isDark ? '切换到亮色模式' : '切换到暗色模式'"
+    :aria-label="isDark ? t('theme.switchToLight') : t('theme.switchToDark')"
+    :title="isDark ? t('theme.switchToLight') : t('theme.switchToDark')"
     @click="toggle"
   >
     <!--

@@ -34,6 +34,16 @@ import {
   FluentIconTooltipQuote24Regular,
 } from '@fluere-vue/icons'
 import type { Component } from 'vue'
+import type { MessageSchema } from '~/i18n/schema'
+
+/**
+ * 展示名称 / 摘要的 i18n key 类型。
+ *
+ * 约定（与 docs/todo.md 目标 1.2 一致）：组件显示名（Button / Input …）是
+ * 专有名词，双语都保持英文，不进 key；只有**分组标题**与**卡片一句话摘要**
+ * 是会随语种变化的界面串，落到 `nav.groups.*` / `nav.summary.*`。
+ * `MessageSchema` 由 zh-Hans 主语言 JSON 推导，写错 key 会在 vue-tsc 下报错。
+ */
 
 /** Overview 卡片图标的配色家族（Fluent 调色板，卡片侧映射到具体 token）。 */
 type ComponentPalette = 'blue' | 'purple' | 'plum' | 'teal' | 'marigold'
@@ -42,15 +52,18 @@ type ComponentPalette = 'blue' | 'purple' | 'plum' | 'teal' | 'marigold'
 interface ComponentNavItemBase {
   /** 组件 slug，对应 `/components/{slug}` 路由 */
   slug: string
-  /** 展示名称 */
+  /** 展示名称（专有名词，双语保持英文，不进 i18n key） */
   name: string
 }
 
 /** 已实现：文档页存在，Overview 卡片需要的字段齐全。 */
 interface ImplementedComponentNavItem extends ComponentNavItemBase {
   implemented: true
-  /** Overview 卡片的一句话摘要 */
-  summary: string
+  /**
+   * Overview 卡片的一句话摘要（i18n key，见 nav.summary.*）。
+   * 只允许 MessageSchema 里真实存在的 key，键入错误由类型系统兜底。
+   */
+  summaryKey: keyof MessageSchema['nav']['summary']
   /** Overview 卡片图标（24px 字形，卡片按 32px 渲染） */
   icon: Component
 }
@@ -63,12 +76,8 @@ interface PlannedComponentNavItem extends ComponentNavItemBase {
 type ComponentNavItem = ImplementedComponentNavItem | PlannedComponentNavItem
 
 interface ComponentNavGroup {
-  /** 分组 key */
-  id: string
-  /** 分组英文名 */
-  title: string
-  /** 分组中文名 */
-  label: string
+  /** 分组 key，对应 i18n key `nav.groups.{id}`（分组标题随语种解析） */
+  id: keyof MessageSchema['nav']['groups']
   /** 该分组的卡片图标配色 */
   palette: ComponentPalette
   items: ComponentNavItem[]
@@ -77,44 +86,40 @@ interface ComponentNavGroup {
 const componentNavGroups: ComponentNavGroup[] = [
   {
     id: 'basic',
-    title: 'Basic',
-    label: '基础',
     palette: 'blue',
     items: [
       {
         slug: 'button',
         name: 'Button',
         implemented: true,
-        summary: '触发操作的按钮，五档外观与三种尺寸。',
+        summaryKey: 'button',
         icon: FluentIconControlButton24Regular,
       },
       {
         slug: 'input',
         name: 'Input',
         implemented: true,
-        summary: '单行 / 多行文本输入，支持标题、说明与密码形态。',
+        summaryKey: 'input',
         icon: FluentIconTextbox24Regular,
       },
       {
         slug: 'scroll-view',
         name: 'Scroll View',
         implemented: true,
-        summary: '内容超出视口时可滚动、平移与缩放的容器。',
+        summaryKey: 'scroll-view',
         icon: FluentIconDualScreenVerticalScroll24Regular,
       },
       {
         slug: 'icons',
         name: 'Icons',
         implemented: true,
-        summary: 'WinUI 3 / Fluent System Icons 图标组件。',
+        summaryKey: 'icons',
         icon: FluentIconSymbols24Regular,
       },
     ],
   },
   {
     id: 'form',
-    title: 'Form',
-    label: '表单',
     palette: 'purple',
     items: [
       { slug: 'autocomplete', name: 'Autocomplete', implemented: false },
@@ -122,14 +127,14 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'checkbox',
         name: 'Checkbox',
         implemented: true,
-        summary: '在若干项中选择一个或多个，支持不确定态。',
+        summaryKey: 'checkbox',
         icon: FluentIconCheckboxChecked24Regular,
       },
       {
         slug: 'combobox',
         name: 'Combobox',
         implemented: true,
-        summary: '从一组选项中选一项，支持文本搜索与可编辑。',
+        summaryKey: 'combobox',
         icon: FluentIconAppsListDetail24Regular,
       },
       { slug: 'editable', name: 'Editable', implemented: false },
@@ -138,7 +143,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'number-box',
         name: 'Number Box',
         implemented: true,
-        summary: '录入数字，支持区间校验、步进与内联表达式。',
+        summaryKey: 'number-box',
         icon: FluentIconNumberSymbol24Regular,
       },
       { slug: 'label', name: 'Label', implemented: false },
@@ -147,7 +152,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'radio-group',
         name: 'Radio Group',
         implemented: true,
-        summary: '在一组互斥选项中选择一个。',
+        summaryKey: 'radio-group',
         icon: FluentIconRadioButton24Regular,
       },
       { slug: 'rating', name: 'Rating', implemented: false },
@@ -156,14 +161,14 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'slider',
         name: 'Slider',
         implemented: true,
-        summary: '在连续区间内拖动取值。',
+        summaryKey: 'slider',
         icon: FluentIconOptions24Regular,
       },
       {
         slug: 'switch',
         name: 'Switch',
         implemented: true,
-        summary: '在「开 / 关」两个状态间切换。',
+        summaryKey: 'switch',
         icon: FluentIconToggleRight24Regular,
       },
       { slug: 'tags-input', name: 'Tags Input', implemented: false },
@@ -173,8 +178,6 @@ const componentNavGroups: ComponentNavGroup[] = [
   },
   {
     id: 'color',
-    title: 'Color',
-    label: '颜色',
     palette: 'plum',
     items: [
       { slug: 'color-area', name: 'Color Area', implemented: false },
@@ -186,8 +189,6 @@ const componentNavGroups: ComponentNavGroup[] = [
   },
   {
     id: 'dates',
-    title: 'Dates',
-    label: '日期',
     palette: 'marigold',
     items: [
       { slug: 'calendar', name: 'Calendar', implemented: false },
@@ -206,8 +207,6 @@ const componentNavGroups: ComponentNavGroup[] = [
   },
   {
     id: 'general',
-    title: 'General',
-    label: '通用',
     palette: 'teal',
     items: [
       { slug: 'accordion', name: 'Accordion', implemented: false },
@@ -219,7 +218,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'content-dialog',
         name: 'Content Dialog',
         implemented: true,
-        summary: '模态对话框：标题 + 正文 + 主 / 次 / 关闭按钮。',
+        summaryKey: 'content-dialog',
         icon: FluentIconSquareMultiple24Regular,
       },
       { slug: 'context-menu', name: 'Context Menu', implemented: false },
@@ -231,14 +230,14 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'info-badge',
         name: 'Info Badge',
         implemented: true,
-        summary: '非打断式小徽章：圆点 / 数值 / 图标三态。',
+        summaryKey: 'info-badge',
         icon: FluentIconBadge24Regular,
       },
       {
         slug: 'infobar',
         name: 'Info Bar',
         implemented: true,
-        summary: '应用级状态提示横幅，四档 Severity、可关闭。',
+        summaryKey: 'infobar',
         icon: FluentIconInfo24Regular,
       },
       { slug: 'menubar', name: 'Menubar', implemented: false },
@@ -249,14 +248,14 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'progress',
         name: 'Progress Bar',
         implemented: true,
-        summary: '线性进度指示：不确定滑块与确定填充。',
+        summaryKey: 'progress',
         icon: FluentIconDataBarHorizontal24Regular,
       },
       {
         slug: 'progress-ring',
         name: 'Progress Ring',
         implemented: true,
-        summary: '环形进度指示：不确定转圈与确定弧长。',
+        summaryKey: 'progress-ring',
         icon: FluentIconCircleHalfFill24Regular,
       },
       { slug: 'scroll-area', name: 'Scroll Area', implemented: false },
@@ -270,7 +269,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         slug: 'tooltip',
         name: 'Tooltip',
         implemented: true,
-        summary: '悬停或聚焦时显示的补充信息浮层。',
+        summaryKey: 'tooltip',
         icon: FluentIconTooltipQuote24Regular,
       },
       { slug: 'tree', name: 'Tree', implemented: false },

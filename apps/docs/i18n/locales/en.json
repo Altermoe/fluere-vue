@@ -1,0 +1,122 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "components": "Components",
+    "overview": "All components",
+    "toggleNavOpen": "Open component navigation",
+    "toggleNavClose": "Close component navigation",
+    "componentNavDialog": "Component navigation",
+    "unimplemented": "Not implemented",
+    "groups": {
+      "basic": "Basic",
+      "form": "Form",
+      "color": "Color",
+      "dates": "Dates",
+      "general": "General"
+    },
+    "summary": {
+      "button": "A button that triggers an action, with five appearances and three sizes.",
+      "input": "Single-line / multi-line text input, supporting headers, descriptions and password forms.",
+      "scroll-view": "A container that scrolls, pans and zooms content that overflows the viewport.",
+      "icons": "WinUI 3 / Fluent System Icons icon components.",
+      "checkbox": "Select one or more items from a set, with an indeterminate state.",
+      "combobox": "Pick one option from a list, with text search and an editable mode.",
+      "number-box": "Enter numbers with range validation, stepping and inline expressions.",
+      "radio-group": "Choose one option from a mutually exclusive group.",
+      "slider": "Drag to pick a value along a continuous range.",
+      "switch": "Toggle between an on and off state.",
+      "content-dialog": "A modal dialog: title + body + primary / secondary / close buttons.",
+      "info-badge": "A non-intrusive small badge: dot / value / icon states.",
+      "infobar": "An app-level status banner with four severities and a closable mode.",
+      "progress": "Linear progress indicator: indeterminate slider and determinate fill.",
+      "progress-ring": "Circular progress indicator: indeterminate spinner and determinate arc.",
+      "tooltip": "A supplementary info overlay shown on hover or focus."
+    }
+  },
+  "theme": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
+  "github": {
+    "openInNewTab": "Open GitHub repository in a new tab"
+  },
+  "home": {
+    "badge": "WinUI 3 native quality restored",
+    "heroTitle1": "WinUI 3 native quality,",
+    "heroTitle2": "rebuilt in your browser",
+    "heroIntroBefore": "A Vue 3 component library based on the native ",
+    "heroIntroLinkWinui": "WinUI 3",
+    "heroIntroAfter1": " controls, faithfully replicating each control's size, corner radius, press feel and motion against a real Windows 11 install, and restoring the translucency of ",
+    "heroIntroLinkMica": "Mica / Acrylic",
+    "heroIntroAfter2": " — what you see in your browser is that Windows control, not a web imitation of it.",
+    "getStarted": "Get started",
+    "exploreComponents": "Explore components",
+    "readyTitle": "Ready to get started?",
+    "ctaIntro": "Whether you're building an internal tool or a customer-facing product, FluereVue gives you a smooth feel close to native Windows apps on the web.",
+    "footer": "© 2026 FluereVue. MIT License.",
+    "features": {
+      "accessibility": {
+        "title": "Accessibility out of the box.",
+        "subtitle": "Built with WAI-ARIA in mind",
+        "items": [
+          "WAI-ARIA compliant",
+          "Keyboard navigation",
+          "Focus management",
+          "Screen reader support"
+        ]
+      },
+      "saveTime": {
+        "title": "Save time. Ship faster.",
+        "subtitle": "A carefully crafted component system",
+        "items": [
+          "Rich base components",
+          "Consistent API design",
+          "Ready out of the box",
+          "Composable structure"
+        ]
+      },
+      "developerExperience": {
+        "title": "Developer Experience First.",
+        "subtitle": "Unstyled, Customizable, Familiar API",
+        "items": [
+          "Fully customizable styling",
+          "Seamless UnoCSS integration",
+          "TypeScript-friendly types",
+          "Fluent Design token system"
+        ]
+      }
+    },
+    "stats": {
+      "components": "Components",
+      "typescript": "TypeScript",
+      "license": "License"
+    },
+    "ctaCards": {
+      "install": {
+        "title": "Install and Setup",
+        "desc": "Learn how to install and configure FluereVue, then build and style your first component."
+      },
+      "browse": {
+        "title": "Browse components",
+        "desc": "See all the components and utilities FluereVue provides."
+      },
+      "themes": {
+        "title": "Explore Themes",
+        "desc": "Explore the Fluent Design theme system and design tokens."
+      }
+    }
+  },
+  "components": {
+    "overviewTitle": "Component overview",
+    "overviewLead": "{count} components implemented — click a card to see usage, examples and API.",
+    "notFound": "No content found: {path}",
+    "missingEnglishNotice": "This page has no English version yet; showing the Chinese content."
+  },
+  "demo": {
+    "title": "Example",
+    "copy": "Copy",
+    "copied": "Copied",
+    "viewCode": "View code",
+    "hideCode": "Hide code"
+  }
+}

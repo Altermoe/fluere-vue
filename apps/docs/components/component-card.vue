@@ -62,7 +62,7 @@ import type { Component } from 'vue'
 import type { ComponentPalette } from '~/data/components-nav'
 
 const props = defineProps<{
-  /** 目标路由（组件文档页 `/components/{slug}`） */
+  /** 目标路由（组件文档页 `/components/{slug}`，相对路径；渲染时按 locale 前缀化） */
   to: string
   /** 卡片标题（组件名） */
   name: string
@@ -73,6 +73,8 @@ const props = defineProps<{
   /** 图标配色家族（来自 nav 分组） */
   palette: ComponentPalette
 }>()
+
+const localePath = useLocalePath()
 
 /** 图标渲染尺寸：与 WinUI 模板的 `Image Width="32"` 一致（1× / 2× 均可整像素缩放）。 */
 const ICON_SIZE = 32
@@ -92,7 +94,7 @@ const iconColor = computed(() => PALETTE_FOREGROUND[props.palette])
 <template>
   <!-- 整张卡片就是一个链接：命中区 = 可见面，不需要额外的“查看更多”入口 -->
   <NuxtLink
-    :to="to"
+    :to="localePath(props.to)"
     class="docs-component-card"
   >
     <component

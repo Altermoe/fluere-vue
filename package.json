@@ -31,10 +31,12 @@
     "lint": "oxlint --ignore-pattern .dsh --ignore-pattern packages/designs/generated --ignore-pattern packages/designs/data --ignore-pattern packages/icons/generated",
     "lint:fix": "oxlint --fix --ignore-pattern .dsh --ignore-pattern packages/designs/generated --ignore-pattern packages/designs/data --ignore-pattern packages/icons/generated",
     "lint:ssr": "bash scripts/lint-ssr.sh",
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:check:scan": "node scripts/i18n-check.mjs --scan",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
     "tsc": "pnpm -r tsc",
-    "check": "pnpm lint && pnpm format && pnpm tsc",
+    "check": "pnpm lint && pnpm format && pnpm tsc && pnpm i18n:check",
     "check:fix": "pnpm lint:fix && pnpm format:fix && pnpm tsc"
   },
   "devDependencies": {
