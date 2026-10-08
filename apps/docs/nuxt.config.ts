@@ -79,6 +79,16 @@ export default defineNuxtConfig({
       },
     },
   },
+  experimental: {
+    defaults: {
+      nuxtLink: {
+        // 默认只有「可见性预取」；补上交互预取，指针移入 / 键盘聚焦目标链接时就
+        // 预加载目标页组件 chunk，点击后 vue-router 不必再等组件下载完才完成跳转。
+        // 具体预取动作见 plugins/docs-route-loading.client.ts。
+        prefetchOn: { visibility: true, interaction: true },
+      },
+    },
+  },
   devServer: {
     port: 60727,
   },

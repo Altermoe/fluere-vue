@@ -5,6 +5,12 @@ import { FluereButton, FluereScrollView } from '@fluere-vue/ui'
 const route = useRoute()
 const { open, toggle } = useDocsSidebar()
 
+/**
+ * 路由加载态（写入方见 plugins/docs-route-loading.client.ts）：
+ * 为 true 时用 DocsRouteSkeleton 覆盖 router-view 视口。
+ */
+const routeLoading = useDocsRouteLoading()
+
 /** 内容区顶部偏移（水平 / 垂直同值，均为 0） */
 const CONTENT_TOP_OFFSET = 0
 
@@ -57,6 +63,22 @@ watch(
         </div>
       </FluereScrollView>
     </div>
+
+    <!--
+      路由骨架遮罩：覆盖 router-view 视口（header 之下；桌面端从侧边栏右缘 15rem 起），
+      层级夹在内容之上、抽屉（z-30）与 header（z-40）之下——加载期间导航仍可操作。
+      包裹层负责定位，DocsRouteSkeleton 自身负责铺满 + 淡入；这里的 Transition 只声明
+      离场淡出（新页面出现时遮罩柔和退去）。同为「router-view 视口」的首页遮罩见
+      pages/index.vue（那边没有布局，遮罩挂在页面自己身上）。
+    -->
+    <Transition name="docs-route-skeleton">
+      <div
+        v-if="routeLoading"
+        class="absolute bottom-0 left-0 right-0 top-14 z-20 lg:left-60"
+      >
+        <DocsRouteSkeleton />
+      </div>
+    </Transition>
 
     <!-- 侧边栏：桌面常驻 + 移动端抽屉，响应式逻辑全部内聚于此 -->
     <DocsSidebar />
@@ -133,5 +155,27 @@ watch(
 .docs-shell {
   height: 100vh;
   height: 100dvh;
+}
+
+/*
+ * 路由骨架遮罩的离场：accelerate（内容「离场」）语汇，与抽屉同一套 Fluent 动效约定。
+ * 只做透明度，不叠加位移，避免为一个临时遮罩多起一个合成层。
+ * 进入淡入由 DocsRouteSkeleton 自身的 animation 负责（同一个组件也挂在没有
+ * Transition 包裹的首页上，见 pages/index.vue）。
+ */
+.docs-route-skeleton-leave-active {
+  transition-property: opacity;
+  transition-duration: var(--durationFast);
+  transition-timing-function: var(--curveAccelerateMin);
+}
+.docs-route-skeleton-leave-to {
+  opacity: 0;
+}
+
+/* 减少动效偏好：瞬时隐藏；骨架自身的波浪循环与淡入也已在组件内停用 */
+@media (prefers-reduced-motion: reduce) {
+  .docs-route-skeleton-leave-active {
+    transition: none;
+  }
 }
 </style>

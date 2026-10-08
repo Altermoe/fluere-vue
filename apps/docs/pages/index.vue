@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { FluereScrollView } from '@fluere-vue/ui'
 
+/**
+ * 路由加载态（写入方见 plugins/docs-route-loading.client.ts）。
+ *
+ * 首页是唯一不经过 layouts/ 的页面，而 Nuxt 在「新目标页的异步数据就绪」之前会把
+ * 整个新 fork（布局 + 页面）压住不渲染：实测「首页 → /components/*」在 dev 下点击后
+ * 要数秒才换视图，且期间没有任何网络请求。也就是说这段时间里能立刻给出反馈的只有
+ * 当前仍挂着的这一页，遮罩因此也要挂在首页自己身上（另一半在 layouts/components.vue）。
+ */
+const routeLoading = useDocsRouteLoading()
+
 const navLinks = [
   { label: 'Docs', to: '/components' },
   { label: 'Components', to: '/components/button' },
@@ -386,6 +396,18 @@ const ctLinks = [
           </footer>
         </div>
       </FluereScrollView>
+    </div>
+
+    <!--
+      路由骨架遮罩：覆盖首页的 router-view 视口（header 之下、整宽——首页没有侧边栏）。
+      层级在内容之上、header（z-40）之下；DocsRouteSkeleton 自带淡入，
+      离场随本页一起卸载（新的 docs 布局接手时内容已就绪）。
+    -->
+    <div
+      v-if="routeLoading"
+      class="absolute bottom-0 left-0 right-0 top-14 z-20"
+    >
+      <DocsRouteSkeleton />
     </div>
   </div>
 </template>
