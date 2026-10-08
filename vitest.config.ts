@@ -8,8 +8,8 @@ import { defineConfig } from 'vitest/config'
 //   @fluere-vue/*；这里用 resolve.alias 直接指到各包源文件，与 tsconfig.base.json 的
 //   paths 保持一致（仅 @fluere-vue/ui 指到真实入口 packages/ui/index.ts）。
 // - 环境统一为 jsdom：组件测试用 @vue/test-utils 挂载 SFC，需要 DOM。
-// - include 限定 packages/**；apps/docs 是 Nuxt 应用，其页面测试需要 @nuxt/test-utils，
-//   不属于本配置范围。
+// - include 限定 packages/** 与 apps/docs 的**纯工具函数**测试；apps/docs 是 Nuxt 应用，
+//   其页面 / 组件测试需要 @nuxt/test-utils 与 Nuxt 运行时（自动导入、`~` 别名），不在本范围。
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -44,7 +44,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['packages/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+    include: [
+      'packages/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+      'apps/docs/utils/**/*.{test,spec}.?(c|m)[jt]s?(x)',
+    ],
     coverage: {
       provider: 'v8',
       include: ['packages/**/src/**'],

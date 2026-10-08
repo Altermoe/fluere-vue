@@ -19,7 +19,11 @@ const navLinks = computed(() => [
   { label: t('nav.components'), to: localePath('/components/button') },
 ])
 
-/** Hero feature 卡片：文案全走 i18n key（home.features.*），用 tm 取对象值 */
+/**
+ * Hero feature 卡片：文案全走 i18n key（home.features.*）。
+ * `tm` 取自 useDocsI18n —— 它已把预编译 message AST 逐叶子解析为字符串
+ * （裸用 vue-i18n 的 `tm` 会拿到 AST 并渲染成 JSON，见该 composable 注释）。
+ */
 const features = computed(() => [
   tm('home.features.accessibility'),
   tm('home.features.saveTime'),
