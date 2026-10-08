@@ -135,39 +135,34 @@ const ctLinks = [
                   class="inline-flex items-center gap-2 px-3 py-1 rounded-fluent-circular border border-colorNeutralStroke1 bg-colorNeutralBackground2 text-xs text-colorNeutralForeground2 mb-8 hover:border-colorBrandStroke1 transition-colors"
                 >
                   <span class="w-1.5 h-1.5 rounded-fluent-circular bg-colorBrandBackground"></span>
-                  New: Button & Input 组件已发布
+                  WinUI 3 原生质感还原
                   <span class="text-colorNeutralForeground3">→</span>
                 </a>
                 <h1 class="text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6">
-                  Craft accessible web apps
+                  WinUI 3 native quality,
                   <br />
                   <span
                     class="bg-gradient-to-r from-colorBrandForeground1 to-colorCompoundBrandForeground1 bg-clip-text text-transparent"
                   >
-                    with Vue 3
+                    rebuilt in your browser
                   </span>
                 </h1>
                 <p
                   class="text-lg text-colorNeutralForeground2 max-w-2xl mx-auto mb-10 leading-relaxed"
                 >
-                  一个基于
+                  以
                   <a
                     href="#"
                     class="text-colorBrandForegroundLink hover:underline"
-                    >Fluent Design 2</a
+                    >WinUI 3</a
                   >
-                  设计规范的开源组件库， 提供
+                  原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机逐项复刻每个控件的尺寸、圆角、按压力感与动效，并还原
                   <a
                     href="#"
                     class="text-colorBrandForegroundLink hover:underline"
-                    >可组合</a
+                    >Mica / Acrylic</a
                   >
-                  的组件， 以及丰富的
-                  <a
-                    href="#"
-                    class="text-colorBrandForegroundLink hover:underline"
-                    >使用示例</a
-                  >， 随时可以集成到你的项目中。
+                  的透光质感——你在浏览器里看到的，就是 Windows 上那一个控件，而不是它的 Web 仿冒品。
                 </p>
                 <div class="flex items-center justify-center gap-4">
                   <NuxtLink
@@ -355,7 +350,7 @@ const ctLinks = [
                 <h2 class="text-3xl font-bold text-center mb-4">Ready to get started?</h2>
                 <p class="text-colorNeutralForeground2 text-center mb-12 max-w-xl mx-auto">
                   无论你是在构建内部工具还是面向客户的产品，FluereVue
-                  都能帮你快速打造流畅的用户界面。
+                  都能让你在 Web 上获得接近 Windows 原生应用的顺滑手感。
                 </p>
                 <div class="grid md:grid-cols-3 gap-6">
                   <NuxtLink
