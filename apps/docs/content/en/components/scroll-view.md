@@ -183,11 +183,15 @@ their names carry the `fluere:` prefix and they are dispatched on the root eleme
 
 ## Agent / Automation access
 
+<!-- style-spec must be linked with an absolute URL: relative paths outside content/ (./../../../docs/…)
+     are treated as site routes by crawlLinks during `pnpm docs:generate`, 404 and fail the whole command
+     (see the docs:generate check item in AGENTS.md). -->
+
 This component expresses its offset through a content `transform` and its presenter is `overflow: clip` (**not a native scroll container**),
 so the native scrolling semantics of browsers and automation tools do not apply here: `scrollTop` is always `0`,
 and `scrollBy` / `scrollIntoView` / `scrollIntoViewIfNeeded` can find no scrollable ancestor
 (native auto-scrolling before Playwright clicks an element outside the viewport also fails, which is
-the pitfall documented in [style-spec §7](./../../../docs/style-spec.md)). For this the component provides two DOM-based paths,
+the pitfall documented in [style-spec §7](https://github.com/Altermoe/fluere-vue/blob/main/docs/style-spec.md)). For this the component provides two DOM-based paths,
 **neither of which requires touching the component instance**:
 
 - **Read-only reflection**: the root element always carries a set of state attributes for determining 「whether it moved / how much is left」;

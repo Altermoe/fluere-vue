@@ -183,11 +183,14 @@ const sv = ref<InstanceType<typeof FluereScrollView>>()
 
 ## Agent / 自动化访问
 
+<!-- style-spec 必须用绝对地址外链：content/ 之外的相对路径（./../../../docs/…）在 `pnpm docs:generate`
+     预渲染时会被 crawlLinks 当成站内路由抓取并 404，从而让整条命令失败（详见 AGENTS.md 的 docs:generate 检查项）。 -->
+
 本组件的偏移由内容 `transform` 表达、presenter 是 `overflow: clip`（**不是原生滚动容器**），
 因此浏览器与自动化工具的原生滚动语义在这里不成立：`scrollTop` 恒为 `0`，
 `scrollBy` / `scrollIntoView` / `scrollIntoViewIfNeeded` 都找不到可滚动祖先
 （Playwright 点击视口外元素前的自动滚动同样失效，这也是
-[style-spec §7](./../../../docs/style-spec.md) 记录的那条坑）。组件为此提供两条 DOM 通路，
+[style-spec §7](https://github.com/Altermoe/fluere-vue/blob/main/docs/style-spec.md) 记录的那条坑）。组件为此提供两条 DOM 通路，
 **都不需要接触组件实例**：
 
 - **只读反射**：根元素始终带一组状态属性，用来判断「动没动、还剩多少」；
