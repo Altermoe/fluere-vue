@@ -1,13 +1,93 @@
 <script setup lang="ts">
-// `/components` 首页：用于展示组件库故事文案（Story）。
-// 当前阶段暂不填写内容，仅保留页面结构。
+/**
+ * `/components` 首页（Overview）：已实现组件的卡片网格。
+ *
+ * 卡片外观对齐参考图（WinUI 3 Gallery「全部示例」页）的规格与映射说明，
+ * 全部写在 `components/component-card.vue` 的头部注释里；本页只负责
+ * ① 从组件注册表里挑出已实现项 ② 按 WinUI 模板的固定卡片尺寸 / 12px 间距排网格。
+ *
+ * 几何来源（同参考图）：
+ *   - 列：AllControlsPage.xaml 的 `GridView`（WideLayout 固定 300px 卡片 + 换列，
+ *     NarrowLayout 单列拉伸）→ `repeat(auto-fill, 300px)` / `minmax(0, 1fr)`
+ *   - 间距：IndentedGridViewItemStyle 的 `Margin 12,0,0,12` → gap 12
+ *   - 断点：WideLayout 的 `Breakpoint640Plus` = 640px = Uno 的 sm（40rem）
+ *   - 标题：WinUI Gallery 页头 `TitleTextBlockStyle`（28 SemiBold）量级，
+ *     这里取文档站正文 `<h1>` 同档（docs-prose：fontSizeHero800 / 32 + Semibold），
+ *     让 Overview 与各组件页的页标题视觉一致。
+ */
+import { componentNavGroups } from '~/data/components-nav'
+
 definePageMeta({
   layout: 'components',
 })
+
+/**
+ * 卡片列表 = 注册表里的已实现项，顺序与侧边栏一致（分组顺序 → 组内顺序）。
+ * `implemented` 为 true 的条目在类型上必须带 `summary` / `icon`，故这里不会出现半成品卡片。
+ */
+const cards = componentNavGroups.flatMap((group) =>
+  group.items.flatMap((item) => (item.implemented ? [{ ...item, palette: group.palette }] : [])),
+)
 </script>
 
 <template>
-  <div class="min-h-[50vh] flex items-center justify-center">
-    <p class="text-colorNeutralForeground3 text-sm">（故事文案 · 待补充）</p>
+  <div>
+    <header>
+      <h1 class="docs-components-overview__title">组件总览</h1>
+      <p class="docs-components-overview__lead">
+        已实现 {{ cards.length }} 个组件，点击卡片查看用法、示例与 API。
+      </p>
+    </header>
+
+    <ul class="docs-component-grid">
+      <li
+        v-for="card in cards"
+        :key="card.slug"
+      >
+        <ComponentCard
+          :to="`/components/${card.slug}`"
+          :name="card.name"
+          :summary="card.summary"
+          :icon="card.icon"
+          :palette="card.palette"
+        />
+      </li>
+    </ul>
   </div>
 </template>
+
+<style scoped>
+/* 页标题与引导句：与 docs-prose 的 h1 / p 同档（assets/docs-prose.css） */
+.docs-components-overview__title {
+  font-size: var(--fontSizeHero800); /* 32 */
+  line-height: var(--lineHeightHero800); /* 40 */
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-components-overview__lead {
+  margin-top: var(--spacingVerticalS);
+  font-size: var(--fontSizeBase300); /* 14 */
+  line-height: var(--lineHeightBase300); /* 20 */
+  color: var(--colorNeutralForeground2);
+}
+
+/*
+ * 卡片网格：窄屏单列（NarrowLayout，卡片自身拉伸），≥640px 起固定 300px 卡片、
+ * 按可用宽度自动换列（WideLayout 的 GridView 行为）。
+ * 列表标记与缩进由 presetWind4 的 preflight 抹平（`ul { list-style: none }` + `* { padding: 0 }`），
+ * 这里不再重复复位。
+ */
+.docs-component-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacingHorizontalM); /* 卡片之间横竖各 12 */
+  margin-top: var(--spacingVerticalL); /* 与 Gallery 的 GridView Padding 上 16 同档 */
+}
+
+@media (min-width: 40rem) {
+  .docs-component-grid {
+    grid-template-columns: repeat(auto-fill, 300px);
+  }
+}
+</style>
