@@ -8,7 +8,7 @@
 >
 > 版本范围说明：0.1.0-rc.1 收口**通用 WinUI 控件**；0.3.0-rc.1 收口**能被用起来**（多语言、文档站、npm 发布）；0.4.0 起按本文件末段拆分推进，0.9.0-rc.1 以 Explorer 仿真验收，0.9 → 1.0.0 为生产版前的收尾窗口。
 
-- [ ] 0. 收尾 Input：补齐 password / textarea 形态、大小与有效性状态，跑通测试与文档 —— **已移入 0.4.0（见文末 0.4.5）**，在此保留仅为编号连续
+- [x] 0. 收尾 Input：补齐 password / textarea 形态、大小与有效性状态，跑通测试与文档 —— **已由 0.4.5 落地（含 header / description）**，在此保留仅为编号连续
 
 ## Wave 1 · 核心表单（最高频，先形成"数据录入"闭环）
 
@@ -115,6 +115,9 @@
 | 0.4.6 | `ToggleButton` / `ToggleGroup`（Button 的 `selected` / `aria-pressed` 可直接迁移）                                     | S 1      | 键盘可达；分组单选 / 多选语义                                                                                                   |
 | 0.4.7 | `Select`（复用 reka Select / Listbox）                                                                                 | M 2.5    | 与 Combobox 的差异（不可编辑、无文本搜索）写入文档                                                                              |
 | 0.4.8 | 收尾：刷新 `packages/ui/README.md`（现仅列 Button / Input / Combobox 三个，已严重过期）；处理 `apps/playground` 占位包 | 0.5      | —                                                                                                                               |
+
+> **0.4.5 已落地**：Input 收尾（password / textarea / header / description，含「显示」按钮、按住 `Alt+F8` 显示与掩码状态下的复制拦截）。
+> 规格源、掩码字形与复制拦截的 Web 取舍写在 `packages/ui/src/input/input.vue` 的契约注释，示例与 API 表见 `apps/docs/content/components/input.md`；本文档第 0 项已勾掉。
 
 ## 0.5.0 · Explorer 骨架（≈ 17 点组件 + 11 点文档站）
 

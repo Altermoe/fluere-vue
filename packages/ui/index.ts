@@ -75,6 +75,7 @@ export type {
   FluereInfoBarSeverity,
 } from './src/infobar/types'
 export type { FluereInputProps } from './src/input/input.vue'
+export type { FluerePasswordRevealMode } from './src/input/types'
 export type {
   FluereNumberBoxProps,
   FluereNumberBoxSpinButtonPlacementMode,

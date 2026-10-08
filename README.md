@@ -79,7 +79,7 @@ import { FluereButton } from '@fluere-vue/ui'
 | `FluereInfoBar`                          | InfoBar                  | 已完成 |
 | `FluereProgressBar`                      | ProgressBar              | 已完成 |
 | `FluereProgressRing`                     | ProgressRing             | 已完成 |
-| `FluereInput`                            | TextBox                  | 开发中 |
+| `FluereInput`                            | TextBox / PasswordBox    | 已完成 |
 | `FluereTooltip`                          | ToolTip / ToolTipService | 已完成 |
 | `FluereScrollView`                       | ScrollView               | 开发中 |
 

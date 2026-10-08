@@ -53,6 +53,34 @@ describe('SSR 兼容性冒烟测试', () => {
     expect(html).toContain('fui-input')
   })
 
+  it('FluereInput 的密码 / 标题 / 多行形态可服务端渲染', async () => {
+    // 密码：服务端就该渲染掩码串（真值不进 HTML）；显示按钮要等挂载后量到宽度才出现
+    const passwordApp = createSSRApp({
+      render: () =>
+        h(FluereInput, {
+          type: 'password',
+          passwordChar: '#',
+          header: '密码',
+          description: '至少 8 位',
+          modelValue: 'secret',
+        }),
+    })
+    const passwordHtml = await renderToString(passwordApp)
+    expect(passwordHtml).toContain('fui-input__header')
+    expect(passwordHtml).toContain('fui-input__description')
+    expect(passwordHtml).toContain('value="######"')
+    expect(passwordHtml).not.toContain('value="secret"')
+    expect(passwordHtml).not.toContain('fui-input__reveal')
+
+    // 多行：渲染 textarea
+    const multilineApp = createSSRApp({
+      render: () => h(FluereInput, { multiline: true, rows: 4, modelValue: '多行' }),
+    })
+    const multilineHtml = await renderToString(multilineApp)
+    expect(multilineHtml).toContain('<textarea')
+    expect(multilineHtml).toContain('rows="4"')
+  })
+
   it('FluereCheckbox 可服务端渲染（复用 reka CheckboxRoot + VueUse，回归无浏览器 API 依赖）', async () => {
     const html = await renderServer(FluereCheckbox, '接收通知')
     expect(html).toContain('fui-checkbox')
