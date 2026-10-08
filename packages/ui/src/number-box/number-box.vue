@@ -381,7 +381,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
       </template>
     </span>
 
-    <!-- DescriptionPresenter：SystemControlDescriptionTextForegroundBrush → colorNeutralForeground2 -->
+    <!-- DescriptionPresenter：SystemControlDescriptionTextForegroundBrush → colorNeutralForeground3 -->
     <span
       v-if="hasDescription"
       :id="descriptionId"
@@ -430,11 +430,28 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
 /*            rest      TextControlButtonBackground（未定义 → 透明）     */
 /*            hover     SubtleFillColorSecondary → colorSubtleBackgroundHover */
 /*            pressed   SubtleFillColorTertiary  → colorSubtleBackgroundPressed */
-/*            前景      TextFillColorSecondary/Primary/Tertiary          */
-/*                      → colorNeutralForeground2 / 1 / 3                */
 /*            边框      ControlFillColorTransparent（恒透明）            */
+/*   前景     TextControlButtonForeground                               */
+/*              = TextFillColorSecondaryBrush = #9E000000（62% 黑 →      */
+/*                白底合成 #616161）→ colorNeutralForeground3（ΔRGB 0，  */
+/*                与 TextControlPlaceholderForeground 同一支画刷）       */
+/*            …ForegroundPointerOver 与 rest 同值 → 悬停只换底色不变色   */
+/*            …ForegroundPressed = TextFillColorTertiaryBrush            */
+/*              = #72000000（45% 黑 → 白底 #8D8D8D）→                   */
+/*                colorNeutralForeground4 #707070（ΔRGB 29，中性前景     */
+/*                梯度里最近的一档；与 FluereInput 显示按钮同一套映射）  */
+/*   指示器   NumberBoxPopupIndicatorForeground                         */
+/*              = TextFillColorSecondaryBrush → colorNeutralForeground3  */
 /*   标题     TextControlHeaderForeground / …Disabled                   */
 /*   说明     SystemControlDescriptionTextForegroundBrush                */
+/*              = SystemControlPageTextBaseMediumBrush                  */
+/*                = SystemBaseMediumColor #99000000（60% 黑 → 白底       */
+/*                  #666666）→ colorNeutralForeground3 #616161（ΔRGB 5） */
+/*                                                                     */
+/* 真实浏览器实测（隔离 Vite + Playwright + 系统 Chrome，              */
+/* getComputedStyle 读前景色，明暗两套）：                               */
+/*   rest / hover / 指示器 / 说明   #616161（深色 #adadad）              */
+/*   pressed                        #707070（深色 #999999）              */
 /*                                                                     */
 /* 三处 Web 侧补充（WinUI 没有、但不影响观感与语义）：                    */
 /*   1. 输入框右侧的文本留白：按钮绝对定位在输入框之上，WinUI 允许文本     */
@@ -515,7 +532,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
   border: none;
   border-radius: var(--borderRadiusMedium); /* CornerRadius = ControlCornerRadius 4 */
   background-color: var(--colorSubtleBackground); /* TextControlButtonBackground → 透明 */
-  color: var(--colorNeutralForeground2); /* TextControlButtonForeground */
+  color: var(--colorNeutralForeground3); /* TextControlButtonForeground */
   cursor: default;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -535,7 +552,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
   inset-inline-end: 8px; /* NumberBoxPopupIndicatorMargin 0,0,8,0 */
   display: flex;
   align-items: center;
-  color: var(--colorNeutralForeground2); /* NumberBoxPopupIndicatorForeground */
+  color: var(--colorNeutralForeground3); /* NumberBoxPopupIndicatorForeground */
   pointer-events: none;
 }
 
@@ -567,7 +584,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
   border: none;
   border-radius: var(--borderRadiusMedium);
   background-color: var(--colorSubtleBackground);
-  color: var(--colorNeutralForeground2);
+  color: var(--colorNeutralForeground3); /* RepeatButtonForeground */
   cursor: default;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -584,7 +601,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
 .fui-number-box__spin-button:not(:disabled):active,
 .fui-number-box__popup-button:not(:disabled):active {
   background-color: var(--colorSubtleBackgroundPressed); /* SubtleFillColorTertiary */
-  color: var(--colorNeutralForeground3); /* TextControlButtonForegroundPressed */
+  color: var(--colorNeutralForeground4); /* TextControlButtonForegroundPressed */
 }
 .fui-number-box__spin-button:disabled,
 .fui-number-box__popup-button:disabled {
@@ -601,7 +618,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
 /* ---- 说明文本（DescriptionPresenter） ---- */
 .fui-number-box__description {
   margin-block-start: var(--spacingVerticalXS);
-  color: var(--colorNeutralForeground2); /* SystemControlDescriptionTextForegroundBrush */
+  color: var(--colorNeutralForeground3); /* SystemControlDescriptionTextForegroundBrush */
   font-size: var(--fontSizeBase200);
   line-height: var(--lineHeightBase200);
 }

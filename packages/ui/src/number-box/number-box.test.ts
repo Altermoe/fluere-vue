@@ -455,7 +455,7 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
     expect(button).toContain('margin-inline: 4px')
     expect(button).toContain('border-radius: var(--borderRadiusMedium)')
     expect(button).toContain('background-color: var(--colorSubtleBackground)')
-    expect(button).toContain('color: var(--colorNeutralForeground2)')
+    expect(button).toContain('color: var(--colorNeutralForeground3)')
     expect(rules.get('.fui-number-box__spin-button--decrease') ?? '').toContain(
       'margin-inline-start: 0',
     )
@@ -467,7 +467,7 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
     )
     const pressed = rules.get('.fui-number-box__spin-button:not(:disabled):active') ?? ''
     expect(pressed).toContain('background-color: var(--colorSubtleBackgroundPressed)')
-    expect(pressed).toContain('color: var(--colorNeutralForeground3)')
+    expect(pressed).toContain('color: var(--colorNeutralForeground4)')
     expect(rules.get('.fui-number-box__spin-button:disabled') ?? '').toContain(
       'color: var(--colorNeutralForegroundDisabled)',
     )
@@ -476,7 +476,7 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
   it('紧凑指示器：NumberBoxPopupIndicatorMargin 0,0,8,0 + TextFillColorSecondary', () => {
     const indicator = rules.get('.fui-number-box__indicator') ?? ''
     expect(indicator).toContain('inset-inline-end: 8px')
-    expect(indicator).toContain('color: var(--colorNeutralForeground2)')
+    expect(indicator).toContain('color: var(--colorNeutralForeground3)')
     expect(indicator).toContain('pointer-events: none')
   })
 
@@ -497,11 +497,12 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
     expect(button).toContain('width: 36px')
     expect(button).toContain('height: 36px')
     expect(button).toContain('border-radius: var(--borderRadiusMedium)')
+    expect(button).toContain('color: var(--colorNeutralForeground3)')
   })
 
   it('说明文本：SystemControlDescriptionTextForegroundBrush', () => {
     expect(rules.get('.fui-number-box__description') ?? '').toContain(
-      'color: var(--colorNeutralForeground2)',
+      'color: var(--colorNeutralForeground3)',
     )
   })
 
