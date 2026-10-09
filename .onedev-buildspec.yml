@@ -2,7 +2,7 @@ version: 53
 
 # CI（只做持续集成，不做部署）。
 #
-# 结构：check / test / build 三个**并行** job，共享同一份 pnpm 缓存（key=pnpm），
+# 结构：check / test / build 三个**并行** job，共享同一份 pnpm store 缓存（key=pnpm-store），
 # 任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
 # （apps/docs/.output/public）发布成 artifact，供后续 CD 复用。
 #
