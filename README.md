@@ -23,13 +23,13 @@ FluereVue 想抹平这层距离。
 
 结果就是：一眼能看出是网页，用起来像"丐版"。FluereVue 要做的，就是把 Web 版丢掉的那些体验细节，一项一项捡回来。
 
-| 对比维度 | 常见的 Fluent 系 Web 库            | FluereVue                          |
-| -------- | ---------------------------------- | ---------------------------------- |
-| 设计基准 | Fluent Design 2 Web 规范           | WinUI 3 / Windows App SDK 原生控件 |
-| 动效     | 简化版，时长/缓动与 Windows 不一致 | 逐项对照 WinUI 控件模板动画        |
-| 组件细节 | 弱化（圆角、描边、状态层级等）     | 逐像素还原各状态                   |
-| 材质     | 无或近似                           | Mica / Acrylic 的 Web 近似实现     |
-| 无障碍   | 通用 Web 实现                      | 还原焦点矩形、对比度与 aria 语义   |
+| 对比维度 | 常见的 Fluent 系 Web 库     | FluereVue                      |
+| ---- | ---------------------- | ------------------------------ |
+| 设计基准 | Fluent Design 2 Web 规范 | WinUI 3 / Windows App SDK 原生控件 |
+| 动效   | 简化版，时长/缓动与 Windows 不一致 | 逐项对照 WinUI 控件模板动画              |
+| 组件细节 | 弱化（圆角、描边、状态层级等）        | 逐像素还原各状态                       |
+| 材质   | 无或近似                   | Mica / Acrylic 的 Web 近似实现      |
+| 无障碍  | 通用 Web 实现              | 还原焦点矩形、对比度与 aria 语义            |
 
 ## 特性
 
@@ -65,8 +65,8 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 组件进度
 
-| 组件                                     | 对应 WinUI 3 控件        | 状态   |
-| ---------------------------------------- | ------------------------ | ------ |
+| 组件                                       | 对应 WinUI 3 控件            | 状态  |
+| ---------------------------------------- | ------------------------ | --- |
 | `FluereButton`                           | Button / ToggleButton    | 已完成 |
 | `FluereCheckbox`                         | CheckBox                 | 已完成 |
 | `FluereToggleSwitch`                     | ToggleSwitch             | 已完成 |
@@ -101,14 +101,14 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 项目结构
 
-| 包                         | 职责                                                   |
-| -------------------------- | ------------------------------------------------------ |
+| 包                          | 职责                                        |
+| -------------------------- | ----------------------------------------- |
 | `packages/designs`         | 设计令牌唯一事实源，产出 `tokens.css` 与 UnoCSS preset |
-| `packages/themes`          | 主题适配层，对外提供 `presetFluere`                    |
-| `packages/ui`              | 组件实现（自包含样式）                                 |
-| `packages/icons`           | 生成自 Segoe Fluent Icons 的 Vue 图标组件              |
-| `packages/hooks` / `utils` | 共享 Hooks 与工具函数                                  |
-| `apps/docs` / `playground` | 文档站与实验场                                         |
+| `packages/themes`          | 主题适配层，对外提供 `presetFluere`                 |
+| `packages/ui`              | 组件实现（自包含样式）                               |
+| `packages/icons`           | 生成自 Segoe Fluent Icons 的 Vue 图标组件         |
+| `packages/hooks` / `utils` | 共享 Hooks 与工具函数                            |
+| `apps/docs` / `playground` | 文档站与实验场                                   |
 
 ## 路线图
 
@@ -127,21 +127,43 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 持续集成与发布
 
-CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）。推送到 `main` 或推送 `v*` tag 会**并行**触发三个 job（共享同一份 pnpm 缓存）：
+> 注：本节出现的 `${VAR}` 为别名引用——实际值维护在根目录 `.env.local`（已 git 忽略、禁止入库），不可达的同格式示例见 `.env.example`。
 
-| job     | 内容                                                                                                             |
-| ------- | ---------------------------------------------------------------------------------------------------------------- |
-| `check` | 构建规范自校验（`scripts/lint-buildspec.py`）→ 版本一致性 → `pnpm check`（lint / format / tsc / i18n / version） |
-| `test`  | `pnpm test`（vitest 全量）                                                                                       |
-| `build` | `pnpm docs:generate` 预渲染文档站并校验产物，把 `apps/docs/.output/public` 发布成 artifact（供后续 CD 直接取用） |
+CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）。推送到 `main` 或推送 `v*` tag 会**并行**触发三个 job（共享同一份 pnpm 缓存）；推 tag 时再多一个 `deploy`，它等前三个 job 全绿后才开始：
+
+| job      | 触发                | 内容                                                                                               |
+| -------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `check`  | `main` / `v*` tag | 构建规范自校验（`scripts/lint-buildspec.py`）→ 版本一致性 → `pnpm check`（lint / format / tsc / i18n / version） |
+| `test`   | `main` / `v*` tag | `pnpm test`（vitest 全量）                                                                           |
+| `build`  | `main` / `v*` tag | `pnpm docs:generate` 预渲染文档站并校验产物，把 `apps/docs/.output/public` 发布成 artifact                       |
+| `deploy` | 仅 `v*` tag        | 等 check / test / build 全绿后，取 build 的 artifact 部署成本机 nginx 容器（见下节）                                |
 
 约定：
 
-- **版本号唯一事实源是仓库根 `package.json`**：`pnpm version:sync` 把版本写进全部子包，`pnpm version:check` 校验一致性；推 tag 时 CI 额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。文档站页面版本号读 `runtimeConfig.public.docsVersion`（CI 由 tag 注入 `NUXT_PUBLIC_DOCS_VERSION`，本地回退根版本），不要在页面里硬编码。
+- **版本号唯一事实源是仓库根** **`package.json`**：`pnpm version:sync` 把版本写进全部子包，`pnpm version:check` 校验一致性；推 tag 时 CI 额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。文档站页面版本号读 `runtimeConfig.public.docsVersion`（CI 由 tag 注入 `NUXT_PUBLIC_DOCS_VERSION`，本地回退根版本），不要在页面里硬编码。
 - `pnpm-lock.yaml` **必须入库**：CI 用 `--frozen-lockfile` 复现依赖树，缓存键也取自它 + `pnpm-workspace.yaml` + `.npmrc`。
-- 出网代理放在 OneDev 构建密钥 `CI_HTTP_PROXY`（见 [scripts/ci-env.sh](./scripts/ci-env.sh)）：任务容器里的 `localhost` 指向容器自身，宿主代理必须写成宿主可达地址（生产实测为 `http://172.17.0.1:7890`），`none` / 空值表示直连。
-- 远端：`github` 为公开仓库，`onedev` = `https://git.nahida.space/fluere-vue.git`（生产 CI），`onedev-local` = `http://localhost:6610/fluere-vue.git`（本地 OneDev 演练）。
+- 出网代理放在 OneDev 构建密钥 `CI_HTTP_PROXY`（见 [scripts/ci-env.sh](./scripts/ci-env.sh)）：任务容器里的 `localhost` 指向容器自身，宿主代理必须写成宿主可达地址（生产实测为 `${CI_HTTP_PROXY}`），`none` / 空值表示直连。
+- 远端：`github` 为公开仓库，`onedev` = `${ONEDEV_REMOTE}`（生产 CI），`onedev-local` = `http://localhost:6610/fluere-vue.git`（本地 OneDev 演练）。
 - 本地复现 CI：`pnpm check`、`pnpm test`、`pnpm docs:generate`、`pnpm lint:buildspec`。
+
+### 持续部署（CD）
+
+只有推 `v*` tag 才会部署，`main` 上的提交只做验证。deploy job 里跑 [scripts/deploy.sh](./scripts/deploy.sh)，它通过 job 容器挂进来的**宿主 docker socket** 操作宿主 docker（job executor 是 `ServerDockerExecutor` + `mountDockerSock`），因此 `docker run -v` 的路径按宿主解析。
+
+产物布局（两个 OneDev 实例用同一套值，所以不需要额外密钥）：
+
+```
+${DEPLOY_ROOT}/
+├── nginx/                    # fluere-vue.conf（含 security-headers.inc），每次部署从仓库同步
+├── releases/<tag>/           # 站点静态产物，保留最近 5 个（KEEP_RELEASES）
+└── current -> releases/<tag> # 原子切换的符号链接，回滚就是切回上一个
+```
+
+- 容器：镜像 `${NGINX_IMAGE}`，名字 `${DEPLOY_CONTAINER}`，**只发布到宿主回环地址（`${DEPLOY_BIND}`）**；容器内 nginx 只 `listen 80` 并直出 `current`。TLS 证书、域名、HSTS 一律交给上级运维系统（反向代理）处理，仓库里不出现证书配置。
+- 配置：[deploy/nginx/fluere-vue.conf](./deploy/nginx/fluere-vue.conf)（缓存策略：`/_nuxt/` 一年 immutable、HTML 与 `_payload.json` 不缓存、`__nuxt_content/*/sql_dump.txt` 不缓存）+ [security-headers.inc](./deploy/nginx/security-headers.inc)。配置里的 `__DEPLOY_ROOT__` 由脚本替换，所以改根目录不用改两份。
+- 健康检查（不过就回滚 `current` 并以非零码退出）：首页字节与 release 的 `index.html` 一致 + 首页出现本次 tag 版本号 + 未知路径返回 404。
+- 本地演练（不需要 CI）：先 `pnpm docs:generate`，再 `sh scripts/deploy.sh v0.0.1`；脚本默认读 `site/`，本机演练时用 `SITE_DIR=apps/docs/.output/public` 指向本地产物。
+- 部署根目录由 docker 以 root 创建，查看/清理要 `sudo`（或 `docker run --rm -v "${DEPLOY_ROOT}:/d" alpine ...`）。回滚：`docker run --rm -v "${DEPLOY_ROOT}:/d" -w /d alpine:3.22 ln -sfn releases/<旧 tag> current`。
 
 ## 许可证
 

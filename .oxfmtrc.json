@@ -22,6 +22,7 @@
     "*.timestamp-*.*",
     "temp",
     ".dsh",
+    "deploy/nginx",
     "packages/designs/generated",
     "packages/designs/data",
     "packages/icons/generated"

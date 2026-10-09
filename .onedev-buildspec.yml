@@ -1,10 +1,13 @@
 version: 53
 
-# CI（只做持续集成，不做部署）。
+# CI/CD。
 #
 # 结构：check / test / build 三个**并行** job，共享同一份 pnpm store 缓存（key=pnpm-store），
 # 任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
-# （apps/docs/.output/public）发布成 artifact，供后续 CD 复用。
+# （apps/docs/.output/public）发布成 artifact。
+# 第四个 job deploy 只在推 tag 时跑：依赖前三个 job，取 build 的 artifact 部署成本机的
+# nginx 容器（只 listen 127.0.0.1:8080，TLS 与域名交给外层反代，见 docs/../README 的
+# 「持续集成与发布」一节与 scripts/deploy.sh）。
 #
 # 约定（改本文件前先读）：
 # - OneDev 的**每个 step 都跑在全新容器里**：上一个 step 装的 pnpm 与环境变量
@@ -13,10 +16,11 @@ version: 53
 #   tag 推送时额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。
 # - 出网代理走构建密钥 CI_HTTP_PROXY（空值 / none = 直连），见 scripts/ci-env.sh。
 #   容器内 localhost 指向容器自身，代理必须填宿主可达地址。
+#   deploy job 不需要代理：它只通过挂进来的宿主 docker socket 干活，拉镜像由宿主 daemon 做。
 # - node 镜像固定 26-alpine：@nuxt/content 的原生 sqlite 连接器要求 Node >= 22.13，
 #   26 已正式版且自带 node:sqlite。Node 25+ 不再内置 corepack，pnpm 由
 #   scripts/ci-bootstrap.sh 按 package.json 的 packageManager 装精确版本。
-# - 只把「会变的值」放进构建密钥；镜像版本、缓存 key 等稳定值留在本文件。
+# - 只把「会变的值」放进构建密钥；镜像版本、缓存 key、部署根目录 / 端口等稳定值留在本文件。
 # - 缓存只收 pnpm store（下载缓存），**不收 node_modules**：pnpm 的 workspace 链接
 #   （node_modules/@fluere-vue/*、.pnpm/node_modules/*）是指向缓存目录之外的符号链接，
 #   OneDev 解包时的符号链接逃逸防护会直接判缓存恢复失败（Tar entry symbol link escape
@@ -213,6 +217,66 @@ jobs:
       - type: BranchUpdateTrigger
         branches: main
         userMatch: anyone
+      - type: TagCreateTrigger
+        tags: v*
+    retryCondition: never
+    maxRetries: 3
+    retryDelay: 30
+    timeout: 3600
+
+  # CD：把 build 产出的静态产物部署成本机的一个 nginx 容器（步骤细节见 scripts/deploy.sh 顶部注释）。
+  #
+  # 为什么用 docker CLI 而不是 OneDev 的 RunContainerStep / services：
+  # - RunContainerStep 的 schema 没有 ports 字段，services 也没有端口与卷挂载，
+  #   两者都无法把端口发布到宿主，只有 `docker run` 能；
+  # - job executor 是 ServerDockerExecutor 且 mountDockerSock=true，job 容器里能访问宿主的
+  #   /var/run/docker.sock，于是 `docker run -v` 的路径按**宿主**解析——正好用它写 releases
+  #   目录、起 nginx 容器。反过来说 job 容器里没有部署目录，脚本里所有宿主侧写操作都通过
+  #   挂载了宿主目录的 helper 容器完成。
+  # - 镜像固定 docker:29-cli（与本机 daemon 29.7.2 同代）；CLI 会向下协商 API 版本，
+  #   daemon 更旧的实例同样可用。
+  # 触发刻意只留 tag：分支推送只验证不部署，避免 main 上的任何提交直接上生产。
+  - name: deploy
+    jobExecutor: docker
+    steps:
+      - type: CheckoutStep
+        name: checkout
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+        optional: false
+      - type: CommandStep
+        name: deploy docs site to nginx
+        runInContainer: true
+        image: docker:29-cli
+        interpreter:
+          type: PosixInterpreter
+          shell: sh
+          commands: |
+            set -e
+            sh scripts/deploy.sh "$DEPLOY_TAG"
+        envVars:
+          - name: DEPLOY_TAG
+            value: '@tag@'
+        runAs: 0:0
+        useTTY: false
+        condition: SUCCESSFUL
+        optional: false
+    jobDependencies:
+      # check / test / build 全部成功才部署；只有 build 需要取 artifact。
+      - jobName: check
+        requireSuccessful: true
+      - jobName: test
+        requireSuccessful: true
+      - jobName: build
+        requireSuccessful: true
+        artifacts: '**'
+        # artifact 内的路径相对于 build 的 sourcePath（apps/docs/.output/public），
+        # 落到 site/ 下即站点根（site/index.html、site/_nuxt/...）。
+        destinationPath: site
+    triggers:
       - type: TagCreateTrigger
         tags: v*
     retryCondition: never

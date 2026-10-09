@@ -83,6 +83,22 @@ CONDITION_VALUES = {
 # `uploadStrategy` on SetupCacheStep -> UploadStrategy.
 UPLOAD_STRATEGY_VALUES = {"UPLOAD_IF_NOT_EXACT_MATCH", "UPLOAD_IF_CHANGED"}
 
+# Job-level fields (io.onedev.server.buildspec.job.Job). `maxRetries` / `retryDelay`
+# are not in the schema's `properties` block: they show up in a conditional `if/then`
+# (required only when retryCondition != never), so they must be listed here manually.
+JOB_FIELDS = {
+    "name", "jobExecutor", "steps", "triggers", "jobDependencies",
+    "projectDependencies", "requiredServices", "paramSpecs", "postBuildActions",
+    "timeout", "retryCondition", "maxRetries", "retryDelay", "sequentialGroup",
+    "includeUpstreamWhenRebuild", "includeDownstreamWhenRebuild",
+}
+
+# Fields of a `jobDependencies` entry (artifacts are retrieved into the dependent job).
+JOB_DEPENDENCY_FIELDS = {
+    "jobName", "requireSuccessful", "artifacts", "destinationPath",
+    "paramMatrix", "excludeParamMaps",
+}
+
 # Allowed fields per known step (base Step fields + that step's own). An entry
 # with None means "don't warn on unknown fields" (plugin steps we didn't enumerate).
 STEP_FIELDS = {
@@ -194,6 +210,12 @@ class SpecLinter:
                 continue
             name = job.get("name", "<unnamed>")
             loc = f"{self.path} (job '{name}')"
+            for field in job:
+                if field not in JOB_FIELDS:
+                    self.rep.warn(
+                        loc,
+                        f"unknown job field '{field}' "
+                        f"(allowed: {', '.join(sorted(JOB_FIELDS))})")
             if not isinstance(job.get("steps"), list):
                 self.rep.error(loc, "'steps' must be a list")
             else:
@@ -202,8 +224,27 @@ class SpecLinter:
             if isinstance(job.get("triggers"), list):
                 for trig in job["triggers"]:
                     self.check_trigger(trig, loc)
+            if job.get("jobDependencies") is not None:
+                self.check_job_dependencies(job["jobDependencies"], loc)
 
         self._check_interpolation_balance()
+
+    def check_job_dependencies(self, deps, jobloc):
+        if not isinstance(deps, list):
+            self.rep.error(jobloc, "'jobDependencies' must be a list")
+            return
+        for dep in deps:
+            if not isinstance(dep, dict):
+                self.rep.error(jobloc, "each job dependency must be a mapping")
+                continue
+            for field in dep:
+                if field not in JOB_DEPENDENCY_FIELDS:
+                    self.rep.warn(
+                        jobloc,
+                        f"unknown job dependency field '{field}' "
+                        f"(allowed: {', '.join(sorted(JOB_DEPENDENCY_FIELDS))})")
+            if not dep.get("jobName"):
+                self.rep.error(jobloc, "a job dependency is missing 'jobName'")
 
     def check_step(self, step, jobloc):
         if not isinstance(step, dict):
