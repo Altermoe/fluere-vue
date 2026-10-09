@@ -5,6 +5,8 @@ Microsoft
 
 # deps
 node_modules
+# pnpm store（CI 里作为缓存目录，不进仓库）
+.pnpm-store
 
 # build
 dist
