@@ -23,13 +23,13 @@ FluereVue 想抹平这层距离。
 
 结果就是：一眼能看出是网页，用起来像"丐版"。FluereVue 要做的，就是把 Web 版丢掉的那些体验细节，一项一项捡回来。
 
-| 对比维度 | 常见的 Fluent 系 Web 库     | FluereVue                      |
-| ---- | ---------------------- | ------------------------------ |
-| 设计基准 | Fluent Design 2 Web 规范 | WinUI 3 / Windows App SDK 原生控件 |
-| 动效   | 简化版，时长/缓动与 Windows 不一致 | 逐项对照 WinUI 控件模板动画              |
-| 组件细节 | 弱化（圆角、描边、状态层级等）        | 逐像素还原各状态                       |
-| 材质   | 无或近似                   | Mica / Acrylic 的 Web 近似实现      |
-| 无障碍  | 通用 Web 实现              | 还原焦点矩形、对比度与 aria 语义            |
+| 对比维度 | 常见的 Fluent 系 Web 库            | FluereVue                          |
+| -------- | ---------------------------------- | ---------------------------------- |
+| 设计基准 | Fluent Design 2 Web 规范           | WinUI 3 / Windows App SDK 原生控件 |
+| 动效     | 简化版，时长/缓动与 Windows 不一致 | 逐项对照 WinUI 控件模板动画        |
+| 组件细节 | 弱化（圆角、描边、状态层级等）     | 逐像素还原各状态                   |
+| 材质     | 无或近似                           | Mica / Acrylic 的 Web 近似实现     |
+| 无障碍   | 通用 Web 实现                      | 还原焦点矩形、对比度与 aria 语义   |
 
 ## 特性
 
@@ -65,8 +65,8 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 组件进度
 
-| 组件                                       | 对应 WinUI 3 控件            | 状态  |
-| ---------------------------------------- | ------------------------ | --- |
+| 组件                                     | 对应 WinUI 3 控件        | 状态   |
+| ---------------------------------------- | ------------------------ | ------ |
 | `FluereButton`                           | Button / ToggleButton    | 已完成 |
 | `FluereCheckbox`                         | CheckBox                 | 已完成 |
 | `FluereToggleSwitch`                     | ToggleSwitch             | 已完成 |
@@ -101,14 +101,14 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 项目结构
 
-| 包                          | 职责                                        |
-| -------------------------- | ----------------------------------------- |
+| 包                         | 职责                                                   |
+| -------------------------- | ------------------------------------------------------ |
 | `packages/designs`         | 设计令牌唯一事实源，产出 `tokens.css` 与 UnoCSS preset |
-| `packages/themes`          | 主题适配层，对外提供 `presetFluere`                 |
-| `packages/ui`              | 组件实现（自包含样式）                               |
-| `packages/icons`           | 生成自 Segoe Fluent Icons 的 Vue 图标组件         |
-| `packages/hooks` / `utils` | 共享 Hooks 与工具函数                            |
-| `apps/docs` / `playground` | 文档站与实验场                                   |
+| `packages/themes`          | 主题适配层，对外提供 `presetFluere`                    |
+| `packages/ui`              | 组件实现（自包含样式）                                 |
+| `packages/icons`           | 生成自 Segoe Fluent Icons 的 Vue 图标组件              |
+| `packages/hooks` / `utils` | 共享 Hooks 与工具函数                                  |
+| `apps/docs` / `playground` | 文档站与实验场                                         |
 
 ## 路线图
 
@@ -131,12 +131,12 @@ import { FluereButton } from '@fluere-vue/ui'
 
 CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）。推送到 `main` 或推送 `v*` tag 会**并行**触发三个 job（共享同一份 pnpm 缓存）；推 tag 时再多一个 `deploy`，它等前三个 job 全绿后才开始：
 
-| job      | 触发                | 内容                                                                                               |
-| -------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| job      | 触发              | 内容                                                                                                             |
+| -------- | ----------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `check`  | `main` / `v*` tag | 构建规范自校验（`scripts/lint-buildspec.py`）→ 版本一致性 → `pnpm check`（lint / format / tsc / i18n / version） |
-| `test`   | `main` / `v*` tag | `pnpm test`（vitest 全量）                                                                           |
+| `test`   | `main` / `v*` tag | `pnpm test`（vitest 全量）                                                                                       |
 | `build`  | `main` / `v*` tag | `pnpm docs:generate` 预渲染文档站并校验产物，把 `apps/docs/.output/public` 发布成 artifact                       |
-| `deploy` | 仅 `v*` tag        | 等 check / test / build 全绿后，取 build 的 artifact 部署成本机 nginx 容器（见下节）                                |
+| `deploy` | 仅 `v*` tag       | 等 check / test / build 全绿后，取 build 的 artifact 部署成本机 nginx 容器（见下节）                             |
 
 约定：
 
