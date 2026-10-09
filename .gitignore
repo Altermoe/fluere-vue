@@ -21,7 +21,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 package-lock.json
-pnpm-lock.yaml
+# pnpm-lock.yaml 必须入库：CI 依赖 --frozen-lockfile 复现依赖树，且缓存键取自它。
+# 只忽略其它包管理器的锁文件。
 yarn.lock
 debug.log
 

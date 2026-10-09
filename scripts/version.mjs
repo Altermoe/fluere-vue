@@ -59,23 +59,31 @@ function cmdSync(version) {
     console.log(`sync ${rel(path)}: ${before} -> ${version}`)
     changed += 1
   }
-  console.log(changed === 0 ? `已同步：全部 ${targets.length} 个子包均为 ${version}` : `已更新 ${changed}/${targets.length} 个子包 -> ${version}`)
+  console.log(
+    changed === 0
+      ? `已同步：全部 ${targets.length} 个子包均为 ${version}`
+      : `已更新 ${changed}/${targets.length} 个子包 -> ${version}`,
+  )
 }
 
 function cmdCheck(version, tag) {
   const problems = []
   const targets = collectTargets()
-  if (targets.length === 0) problems.push('未找到任何子包 package.json（检查 pnpm-workspace.yaml 的 packages 目录）')
+  if (targets.length === 0)
+    problems.push('未找到任何子包 package.json（检查 pnpm-workspace.yaml 的 packages 目录）')
 
   for (const path of targets) {
     const actual = readJson(path).version
-    if (actual !== version) problems.push(`${rel(path)}: ${actual} != 根 package.json 的 ${version}`)
+    if (actual !== version)
+      problems.push(`${rel(path)}: ${actual} != 根 package.json 的 ${version}`)
   }
 
   if (tag) {
     const expected = String(tag).replace(/^v/, '')
     if (expected !== version) {
-      problems.push(`git tag ${tag} 对应版本 ${expected}，与根 package.json 的 ${version} 不一致（发布前请先执行 pnpm version:sync 并提交）`)
+      problems.push(
+        `git tag ${tag} 对应版本 ${expected}，与根 package.json 的 ${version} 不一致（发布前请先执行 pnpm version:sync 并提交）`,
+      )
     } else {
       console.log(`tag 校验通过：${tag} -> ${version}`)
     }
@@ -86,7 +94,9 @@ function cmdCheck(version, tag) {
     for (const p of problems) console.error(`  - ${p}`)
     process.exit(1)
   }
-  console.log(`版本一致性检查通过：根版本 ${version}，子包 ${targets.length} 个${tag ? `，tag ${tag}` : ''}`)
+  console.log(
+    `版本一致性检查通过：根版本 ${version}，子包 ${targets.length} 个${tag ? `，tag ${tag}` : ''}`,
+  )
 }
 
 const [command, ...rest] = process.argv.slice(2)

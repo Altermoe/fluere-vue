@@ -1,12 +1,14 @@
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
-import { readFileSync } from 'node:fs'
 import { presetFluere } from '@fluere-vue/themes'
 import { presetWind4, type Preset } from 'unocss'
 
 /** 版本号事实源：仓库根 package.json（相对本配置文件定位，避免依赖 cwd）。 */
 const rootVersion = (
-  JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string }
+  JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
+    version: string
+  }
 ).version
 
 /**
