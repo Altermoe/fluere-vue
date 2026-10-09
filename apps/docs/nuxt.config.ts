@@ -1,7 +1,13 @@
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
 import { presetFluere } from '@fluere-vue/themes'
 import { presetWind4, type Preset } from 'unocss'
+
+/** 版本号事实源：仓库根 package.json（相对本配置文件定位，避免依赖 cwd）。 */
+const rootVersion = (
+  JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string }
+).version
 
 /**
  * 判断某条 optimizeDeps.include 条目是否能被逐级解析为真实模块。
@@ -112,6 +118,14 @@ export default defineNuxtConfig({
   },
   devServer: {
     port: 60727,
+  },
+  // 版本号单一事实源 = 仓库根 package.json（子包版本由 `pnpm version:sync` 同步）。
+  // CI 里由发布 tag 注入 NUXT_PUBLIC_DOCS_VERSION（形如 v0.1.0），本地/分支构建回退到根版本；
+  // 页面一律读 runtimeConfig.public.docsVersion，禁止再硬编码 vX.Y.Z。
+  runtimeConfig: {
+    public: {
+      docsVersion: String(process.env.NUXT_PUBLIC_DOCS_VERSION || rootVersion).replace(/^v/, ''),
+    },
   },
   app: {
     head: {

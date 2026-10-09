@@ -33,10 +33,14 @@
     "lint:ssr": "bash scripts/lint-ssr.sh",
     "i18n:check": "node scripts/i18n-check.mjs",
     "i18n:check:scan": "node scripts/i18n-check.mjs --scan",
+    "version:sync": "node scripts/version.mjs sync",
+    "version:check": "node scripts/version.mjs check",
+    "version:check-tag": "node scripts/version.mjs check --tag",
+    "lint:buildspec": "python3 scripts/lint-buildspec.py .onedev-buildspec.yml",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
     "tsc": "pnpm -r tsc",
-    "check": "pnpm lint && pnpm format && pnpm tsc && pnpm i18n:check",
+    "check": "pnpm lint && pnpm format && pnpm tsc && pnpm i18n:check && pnpm version:check",
     "check:fix": "pnpm lint:fix && pnpm format:fix && pnpm tsc"
   },
   "devDependencies": {

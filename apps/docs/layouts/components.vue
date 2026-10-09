@@ -7,6 +7,9 @@ const { open, toggle } = useDocsSidebar()
 const { t } = useDocsI18n()
 const localePath = useLocalePath()
 
+/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入） */
+const docsVersion = useRuntimeConfig().public.docsVersion
+
 /**
  * 路由加载态（写入方见 plugins/docs-route-loading.client.ts）：
  * 为 true 时用 DocsRouteSkeleton 覆盖 router-view 视口。
@@ -135,7 +138,7 @@ watch(
           </nav>
         </div>
         <div class="flex items-center gap-3 text-sm">
-          <span class="text-colorNeutralForeground3">v0.0.1</span>
+          <span class="text-colorNeutralForeground3">v{{ docsVersion }}</span>
           <!--
             GitHub 仓库入口：外链，语义与样式都是链接（无边框、无底色），
             图标用 GitHub 官方 Invertocat，实现与地址见 components/github-link.vue。

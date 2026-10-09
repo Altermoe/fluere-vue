@@ -13,6 +13,9 @@ const routeLoading = useDocsRouteLoading()
 const { t, tm } = useDocsI18n()
 const localePath = useLocalePath()
 
+/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入） */
+const docsVersion = useRuntimeConfig().public.docsVersion
+
 /** 顶部导航链接：标题随语种解析，链接按 locale 前缀化 */
 const navLinks = computed(() => [
   { label: t('nav.docs'), to: localePath('/components') },
@@ -101,7 +104,7 @@ const ctLinks = computed(() => [
                 </nav>
               </div>
               <div class="flex items-center gap-3 text-sm">
-                <span class="text-colorNeutralForeground3">v0.0.1</span>
+                <span class="text-colorNeutralForeground3">v{{ docsVersion }}</span>
                 <!-- 与 /components 布局同款：主题切换用组件库 Button，GitHub 入口是图标链接 -->
                 <GithubLink />
                 <LocaleSwitch />
