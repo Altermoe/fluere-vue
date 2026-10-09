@@ -214,39 +214,3 @@ jobs:
     retryDelay: 30
     timeout: 3600
 
-  # 临时：探测 CI 容器到宿主代理的可达地址（结论写入 CI_HTTP_PROXY 后即删除本 job）。
-  # 独立成 job 是为了手动触发，不影响 check / test / build 的触发语义。
-  - name: probe-network
-    jobExecutor: docker
-    steps:
-      - type: CommandStep
-        name: probe proxy candidates
-        runInContainer: true
-        image: node:26-alpine
-        interpreter:
-          type: PosixInterpreter
-          shell: sh
-          commands: |
-            for hp in localhost:7890 172.17.0.1:7890 host.docker.internal:7890; do
-              host=${hp%:*}; port=${hp#*:}
-              if nc -z -w 3 "$host" "$port" 2>/dev/null; then echo "TCP OPEN   $hp"; else echo "TCP CLOSED $hp"; fi
-            done
-            for u in http://localhost:7890 http://172.17.0.1:7890 http://host.docker.internal:7890; do
-              HTTP_PROXY="$u" HTTPS_PROXY="$u" NODE_USE_ENV_PROXY=1 node -e '
-                fetch("https://registry.npmjs.org/", { signal: AbortSignal.timeout(15000) })
-                  .then((r) => console.log("HTTP via " + process.env.HTTPS_PROXY + " -> " + r.status))
-                  .catch((e) => console.log("HTTP via " + process.env.HTTPS_PROXY + " -> FAIL " + (e.cause?.code || e.message)))
-              '
-            done
-            node -e '
-              fetch("https://registry.npmjs.org/", { signal: AbortSignal.timeout(15000) })
-                .then((r) => console.log("direct -> " + r.status))
-                .catch((e) => console.log("direct -> FAIL " + (e.cause?.code || e.message)))
-            '
-        runAs: 0:0
-        useTTY: false
-        condition: SUCCESSFUL
-        optional: false
-    retryCondition: never
-    maxRetries: 3
-    timeout: 600
