@@ -193,9 +193,15 @@ jobs:
             pnpm install --frozen-lockfile --store-dir .pnpm-store
             NUXT_PUBLIC_DOCS_VERSION="$CI_TAG" pnpm docs:generate
             du -sh apps/docs/.output/public
-            # tag 构建顺带断言版本号真的注入了产物，避免「tag 打了、页面还是旧版本」
+            # tag 构建顺带断言版本号真的注入了产物，避免「tag 打了、页面还是旧版本」；
+            # 第二条防回归：徽标曾渲染成 vv0.0.1（NUXT_PUBLIC_* 的覆盖绕过 config 里的去前缀），
+            # 现在归一在 useDocsVersion()，产物里不允许再出现重复前缀。
             if [ -n "${CI_TAG:-}" ]; then
               grep -q "v${CI_TAG#v}" apps/docs/.output/public/index.html
+              if grep -q "vv${CI_TAG#v}" apps/docs/.output/public/index.html; then
+                echo "[ci] 版本徽标出现重复前缀 vv${CI_TAG#v}" >&2
+                exit 1
+              fi
               echo "[ci] docs version rendered: v${CI_TAG#v}"
             fi
         envVars:
@@ -260,6 +266,12 @@ jobs:
         envVars:
           - name: DEPLOY_TAG
             value: '@tag@'
+          # 部署位置类私有值不进仓库（仓库公开）：真实值放 OneDev 构建密钥，两个实例各一份，
+          # 授权写 `on branch "**"`（分支与 tag 都匹配）。缺密钥会在此处直接失败。
+          - name: DEPLOY_ROOT
+            value: '@secret:DEPLOY_ROOT@'
+          - name: DEPLOY_BIND
+            value: '@secret:DEPLOY_BIND@'
         runAs: 0:0
         useTTY: false
         condition: SUCCESSFUL

@@ -150,7 +150,7 @@ CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）
 
 只有推 `v*` tag 才会部署，`main` 上的提交只做验证。deploy job 里跑 [scripts/deploy.sh](./scripts/deploy.sh)，它通过 job 容器挂进来的**宿主 docker socket** 操作宿主 docker（job executor 是 `ServerDockerExecutor` + `mountDockerSock`），因此 `docker run -v` 的路径按宿主解析。
 
-产物布局（两个 OneDev 实例用同一套值，所以不需要额外密钥）：
+产物布局：
 
 ```
 ${DEPLOY_ROOT}/
@@ -159,10 +159,11 @@ ${DEPLOY_ROOT}/
 └── current -> releases/<tag> # 原子切换的符号链接，回滚就是切回上一个
 ```
 
+- 私有值：`DEPLOY_ROOT` 与 `DEPLOY_BIND` 属于「部署位置」，**不写进仓库**——每个 OneDev 实例各建同名构建密钥（授权 `on branch "**"`，分支与 tag 都放行），deploy job 以 `@secret:` 注入；缺密钥会让构建直接失败。本机演练从被 gitignore 的 `.env.local` 读（格式见 [.env.example](./.env.example)）。
 - 容器：镜像 `${NGINX_IMAGE}`，名字 `${DEPLOY_CONTAINER}`，**只发布到宿主回环地址（`${DEPLOY_BIND}`）**；容器内 nginx 只 `listen 80` 并直出 `current`。TLS 证书、域名、HSTS 一律交给上级运维系统（反向代理）处理，仓库里不出现证书配置。
 - 配置：[deploy/nginx/fluere-vue.conf](./deploy/nginx/fluere-vue.conf)（缓存策略：`/_nuxt/` 一年 immutable、HTML 与 `_payload.json` 不缓存、`__nuxt_content/*/sql_dump.txt` 不缓存）+ [security-headers.inc](./deploy/nginx/security-headers.inc)。配置里的 `__DEPLOY_ROOT__` 由脚本替换，所以改根目录不用改两份。
 - 健康检查（不过就回滚 `current` 并以非零码退出）：首页字节与 release 的 `index.html` 一致 + 首页出现本次 tag 版本号 + 未知路径返回 404。
-- 本地演练（不需要 CI）：先 `pnpm docs:generate`，再 `sh scripts/deploy.sh v0.0.1`；脚本默认读 `site/`，本机演练时用 `SITE_DIR=apps/docs/.output/public` 指向本地产物。
+- 本地演练（不需要 CI）：先 `pnpm docs:generate`，再 `. ./.env.local && SITE_DIR=apps/docs/.output/public sh scripts/deploy.sh v0.0.1`（脚本读 `SITE_DIR`，默认是 CI 里 artifact 落地的 `site/`）。
 - 部署根目录由 docker 以 root 创建，查看/清理要 `sudo`（或 `docker run --rm -v "${DEPLOY_ROOT}:/d" alpine ...`）。回滚：`docker run --rm -v "${DEPLOY_ROOT}:/d" -w /d alpine:3.22 ln -sfn releases/<旧 tag> current`。
 
 ## 许可证

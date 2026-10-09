@@ -15,16 +15,21 @@
 # 失败即失败：健康检查不过会尽量把 current 切回上一个 release，并以非零码退出。
 #
 # 用法：
-#   sh scripts/deploy.sh <tag>          # tag 形如 v0.0.1
+# 用法（本机演练先从被 gitignore 的 .env.local 读私有值，格式见 .env.example）：
+#   . ./.env.local && sh scripts/deploy.sh <tag>          # tag 形如 v0.0.1
 #
-# 环境变量（默认值即两个 OneDev 实例统一使用的值，改这里等于改部署目标）：
-#   DEPLOY_ROOT     部署根目录（releases/<tag> + current）  默认 /srv/fluere-vue
-#   DEPLOY_BIND     宿主监听地址:端口，只绑回环              默认 127.0.0.1:8080
-#   SITE_DIR        站点产物来源目录                         默认 site
-#   NGINX_IMAGE     nginx 镜像                               默认 nginx:1.29-alpine
+# 环境变量：
+#   DEPLOY_ROOT      部署根目录（releases/<tag> + current）  **必填，无默认**
+#   DEPLOY_BIND      宿主监听地址:端口，只绑回环              **必填，无默认**
+#   SITE_DIR         站点产物来源目录                        默认 site
+#   NGINX_IMAGE      nginx 镜像                              默认 nginx:1.29-alpine
 #   DEPLOY_CONTAINER 容器名                                  默认 fluere-vue-web
-#   KEEP_RELEASES   保留的历史 release 个数（不含 current）   默认 5
-#   HELPER_IMAGE    宿主编排用的临时容器镜像                  默认 alpine:3.22
+#   KEEP_RELEASES    保留的历史 release 个数（不含 current）   默认 5
+#   HELPER_IMAGE     宿主编排用的临时容器镜像                  默认 alpine:3.22
+#
+# 为什么前两个没有默认值：它们是「部署位置」类私有值，仓库（公开）里不写真实值 ——
+# CI 由两个实例的 OneDev 构建密钥 DEPLOY_ROOT / DEPLOY_BIND 注入，本机演练从 .env.local 读。
+# 缺值直接失败，避免默默部署到示例路径。
 
 set -eu
 
@@ -36,8 +41,8 @@ fi
 # tag 形如 v0.0.1，页面上渲染的是 v0.0.1；取去掉 v 的部分用于版本断言
 VERSION="${TAG#v}"
 
-DEPLOY_ROOT="${DEPLOY_ROOT:-/srv/fluere-vue}"
-DEPLOY_BIND="${DEPLOY_BIND:-127.0.0.1:8080}"
+: "${DEPLOY_ROOT:?未设置 DEPLOY_ROOT（CI 由 OneDev 密钥注入；本机演练先 . ./.env.local）}"
+: "${DEPLOY_BIND:?未设置 DEPLOY_BIND（CI 由 OneDev 密钥注入；本机演练先 . ./.env.local）}"
 SITE_DIR="${SITE_DIR:-site}"
 NGINX_IMAGE="${NGINX_IMAGE:-nginx:1.29-alpine}"
 DEPLOY_CONTAINER="${DEPLOY_CONTAINER:-fluere-vue-web}"
