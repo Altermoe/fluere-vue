@@ -4,16 +4,19 @@ version: 53
 #
 # 结构：check / test / build 三个**并行** job，共享同一份 pnpm 缓存（key=pnpm），
 # 任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
-# （apps/docs/.output/public）发布成 artifact，供后续 CD 直接复用。
+# （apps/docs/.output/public）发布成 artifact，供后续 CD 复用。
 #
 # 约定（改本文件前先读）：
+# - OneDev 的**每个 step 都跑在全新容器里**：上一个 step 装的 pnpm 与环境变量
+#   不会带到下一个 step。因此「装依赖 + 跑命令」放在同一个 step。
 # - 版本号唯一事实源是**仓库根 package.json**（scripts/version.mjs 同步子包版本）。
 #   tag 推送时额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。
 # - 出网代理走构建密钥 CI_HTTP_PROXY（空值 / none = 直连），见 scripts/ci-env.sh。
 #   容器内 localhost 指向容器自身，代理必须填宿主可达地址。
 # - node 镜像固定 26-alpine：@nuxt/content 的原生 sqlite 连接器要求 Node >= 22.13，
-#   26 已正式版且自带 node:sqlite。注意 Node 25+ 不再内置 corepack，故显式装 pnpm。
-# - 只写「会变的值」到密钥；镜像版本、缓存 key、store 路径等稳定值留在本文件里。
+#   26 已正式版且自带 node:sqlite。Node 25+ 不再内置 corepack，pnpm 由
+#   scripts/ci-bootstrap.sh 按 package.json 的 packageManager 装精确版本。
+# - 只把「会变的值」放进构建密钥；镜像版本、缓存 key 等稳定值留在本文件。
 jobs:
   - name: check
     jobExecutor: docker
@@ -26,8 +29,8 @@ jobs:
         withSubmodules: false
         condition: SUCCESSFUL
         optional: false
-      # 构建规范自校验：OneDev 只在服务端解析 buildspec，语法/字段错误要等构建才发现；
-      # 这一步把错误提前到流水线最前面（纯静态检查，无需网络与依赖）。
+      # 构建规范自校验：OneDev 只在服务端解析 buildspec，语法 / 字段错误要等构建才暴露；
+      # 这一步把错误提前到流水线最前面（纯静态检查，装个 PyYAML 即可，不碰依赖）。
       - type: CommandStep
         name: lint build spec
         runInContainer: true
@@ -58,7 +61,7 @@ jobs:
         condition: SUCCESSFUL
         optional: false
       - type: CommandStep
-        name: install dependencies
+        name: lint / format / types / i18n / version
         runInContainer: true
         image: node:26-alpine
         interpreter:
@@ -69,23 +72,7 @@ jobs:
             . ./scripts/ci-env.sh
             . ./scripts/ci-bootstrap.sh
             pnpm install --frozen-lockfile --store-dir .pnpm-store
-        envVars:
-          - name: CI_HTTP_PROXY
-            value: '@secret:CI_HTTP_PROXY@'
-        runAs: 0:0
-        useTTY: false
-        condition: SUCCESSFUL
-        optional: false
-      - type: CommandStep
-        name: lint / format / types / i18n / version
-        runInContainer: true
-        image: node:26-alpine
-        interpreter:
-          type: PosixInterpreter
-          shell: sh
-          commands: |
-            set -e
-            # tag 构建校验 tag 与根版本一致；分支构建只校验子包版本同步。
+            # tag 构建校验 tag 与根版本一致；分支构建只校验子包版本同步
             if [ -n "${CI_TAG:-}" ]; then
               pnpm version:check-tag "$CI_TAG"
             else
@@ -93,6 +80,8 @@ jobs:
             fi
             pnpm check
         envVars:
+          - name: CI_HTTP_PROXY
+            value: '@secret:CI_HTTP_PROXY@'
           - name: CI_TAG
             value: '@tag@'
         runAs: 0:0
@@ -132,7 +121,7 @@ jobs:
         condition: SUCCESSFUL
         optional: false
       - type: CommandStep
-        name: install dependencies
+        name: unit tests
         runInContainer: true
         image: node:26-alpine
         interpreter:
@@ -143,23 +132,10 @@ jobs:
             . ./scripts/ci-env.sh
             . ./scripts/ci-bootstrap.sh
             pnpm install --frozen-lockfile --store-dir .pnpm-store
+            pnpm test
         envVars:
           - name: CI_HTTP_PROXY
             value: '@secret:CI_HTTP_PROXY@'
-        runAs: 0:0
-        useTTY: false
-        condition: SUCCESSFUL
-        optional: false
-      - type: CommandStep
-        name: unit tests
-        runInContainer: true
-        image: node:26-alpine
-        interpreter:
-          type: PosixInterpreter
-          shell: sh
-          commands: |
-            set -e
-            pnpm test
         runAs: 0:0
         useTTY: false
         condition: SUCCESSFUL
@@ -196,25 +172,6 @@ jobs:
         uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
         condition: SUCCESSFUL
         optional: false
-      - type: CommandStep
-        name: install dependencies
-        runInContainer: true
-        image: node:26-alpine
-        interpreter:
-          type: PosixInterpreter
-          shell: sh
-          commands: |
-            set -e
-            . ./scripts/ci-env.sh
-            . ./scripts/ci-bootstrap.sh
-            pnpm install --frozen-lockfile --store-dir .pnpm-store
-        envVars:
-          - name: CI_HTTP_PROXY
-            value: '@secret:CI_HTTP_PROXY@'
-        runAs: 0:0
-        useTTY: false
-        condition: SUCCESSFUL
-        optional: false
       # 文档站静态生成：既验证 MDC 内容与双语路由可预渲染，也产出可直接交给 nginx 的产物。
       # tag 构建把版本注入 runtimeConfig，页面版本号即发布 tag。
       - type: CommandStep
@@ -227,6 +184,8 @@ jobs:
           commands: |
             set -e
             . ./scripts/ci-env.sh
+            . ./scripts/ci-bootstrap.sh
+            pnpm install --frozen-lockfile --store-dir .pnpm-store
             NUXT_PUBLIC_DOCS_VERSION="$CI_TAG" pnpm docs:generate
             du -sh apps/docs/.output/public
         envVars:
