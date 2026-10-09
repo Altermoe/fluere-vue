@@ -119,11 +119,29 @@ import { FluereButton } from '@fluere-vue/ui'
 
 ## 开发与贡献
 
-欢迎任何形式的贡献。开发环境需要 Node 与 pnpm（^11.1.1）。
+欢迎任何形式的贡献。开发环境需要 Node（>= 22.13，推荐 26）与 pnpm 11.27.0 —— 版本由 `package.json` 的 `packageManager` 字段固定，装好 corepack 会自动切换；CI 也按该字段安装同一版本。
 
 新增组件的流程、对齐源与验收清单见 [AGENTS.md](./AGENTS.md)（开发前必读）与 [docs/style-spec.md](./docs/style-spec.md)（样式与行为对齐源）：先在 WinUI 3 Gallery 与**对应版本的 Windows App SDK 源码 tag** 确认规格与各状态细节 → 补设计令牌 → 实现组件 → 添加文档示例 → 按 Definition of Done 逐项核对。
 
 常用命令：`pnpm dev`（文档站）、`pnpm build`、`pnpm lint`、`pnpm tsc`、`pnpm check`。
+
+## 持续集成与发布
+
+CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）。推送到 `main` 或推送 `v*` tag 会**并行**触发三个 job（共享同一份 pnpm 缓存）：
+
+| job     | 内容                                                                                                             |
+| ------- | ---------------------------------------------------------------------------------------------------------------- |
+| `check` | 构建规范自校验（`scripts/lint-buildspec.py`）→ 版本一致性 → `pnpm check`（lint / format / tsc / i18n / version） |
+| `test`  | `pnpm test`（vitest 全量）                                                                                       |
+| `build` | `pnpm docs:generate` 预渲染文档站并校验产物，把 `apps/docs/.output/public` 发布成 artifact（供后续 CD 直接取用） |
+
+约定：
+
+- **版本号唯一事实源是仓库根 `package.json`**：`pnpm version:sync` 把版本写进全部子包，`pnpm version:check` 校验一致性；推 tag 时 CI 额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。文档站页面版本号读 `runtimeConfig.public.docsVersion`（CI 由 tag 注入 `NUXT_PUBLIC_DOCS_VERSION`，本地回退根版本），不要在页面里硬编码。
+- `pnpm-lock.yaml` **必须入库**：CI 用 `--frozen-lockfile` 复现依赖树，缓存键也取自它 + `pnpm-workspace.yaml` + `.npmrc`。
+- 出网代理放在 OneDev 构建密钥 `CI_HTTP_PROXY`（见 [scripts/ci-env.sh](./scripts/ci-env.sh)）：任务容器里的 `localhost` 指向容器自身，宿主代理必须写成宿主可达地址（生产实测为 `http://172.17.0.1:7890`），`none` / 空值表示直连。
+- 远端：`github` 为公开仓库，`onedev` = `https://git.nahida.space/fluere-vue.git`（生产 CI），`onedev-local` = `http://localhost:6610/fluere-vue.git`（本地 OneDev 演练）。
+- 本地复现 CI：`pnpm check`、`pnpm test`、`pnpm docs:generate`、`pnpm lint:buildspec`。
 
 ## 许可证
 
