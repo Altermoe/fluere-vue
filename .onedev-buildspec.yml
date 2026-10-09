@@ -17,6 +17,10 @@ version: 53
 #   26 已正式版且自带 node:sqlite。Node 25+ 不再内置 corepack，pnpm 由
 #   scripts/ci-bootstrap.sh 按 package.json 的 packageManager 装精确版本。
 # - 只把「会变的值」放进构建密钥；镜像版本、缓存 key 等稳定值留在本文件。
+# - 缓存只收 pnpm store（下载缓存），**不收 node_modules**：pnpm 的 workspace 链接
+#   （node_modules/@fluere-vue/*、.pnpm/node_modules/*）是指向缓存目录之外的符号链接，
+#   OneDev 解包时的符号链接逃逸防护会直接判缓存恢复失败（Tar entry symbol link escape
+#   detected），导致整个 job 挂掉。
 jobs:
   - name: check
     jobExecutor: docker
@@ -51,12 +55,11 @@ jobs:
         condition: SUCCESSFUL
         optional: false
       - type: SetupCacheStep
-        name: restore pnpm cache
-        key: pnpm
+        name: restore pnpm store
+        key: pnpm-store
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
-          - path: node_modules
         uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
         condition: SUCCESSFUL
         optional: false
@@ -111,12 +114,11 @@ jobs:
         condition: SUCCESSFUL
         optional: false
       - type: SetupCacheStep
-        name: restore pnpm cache
-        key: pnpm
+        name: restore pnpm store
+        key: pnpm-store
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
-          - path: node_modules
         uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
         condition: SUCCESSFUL
         optional: false
@@ -163,12 +165,11 @@ jobs:
         condition: SUCCESSFUL
         optional: false
       - type: SetupCacheStep
-        name: restore pnpm cache
-        key: pnpm
+        name: restore pnpm store
+        key: pnpm-store
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
-          - path: node_modules
         uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
         condition: SUCCESSFUL
         optional: false
