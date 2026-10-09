@@ -7,8 +7,8 @@ const { open, toggle } = useDocsSidebar()
 const { t } = useDocsI18n()
 const localePath = useLocalePath()
 
-/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入） */
-const docsVersion = useRuntimeConfig().public.docsVersion
+/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入）；`v` 前缀由 composable 归一 */
+const docsVersion = useDocsVersion()
 
 /**
  * 路由加载态（写入方见 plugins/docs-route-loading.client.ts）：

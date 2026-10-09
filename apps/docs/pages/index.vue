@@ -13,8 +13,8 @@ const routeLoading = useDocsRouteLoading()
 const { t, tm } = useDocsI18n()
 const localePath = useLocalePath()
 
-/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入） */
-const docsVersion = useRuntimeConfig().public.docsVersion
+/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入）；`v` 前缀由 composable 归一 */
+const docsVersion = useDocsVersion()
 
 /** 顶部导航链接：标题随语种解析，链接按 locale 前缀化 */
 const navLinks = computed(() => [

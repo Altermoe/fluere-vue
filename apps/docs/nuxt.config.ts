@@ -123,10 +123,14 @@ export default defineNuxtConfig({
   },
   // 版本号单一事实源 = 仓库根 package.json（子包版本由 `pnpm version:sync` 同步）。
   // CI 里由发布 tag 注入 NUXT_PUBLIC_DOCS_VERSION（形如 v0.1.0），本地/分支构建回退到根版本；
-  // 页面一律读 runtimeConfig.public.docsVersion，禁止再硬编码 vX.Y.Z。
+  // 页面一律通过 useDocsVersion() 读取，禁止再硬编码 vX.Y.Z。
+  //
+  // 不在这里做前缀规范化：`NUXT_PUBLIC_*` 环境变量覆盖发生在 runtimeConfig 计算**之后**，
+  // 这里写的 `.replace()` 在 CI 注入时会被静默绕过（历史 bug：徽标渲染成 vv0.0.1）。
+  // 归一放在消费点 utils/docs-version.ts，且全仓只有那一处。
   runtimeConfig: {
     public: {
-      docsVersion: String(process.env.NUXT_PUBLIC_DOCS_VERSION || rootVersion).replace(/^v/, ''),
+      docsVersion: String(process.env.NUXT_PUBLIC_DOCS_VERSION || rootVersion),
     },
   },
   app: {
