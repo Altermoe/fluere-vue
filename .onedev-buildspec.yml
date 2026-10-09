@@ -189,6 +189,11 @@ jobs:
             pnpm install --frozen-lockfile --store-dir .pnpm-store
             NUXT_PUBLIC_DOCS_VERSION="$CI_TAG" pnpm docs:generate
             du -sh apps/docs/.output/public
+            # tag 构建顺带断言版本号真的注入了产物，避免「tag 打了、页面还是旧版本」
+            if [ -n "${CI_TAG:-}" ]; then
+              grep -q "v${CI_TAG#v}" apps/docs/.output/public/index.html
+              echo "[ci] docs version rendered: v${CI_TAG#v}"
+            fi
         envVars:
           - name: CI_HTTP_PROXY
             value: '@secret:CI_HTTP_PROXY@'
