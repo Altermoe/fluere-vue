@@ -25,6 +25,7 @@
       "radio-group": "Choose one option from a mutually exclusive group.",
       "slider": "Drag to pick a value along a continuous range.",
       "switch": "Toggle between an on and off state.",
+      "config-provider": "The locale injection point for the library's built-in text: switch language and override individual strings.",
       "content-dialog": "A modal dialog: title + body + primary / secondary / close buttons.",
       "info-badge": "A non-intrusive small badge: dot / value / icon states.",
       "infobar": "An app-level status banner with four severities and a closable mode.",

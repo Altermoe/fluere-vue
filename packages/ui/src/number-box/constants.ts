@@ -54,16 +54,10 @@ const INDEX_NOT_FOUND = -1
 /** 长按重复时，键盘触发的 click 与指针触发的 click 用 `detail` 区分（键盘固定为 0） */
 const KEYBOARD_CLICK_DETAIL = 0
 
-/** 内联增减按钮缺省可访问名（WinUI 为已本地化的 SR_NumberBoxUp/DownSpinButtonName） */
-const DEFAULT_INCREASE_LABEL = 'Increase'
-const DEFAULT_DECREASE_LABEL = 'Decrease'
-
 /** 缺省校验模式（对应 WinUI `NumberBoxValidationMode.InvalidInputOverwritten`） */
 const DEFAULT_VALIDATION_MODE = 'invalidInputOverwritten' as const
 
 export {
-  DEFAULT_DECREASE_LABEL,
-  DEFAULT_INCREASE_LABEL,
   DEFAULT_LARGE_CHANGE,
   DEFAULT_MAXIMUM,
   DEFAULT_MINIMUM,

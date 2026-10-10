@@ -12,9 +12,11 @@
   },
   "scripts": {},
   "dependencies": {
-    "@fluere-vue/utils": "workspace:*"
+    "@fluere-vue/utils": "workspace:*",
+    "@intlify/core-base": "catalog:"
   },
   "devDependencies": {
+    "@vue/test-utils": "catalog:",
     "vue": "catalog:"
   }
 }

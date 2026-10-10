@@ -10,6 +10,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
+import FluereConfigProvider from '../../config-provider/config-provider.vue'
 import FluereScrollView from '../scroll-view.vue'
 import { SCROLL_VIEW_AGENT_EVENTS } from '../use-agent-surface'
 import scrollViewCss from '../scroll-view.css?raw'
@@ -64,8 +65,8 @@ describe('FluereScrollView · 滚动条装配', () => {
     const buttons = bar.findAll('.fui-scrollview__track-button')
     expect(buttons).toHaveLength(2)
     expect(buttons.map((button) => button.attributes('aria-label'))).toEqual([
-      'Scroll up',
-      'Scroll down',
+      '向上滚动',
+      '向下滚动',
     ])
     // 步进按钮不出现在 Tab 序列中（与 WinUI ScrollBar 一致）
     expect(buttons.every((button) => button.attributes('tabindex') === '-1')).toBe(true)
@@ -416,5 +417,50 @@ describe('FluereScrollView · Agent 交互面', () => {
     expect(scrollViewCss).not.toContain('data-scroll')
     expect(scrollViewCss).not.toContain('data-zoom')
     expect(scrollViewCss).not.toContain('[role=')
+  })
+})
+
+describe('FluereScrollView i18n（滚动条可访问名）', () => {
+  it('无 Provider 时内置缺省 zh-Hans：步进按钮与滚动条拇指均为中文', () => {
+    const wrapper = mount(FluereScrollView, {
+      props: {
+        verticalScrollBarVisibility: 'visible',
+        horizontalScrollBarVisibility: 'visible',
+      },
+    })
+    const buttons = wrapper
+      .findAll('.fui-scrollview__track-button')
+      .map((b) => b?.attributes('aria-label'))
+    // DOM 顺序：横向滚动条在前，纵向在后
+    expect(buttons).toEqual(['向左滚动', '向右滚动', '向上滚动', '向下滚动'])
+    expect(wrapper.get('.fui-scrollview__thumb--vertical').attributes('aria-label')).toBe(
+      '垂直滚动条',
+    )
+    expect(wrapper.get('.fui-scrollview__thumb--horizontal').attributes('aria-label')).toBe(
+      '水平滚动条',
+    )
+    wrapper.unmount()
+  })
+
+  it('FluereConfigProvider locale=en 时取英文侧', () => {
+    const wrapper = mount(FluereConfigProvider, {
+      props: { locale: 'en' },
+      slots: {
+        default: () =>
+          h(FluereScrollView, {
+            verticalScrollBarVisibility: 'visible',
+            horizontalScrollBarVisibility: 'visible',
+          }),
+      },
+    })
+    const buttons = wrapper
+      .findAll('.fui-scrollview__track-button')
+      .map((b) => b?.attributes('aria-label'))
+    // DOM 顺序：横向滚动条在前，纵向在后
+    expect(buttons).toEqual(['Scroll left', 'Scroll right', 'Scroll up', 'Scroll down'])
+    expect(wrapper.get('.fui-scrollview__thumb--vertical').attributes('aria-label')).toBe(
+      'Vertical scroll bar',
+    )
+    wrapper.unmount()
   })
 })

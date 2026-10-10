@@ -86,9 +86,9 @@
  *    `Content` / `ContentTemplate` → `#content`（别名 `#default`）插槽；
  *    `ActionButton` → `#action` 插槽；`CloseButtonStyle` 不暴露（样式固定在本组件内）。
  *  - 关闭按钮文案：WinUI 取资源 `InfoBarCloseButtonName` / `InfoBarCloseButtonTooltip`
- *    （英文 "Close"）。本库暂无组件内建文案通道（i18n 属 0.3.0 目标 1.4），故做成
- *    `closeButtonLabel` / `closeButtonTooltip` 两个 Prop，缺省不渲染 —— 组件不硬编码
- *    任何自然语言（同 NumberBox 的 `increaseLabel` / `decreaseLabel` 口径）。
+ *    （英文 "Close"）。接入 0.3.0 目标 1.4 的 i18n 通道后，可访问名由 locale 内建
+ *    文案提供（`closeButtonLabel` 显式传入时压过）；`closeButtonTooltip` 仍为
+ *    纯消费方提供，缺省不渲染（不做原生 title 兜底）。
  *  - 打开 / 关闭的 UIA 通知（`InfoBarOpenedNotification` / `InfoBarClosedNotification`）
  *    是 UIA NotificationEvent，并不映射到 ARIA live region；本库同样不引入 `aria-live`，
  *    避免在 Web 上产生 WinUI 没有的朗读行为。
@@ -106,11 +106,14 @@ export type {
 </script>
 
 <script setup lang="ts">
+import { useScopeMessages } from '@fluere-vue/hooks'
 import { FluentIconDismiss16Regular } from '@fluere-vue/icons'
+import type { FluereLocale } from '@fluere-vue/utils'
 import { computed, defineComponent, h, nextTick, useSlots, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import FluereTooltip from '../tooltip/tooltip.vue'
 import { INFO_BAR_SEVERITY_ICONS } from './constants'
+import { infoBarLocale } from './locale'
 import type { FluereInfoBarCloseReason, FluereInfoBarProps } from './types'
 import { useInfoBarLayout } from './use-infobar-layout'
 
@@ -172,6 +175,11 @@ const hasContentSlot = computed(() => Boolean(slots.content) || Boolean(slots.de
 const hasBannerContent = computed(
   () => props.title !== '' || props.message !== '' || hasActionSlot.value,
 )
+
+/** 内建文案：scope=`infobar`，locale prop 优先、否则跟随 Provider */
+const infoBarI18n = useScopeMessages('infobar', infoBarLocale, () => props.locale)
+/** 关闭按钮可访问名：显式 prop 压过 locale 内建文案（WinUI InfoBarCloseButtonName） */
+const closeButtonName = computed(() => props.closeButtonLabel ?? infoBarI18n.t('close'))
 
 /**
  * 上一次的关闭原因。对齐 WinUI：`IsOpen` 被置为 true 时重置为 `Programmatic`，
@@ -327,7 +335,7 @@ const setGridRef = (ref_: Element | ComponentPublicInstance | null): void => {
           <button
             type="button"
             class="fui-infobar__close"
-            :aria-label="closeButtonLabel ?? undefined"
+            :aria-label="closeButtonName"
             @click="onCloseButtonClick"
           >
             <slot name="close-icon">

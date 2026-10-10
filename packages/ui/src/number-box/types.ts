@@ -113,7 +113,11 @@ export interface FluereNumberBoxProps {
   name?: string
 
   /**
-   * 格式化与解析用的 BCP 47 语言标记（对应 WinUI 的区域设置感知 DecimalFormatter）。
+   * 区域设置语言标记（BCP 47），对应 WinUI 的区域设置感知 DecimalFormatter。
+   *
+   * 同时驱动本组件内建文案（increase / decrease 按钮可访问名）的 locale：
+   * 取值归一为 `zh-Hans` / `en`（其余语言落到内置缺省 zh-Hans），
+   * 见 `packages/ui/src/number-box/locale.ts`。
    *
    * SSR 应用建议显式传入：缺省时使用运行环境的默认区域设置，而服务端（Node）与浏览器
    * 的默认区域设置可能不同（如 de-DE 的小数点），首帧会出现水合不一致。
@@ -151,14 +155,14 @@ export interface FluereNumberBoxProps {
   acceptsExpression?: boolean
 
   /**
-   * 加号按钮的可访问名（WinUI 由资源本地化，本库暂无 i18n 通道，故做成 prop）
-   * @default 'Increase'
+   * 加号按钮的可访问名（WinUI 由资源 `SR_NumberBoxUpSpinButtonName` 本地化）。
+   * 显式传入压过 locale；缺省取当前 locale 的内建文案（见 ./locale.ts）。
    */
   increaseLabel?: string
 
   /**
-   * 减号按钮的可访问名
-   * @default 'Decrease'
+   * 减号按钮的可访问名（对应 `SR_NumberBoxDownSpinButtonName`）。
+   * 显式传入压过 locale；缺省取当前 locale 的内建文案（见 ./locale.ts）。
    */
   decreaseLabel?: string
 }

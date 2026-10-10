@@ -1,7 +1,8 @@
 /* oxlint-disable prefer-named-capture-group, no-magic-numbers -- 样式契约测试要读 SFC 源码做文本解析，正则与下标属测试细节 */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { h, nextTick, ref } from 'vue'
+import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereNumberBox from './number-box.vue'
 import numberBoxSfc from './number-box.vue?raw'
 
@@ -284,8 +285,8 @@ describe('FluereNumberBox 增减按钮（SpinButtonPlacementMode）', () => {
     expect(buttons).toHaveLength(2)
     expect(buttons[0]?.classes()).toContain('fui-number-box__spin-button--increase')
     expect(buttons[1]?.classes()).toContain('fui-number-box__spin-button--decrease')
-    expect(buttons[0]?.attributes('aria-label')).toBe('Increase')
-    expect(buttons[1]?.attributes('aria-label')).toBe('Decrease')
+    expect(buttons[0]?.attributes('aria-label')).toBe('增加')
+    expect(buttons[1]?.attributes('aria-label')).toBe('减少')
     expect(buttons[0]?.attributes('tabindex')).toBe('-1')
     // WinUI 的 SymbolThemeFontFamily 字形 E70E / E70D → Fluent 图标
     expect(buttons[0]?.find('[data-icon-name="chevron_up"]').exists()).toBe(true)
@@ -511,5 +512,61 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
       'transition: background-color var(--durationFast) var(--curveEasyEase)',
     )
     expect(numberBoxSfc).toContain('@media (prefers-reduced-motion: reduce)')
+  })
+})
+
+describe('FluereNumberBox i18n（增减按钮可访问名）', () => {
+  const labelsUnder = (render: () => unknown) => {
+    const wrapper = render() as ReturnType<typeof mount>
+    return wrapper.findAll('.fui-number-box__spin-button').map((b) => b?.attributes('aria-label'))
+  }
+
+  it('无 Provider 时内置缺省 zh-Hans：增加 / 减少', () => {
+    const labels = labelsUnder(() =>
+      mount(FluereNumberBox, { props: { spinButtonPlacementMode: 'inline' } }),
+    )
+    expect(labels).toEqual(['增加', '减少'])
+  })
+
+  it('FluereConfigProvider locale=en 时取英文侧', () => {
+    const labels = labelsUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: {
+          default: () => h(FluereNumberBox, { spinButtonPlacementMode: 'inline' }),
+        },
+      }),
+    )
+    expect(labels).toEqual(['Increase', 'Decrease'])
+  })
+
+  it('组件 locale prop 压过 Provider', () => {
+    const labels = labelsUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: {
+          default: () =>
+            h(FluereNumberBox, { spinButtonPlacementMode: 'inline', locale: 'zh-Hans' }),
+        },
+      }),
+    )
+    expect(labels).toEqual(['增加', '减少'])
+  })
+
+  it('显式 increase-label / decrease-label 压过 locale', () => {
+    const labels = labelsUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: {
+          default: () =>
+            h(FluereNumberBox, {
+              spinButtonPlacementMode: 'inline',
+              increaseLabel: '增益',
+              decreaseLabel: '减损',
+            }),
+        },
+      }),
+    )
+    expect(labels).toEqual(['增益', '减损'])
   })
 })

@@ -41,6 +41,7 @@
 </script>
 
 <script setup lang="ts">
+import { useScopeMessages } from '@fluere-vue/hooks'
 import {
   FluentIconChevronDown12Regular,
   FluentIconChevronDown16Regular,
@@ -50,13 +51,8 @@ import {
 } from '@fluere-vue/icons'
 import { computed, nextTick, ref, useId, useSlots } from 'vue'
 import FluereInput from '../input/input.vue'
-import {
-  DEFAULT_DECREASE_LABEL,
-  DEFAULT_INCREASE_LABEL,
-  DEFAULT_LARGE_CHANGE,
-  DEFAULT_SMALL_CHANGE,
-  KEYBOARD_CLICK_DETAIL,
-} from './constants'
+import { DEFAULT_LARGE_CHANGE, DEFAULT_SMALL_CHANGE, KEYBOARD_CLICK_DETAIL } from './constants'
+import { numberBoxLocale } from './locale'
 import type { NumberBoxSpinDirection } from './step'
 import type { FluereNumberBoxProps, FluereNumberBoxValueChangedEventArgs } from './types'
 import { useNumberBox } from './use-number-box'
@@ -82,8 +78,8 @@ const props = withDefaults(defineProps<FluereNumberBoxProps>(), {
   validationMode: 'invalidInputOverwritten',
   wrapEnabled: false,
   acceptsExpression: false,
-  increaseLabel: DEFAULT_INCREASE_LABEL,
-  decreaseLabel: DEFAULT_DECREASE_LABEL,
+  increaseLabel: undefined,
+  decreaseLabel: undefined,
 })
 
 const emit = defineEmits<{
@@ -93,6 +89,12 @@ const emit = defineEmits<{
 }>()
 
 defineOptions({ name: 'FluereNumberBox' })
+
+/* ---- 内建文案：scope=`number-box`，locale prop 优先、否则跟随 Provider ---- */
+const numberBoxI18n = useScopeMessages('number-box', numberBoxLocale, () => props.locale)
+/** 增减按钮可访问名：显式 prop 压过 locale 内建文案 */
+const increaseName = computed(() => props.increaseLabel || numberBoxI18n.t('increase'))
+const decreaseName = computed(() => props.decreaseLabel || numberBoxI18n.t('decrease'))
 
 const slots = useSlots()
 // A11y 关联用的 id 走 Vue 的 useId（SSR 与水合一致，见 docs/ssr-guide.md 第 9 节）
@@ -317,7 +319,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
           class="fui-number-box__spin-button fui-number-box__spin-button--increase"
           tabindex="-1"
           :disabled="isSpinDisabled('increase')"
-          :aria-label="increaseLabel"
+          :aria-label="increaseName"
           @mousedown.prevent
           @pointerdown="onSpinPointerDown('increase')"
           @click="onSpinClick('increase', $event)"
@@ -329,7 +331,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
           class="fui-number-box__spin-button fui-number-box__spin-button--decrease"
           tabindex="-1"
           :disabled="isSpinDisabled('decrease')"
-          :aria-label="decreaseLabel"
+          :aria-label="decreaseName"
           @mousedown.prevent
           @pointerdown="onSpinPointerDown('decrease')"
           @click="onSpinClick('decrease', $event)"
@@ -358,7 +360,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
             class="fui-number-box__popup-button"
             tabindex="-1"
             :disabled="isSpinDisabled('increase')"
-            :aria-label="increaseLabel"
+            :aria-label="increaseName"
             @mousedown.prevent
             @pointerdown="onSpinPointerDown('increase')"
             @click="onSpinClick('increase', $event)"
@@ -370,7 +372,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
             class="fui-number-box__popup-button"
             tabindex="-1"
             :disabled="isSpinDisabled('decrease')"
-            :aria-label="decreaseLabel"
+            :aria-label="decreaseName"
             @mousedown.prevent
             @pointerdown="onSpinPointerDown('decrease')"
             @click="onSpinClick('decrease', $event)"

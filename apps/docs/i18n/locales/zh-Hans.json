@@ -25,6 +25,7 @@
       "radio-group": "在一组互斥选项中选择一个。",
       "slider": "在连续区间内拖动取值。",
       "switch": "在「开 / 关」两个状态间切换。",
+      "config-provider": "组件库内建文案的 locale 注入点：切换语言与覆盖个别措辞。",
       "content-dialog": "模态对话框：标题 + 正文 + 主 / 次 / 关闭按钮。",
       "info-badge": "非打断式小徽章：圆点 / 数值 / 图标三态。",
       "infobar": "应用级状态提示横幅，四档 Severity、可关闭。",

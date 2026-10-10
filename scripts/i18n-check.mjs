@@ -281,6 +281,56 @@ if (missingRefs.size) {
   console.log('✓ 源码引用的 t()/tm() key 全部存在于主语言消息树')
 }
 
+// ---- 组件库 locale 切片（packages/ui/src/**/locale.ts）：zh-Hans / en 两侧 key 集一致 ----
+
+/**
+ * 组件库每组件一个 `locale.ts`（todo 目标 1 · 1.4）。其消息对象两侧
+ * `zhHans`（内置缺省）与 `en`（兜底）的 key 集必须一致：任一侧缺 key 会让设计好的
+ * 回退链（zh-Hans→zh→en）在某一侧静默断链。这里做**静态**校核——不引入 TS 运行时，
+ * 只解析切片对象字面量两侧的顶层属性名（切片均为一层扁平结构）；两侧不一致即失败。
+ */
+const UI_LOCALES_ROOT = join(ROOT, 'packages/ui/src')
+function collectLocaleSlices(dir) {
+  const files = []
+  for (const name of readdirSync(dir)) {
+    const abs = join(dir, name)
+    if (statSync(abs).isDirectory()) {
+      if (name !== '__tests__') {
+        files.push(...collectLocaleSlices(abs))
+      }
+    } else if (name === 'locale.ts') {
+      files.push(abs)
+    }
+  }
+  return files
+}
+const objectKeySet = (block) =>
+  new Set([...block.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]))
+for (const file of collectLocaleSlices(UI_LOCALES_ROOT)) {
+  const src = stripComments(readFileSync(file, 'utf8'), false)
+  const zh = /zhHans\s*:\s*\{([\s\S]*?)\}/.exec(src)
+  const en = /en\s*:\s*\{([\s\S]*?)\}/.exec(src)
+  if (!zh || !en) {
+    failed = true
+    console.error(
+      `✗ ${relative(ROOT, file)}：无法解析 zhHans / en 对象字面量（切片结构有变？请同步该检查）`,
+    )
+    continue
+  }
+  const zhKeys = objectKeySet(zh[1])
+  const enKeys = objectKeySet(en[1])
+  const missingEn = [...zhKeys].filter((k) => !enKeys.has(k))
+  const extraEn = [...enKeys].filter((k) => !zhKeys.has(k))
+  if (missingEn.length || extraEn.length) {
+    failed = true
+    console.error(`✗ ${relative(ROOT, file)} 组件 locale 切片 zh-Hans / en key 不一致：`)
+    if (missingEn.length) console.error(`   zh-Hans 有、en 缺: ${missingEn.join(', ')}`)
+    if (extraEn.length) console.error(`   en 有、zh-Hans 缺: ${extraEn.join(', ')}`)
+  } else {
+    console.log(`✓ ${relative(ROOT, file)}: ${zhKeys.size} 个 key 两侧一致`)
+  }
+}
+
 if (failed) {
   console.error('\n✗ i18n 检查未通过（修补后用 `pnpm i18n:check` 复跑）')
   process.exit(1)

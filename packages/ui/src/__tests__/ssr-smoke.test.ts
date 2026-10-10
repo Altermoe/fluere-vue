@@ -17,6 +17,7 @@ import { renderToString } from 'vue/server-renderer'
 import FluereButton from '../button/button.vue'
 import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
+import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereContentDialog from '../content-dialog/content-dialog.vue'
 import FluereInfoBadge from '../info-badge/info-badge.vue'
 import FluereInfoBar from '../infobar/infobar.vue'
@@ -327,5 +328,64 @@ describe('SSR 兼容性冒烟测试', () => {
     const app = createSSRApp({ render: () => h(FluereSmokeLayer, { open: true }) })
     const html = await renderToString(app)
     expect(html).not.toContain('fui-smoke')
+  })
+})
+
+describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', () => {
+  /** 把组件包进给定 locale 的 provider 渲染为 HTML */
+  const renderUnder = async (locale: string, render: () => unknown): Promise<string> => {
+    const app = createSSRApp({
+      render: () =>
+        h(FluereConfigProvider, { locale }, { default: () => h(render() as Component) }),
+    })
+    return renderToString(app)
+  }
+
+  it('NumberBox 内联按钮在 locale=en 下 SSR 直出英文可访问名', async () => {
+    const html = await renderUnder('en', () =>
+      h(FluereNumberBox, { spinButtonPlacementMode: 'inline' }),
+    )
+    expect(html).toContain('aria-label="Increase"')
+    expect(html).toContain('aria-label="Decrease"')
+    // 默认（无 provider）应为中文内置缺省
+    const zh = await renderUnder('zh-Hans', () =>
+      h(FluereNumberBox, { spinButtonPlacementMode: 'inline' }),
+    )
+    expect(zh).toContain('aria-label="增加"')
+  })
+
+  it('InfoBar 关闭按钮在 locale=en 下 SSR 直出 Close', async () => {
+    const en = await renderUnder('en', () =>
+      h(FluereInfoBar, { open: true, title: 't', message: 'm' }),
+    )
+    expect(en).toContain('aria-label="Close"')
+    const zh = await renderUnder('zh-Hans', () =>
+      h(FluereInfoBar, { open: true, title: 't', message: 'm' }),
+    )
+    expect(zh).toContain('aria-label="关闭"')
+  })
+
+  it('ProgressRing / ProgressBar 不确定态在 locale=en 下 SSR 直出 Loading', async () => {
+    const ring = await renderUnder('en', () => h(FluereProgressRing))
+    expect(ring).toContain('aria-label="Loading"')
+    const bar = await renderUnder('en', () => h(FluereProgressBar, { indeterminate: true }))
+    expect(bar).toContain('aria-label="Loading"')
+  })
+
+  it('两个并发 SSR 请求在不同 locale 下渲染，互不串语言（实例级 context）', async () => {
+    const render = (locale: string, component: Component) => {
+      const app = createSSRApp({
+        render: () => h(FluereConfigProvider, { locale }, { default: () => h(component) }),
+      })
+      return renderToString(app)
+    }
+    const [zh, en] = await Promise.all([
+      render('zh-Hans', h(FluereProgressBar, { indeterminate: true })),
+      render('en', h(FluereProgressBar, { indeterminate: true })),
+    ])
+    expect(zh).toContain('加载中')
+    expect(en).toContain('Loading')
+    expect(zh).not.toContain('Loading')
+    expect(en).not.toContain('加载中')
   })
 })

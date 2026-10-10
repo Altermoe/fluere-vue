@@ -4,6 +4,7 @@ import '@fluere-vue/designs/tokens.css'
 import FluereButton from './src/button/button.vue'
 import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
+import FluereConfigProvider from './src/config-provider/config-provider.vue'
 import FluereContentDialog from './src/content-dialog/content-dialog.vue'
 import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
@@ -25,6 +26,7 @@ export {
   FluereButton,
   FluereCheckbox,
   FluereCombobox,
+  FluereConfigProvider,
   FluereContentDialog,
   FluereInfoBadge,
   FluereInfoBar,
@@ -44,6 +46,7 @@ export {
 }
 export type { FluereButtonProps } from './src/button/button.vue'
 export type { FluereCheckboxProps } from './src/checkbox/checkbox.vue'
+export type { FluereConfigProviderProps } from './src/config-provider/config-provider.vue'
 export type {
   FluereComboboxItem,
   FluereComboboxProps,

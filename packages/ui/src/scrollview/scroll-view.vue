@@ -24,9 +24,12 @@
  * Props 类型定义见 ./types.ts（对外由 @fluere-vue/ui 重新导出）。
  */
 
+import { useScopeMessages } from '@fluere-vue/hooks'
+import type { FluereLocale } from '@fluere-vue/utils'
 import { computed, useId } from 'vue'
 import { createScrollViewCore } from './core'
 import { createScrollViewEvents } from './events'
+import { scrollViewLocale } from './locale'
 import type { FluereScrollViewProps, ScrollViewEmits } from './types'
 import { useAgentSurface } from './use-agent-surface'
 import { useAnchor } from './use-anchor'
@@ -51,16 +54,6 @@ interface TrackStep {
   /** 步进按钮的可访问名称 */
   label: string
 }
-
-const VERTICAL_TRACK_STEPS: readonly TrackStep[] = [
-  { key: 'decrement', direction: -1, label: 'Scroll up' },
-  { key: 'increment', direction: 1, label: 'Scroll down' },
-]
-
-const HORIZONTAL_TRACK_STEPS: readonly TrackStep[] = [
-  { key: 'decrement', direction: -1, label: 'Scroll left' },
-  { key: 'increment', direction: 1, label: 'Scroll right' },
-]
 
 /* ------------------------------------------------------------------ */
 /* Props / Emits                                                       */
@@ -88,6 +81,19 @@ const props = withDefaults(defineProps<FluereScrollViewProps>(), {
   label: undefined,
   agentCommands: true,
 })
+
+/* ---- 内建文案：scope=`scroll-view`，locale prop 优先、否则跟随 Provider ---- */
+const scrollI18n = useScopeMessages('scroll-view', scrollViewLocale, () => props.locale)
+
+/** 两端步进按钮描述：label 随 locale 解析（template 自动解包 computed） */
+const VERTICAL_TRACK_STEPS = computed<TrackStep[]>(() => [
+  { key: 'decrement', direction: -1, label: scrollI18n.t('scrollUp') },
+  { key: 'increment', direction: 1, label: scrollI18n.t('scrollDown') },
+])
+const HORIZONTAL_TRACK_STEPS = computed<TrackStep[]>(() => [
+  { key: 'decrement', direction: -1, label: scrollI18n.t('scrollLeft') },
+  { key: 'increment', direction: 1, label: scrollI18n.t('scrollRight') },
+])
 
 const emit = defineEmits<ScrollViewEmits>()
 
@@ -300,7 +306,7 @@ defineExpose({
         role="scrollbar"
         tabindex="-1"
         aria-orientation="horizontal"
-        aria-label="Horizontal scroll bar"
+        :aria-label="scrollI18n.t('horizontalScrollBar')"
         aria-valuemin="0"
         :aria-valuemax="ariaValueMaxX"
         :aria-valuenow="ariaValueNowX"
@@ -346,7 +352,7 @@ defineExpose({
         role="scrollbar"
         tabindex="-1"
         aria-orientation="vertical"
-        aria-label="Vertical scroll bar"
+        :aria-label="scrollI18n.t('verticalScrollBar')"
         aria-valuemin="0"
         :aria-valuemax="ariaValueMaxY"
         :aria-valuenow="ariaValueNowY"

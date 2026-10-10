@@ -53,8 +53,9 @@
  *  - ProgressBarAutomationPeer.cpp：ControlType=ProgressBar；**不确定态不提供
  *    RangeValue 模式**（GetPatternCore 返回 nullptr ⇒ 不暴露 aria-valuenow/min/max）；
  *    GetNameCore 会在 Error/Paused/Indeterminate 时给可访问名加本地化状态前缀
- *    （SR_ProgressBarErrorStatus 等）——本库暂无组件内建文案通道（i18n 属 0.3.0 目标 1.4），
- *    状态词由消费方通过 `label` 自行表达，此处不硬编码任何自然语言。
+ *    （SR_ProgressBarErrorStatus 等）——不确定态缺省可访问名走 0.3.0 目标 1.4 的
+ *    i18n 通道（locale 内建「加载中 / Loading」，见 ./locale.ts）；Error / Paused
+ *    前缀本库不虚构，仍由消费方在 `label` 中表达。
  *
  * 参考截图像素证据（WinUI3 Gallery ProgressBar 页，1:1 DPI；仅用于交叉验证几何，
  * 不作为取值依据——强调色取自截图机器的系统强调色 #295DA8，不是规范值）：
@@ -120,14 +121,23 @@ export interface FluereProgressBarProps {
   disabled?: boolean
 
   /**
-   * 可访问名称（无障碍）。WinUI 会在 Error/Paused/Indeterminate 时给可访问名加
-   * 本地化状态前缀，本库暂无内建文案通道，需要时请由消费方在 `label` 中体现。
+   * 可访问名称（无障碍）。显式传入压过 locale；不确定态缺省取「加载中 / Loading」
+   * （见 locale.ts）。WinUI 的 Error/Paused 本地化状态前缀由消费方在 label 中表达。
    */
   label?: string
+
+  /**
+   * 本组件内建文案（不确定态缺省可访问名）的 locale，优先于
+   * `FluereConfigProvider`，缺省内置 zh-Hans。归一由 `@fluere-vue/utils` 完成
+   * （`zh-CN` / `zh` 落到 `zh-Hans`），见 `./locale.ts`。
+   */
+  locale?: FluereLocale | string
 }
 </script>
 
 <script setup lang="ts">
+import { useScopeMessages } from '@fluere-vue/hooks'
+import type { FluereLocale } from '@fluere-vue/utils'
 /**
  * 语义底座复用 reka-ui 的 ProgressRoot（`role=progressbar` + `data-state`），
  * 但它固定 `aria-valuemin=0` 且只接受 0..max 的归一值，与本控件要还原的
@@ -141,6 +151,7 @@ import {
   ProgressRoot as RekaProgressRoot,
 } from 'reka-ui'
 import { computed, type CSSProperties } from 'vue'
+import { progressBarLocale } from './locale'
 
 const props = withDefaults(defineProps<FluereProgressBarProps>(), {
   modelValue: 0,
@@ -154,6 +165,13 @@ const props = withDefaults(defineProps<FluereProgressBarProps>(), {
   label: undefined,
 })
 const model = defineModel<number>({ default: 0 })
+
+/** 内建文案：scope=`progress-bar`，locale prop 优先、否则跟随 Provider */
+const progressBarI18n = useScopeMessages('progress-bar', progressBarLocale, () => props.locale)
+/** 可访问名：显式 label 压过 locale；不确定态缺省取「加载中 / Loading」 */
+const ariaLabel = computed(
+  () => props.label ?? (props.indeterminate ? progressBarI18n.t('loading') : undefined),
+)
 
 /** 钳位到 [min, max]（对齐 RangeBase 的取值域） */
 const clampedValue = computed(() => {
@@ -219,7 +237,7 @@ defineOptions({ name: 'FluereProgressBar' })
     :data-status="status"
     :data-disabled="disabled ? '' : undefined"
     :style="rootStyle"
-    :aria-label="label ?? undefined"
+    :aria-label="ariaLabel"
     :aria-valuemin="indeterminate ? undefined : min"
     :aria-valuemax="indeterminate ? undefined : max"
     :aria-valuenow="indeterminate ? undefined : clampedValue"

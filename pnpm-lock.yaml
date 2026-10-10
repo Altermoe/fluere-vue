@@ -211,6 +211,9 @@ catalogs:
     '@fluentui/tokens':
       specifier: 1.0.0-alpha.23
       version: 1.0.0-alpha.23
+    '@intlify/core-base':
+      specifier: 11.4.13
+      version: 11.4.13
     '@nuxtjs/i18n':
       specifier: 10.6.0
       version: 10.6.0
@@ -336,7 +339,13 @@ importers:
       '@fluere-vue/utils':
         specifier: workspace:*
         version: link:../utils
+      '@intlify/core-base':
+        specifier: 'catalog:'
+        version: 11.4.13
     devDependencies:
+      '@vue/test-utils':
+        specifier: 'catalog:'
+        version: 2.5.1(@vue/compiler-dom@3.5.43)(@vue/server-renderer@3.5.40)(vue@3.5.40(typescript@6.0.3))
       vue:
         specifier: 'catalog:'
         version: 3.5.40(typescript@6.0.3)

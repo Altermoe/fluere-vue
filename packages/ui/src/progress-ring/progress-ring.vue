@@ -97,13 +97,24 @@ export interface FluereProgressRingProps {
 
   /**
    * 可访问名称（无障碍）。进度条属装饰性指示时请由消费方决定是否标注。
+   * 显式传入压过 locale；不确定态缺省取「加载中 / Loading」（见 locale.ts）。
    */
   label?: string
+
+  /**
+   * 本组件内建文案（不确定态缺省可访问名）的 locale，优先于
+   * `FluereConfigProvider`，缺省内置 zh-Hans。归一由 `@fluere-vue/utils` 完成
+   * （`zh-CN` / `zh` 落到 `zh-Hans`），见 `./locale.ts`。
+   */
+  locale?: FluereLocale | string
 }
 </script>
 
 <script setup lang="ts">
+import { useScopeMessages } from '@fluere-vue/hooks'
+import type { FluereLocale } from '@fluere-vue/utils'
 import { computed, type CSSProperties } from 'vue'
+import { progressRingLocale } from './locale'
 
 /**
  * viewBox 坐标系常量（归一化到 32px 控件，矢量随尺寸缩放）。
@@ -127,6 +138,13 @@ const props = withDefaults(defineProps<FluereProgressRingProps>(), {
   label: undefined,
 })
 const model = defineModel<number>({ default: 0 })
+
+/** 内建文案：scope=`progress-ring`，locale prop 优先、否则跟随 Provider */
+const progressRingI18n = useScopeMessages('progress-ring', progressRingLocale, () => props.locale)
+/** 可访问名：显式 label 压过 locale；不确定态缺省取「加载中 / Loading」 */
+const ariaLabel = computed(
+  () => props.label ?? (props.indeterminate ? progressRingI18n.t('loading') : undefined),
+)
 
 const clampedValue = computed(() => {
   const v = Number.isFinite(model.value) ? model.value : props.min
@@ -181,7 +199,7 @@ defineOptions({ name: 'FluereProgressRing' })
     :data-active="active ? '' : undefined"
     :data-disabled="disabled ? '' : undefined"
     :style="rootStyle"
-    :aria-label="label ?? undefined"
+    :aria-label="ariaLabel"
     :aria-valuemin="indeterminate ? undefined : min"
     :aria-valuemax="indeterminate ? undefined : max"
     :aria-valuenow="indeterminate ? undefined : clampedValue"

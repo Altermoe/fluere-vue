@@ -31,6 +31,8 @@
  * （constants / layout / use-infobar-layout）反向依赖本文件。
  */
 
+import type { FluereLocale } from '@fluere-vue/utils'
+
 /** 严重级别（对应 WinUI `InfoBarSeverity`，成员顺序一致） */
 export type FluereInfoBarSeverity = 'informational' | 'success' | 'warning' | 'error'
 
@@ -108,9 +110,16 @@ export interface FluereInfoBarProps {
 
   /**
    * 关闭按钮的可访问名（WinUI 取资源 `InfoBarCloseButtonName`，英文为 "Close"）。
-   * 不传则该属性不渲染，由消费方自行本地化。
+   * 显式传入压过 locale；缺省取当前 locale 的内建文案（见 ./locale.ts）。
    */
   closeButtonLabel?: string
+
+  /**
+   * 本组件内建文案（关闭按钮可访问名）的 locale，优先于 `FluereConfigProvider`，
+   * 缺省内置 zh-Hans。归一由 `@fluere-vue/utils` 完成（`zh-CN` / `zh` 落到
+   * `zh-Hans`），见 `./locale.ts`。
+   */
+  locale?: FluereLocale | string
 
   /**
    * 关闭按钮的原生提示（WinUI 取资源 `InfoBarCloseButtonTooltip`，英文为 "Close"）。

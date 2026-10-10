@@ -94,7 +94,7 @@
 > 范围（已确认）：**文档站全站 + 组件库内建文案通道与语言包导出**。
 > 一期语言：`zh-Hans`（默认，兼容 `zh-CN`）与 `en`。
 
-**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap 未做）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。仍未收口：**组件库 i18n 通道（1.4）尚未开工**、1.1 的 sitemap、1.5 的 Lighthouse / axe 实跑与 1.4 相关项。
+**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap 未做）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。**组件库 i18n 通道（1.4）已落地**（见下方 1.4：`@fluere-vue/hooks` 增 `provide-locale`/`use-locale`/`useScopeMessages`，`@fluere-vue/ui` 增 `FluereConfigProvider`，首批 6 组件 locale 切片，回退链 `zh-Hans→zh→en` 与并发 SSR 隔离已单测覆盖）。仍未收口：1.1 的 sitemap、1.5 的 Lighthouse / axe 实跑、目标 3 的 `@fluere-vue/ui/locales/*` 子路径导出（1.4 已在组件目录内布好 `locale.ts` 切片，聚合入口随 0.3 构建落地）。
 
 #### 1.1 选型与基建
 
@@ -122,23 +122,23 @@
 
 #### 1.4 组件库 i18n 通道（一期只建通道 + 首批文案）
 
-> **状态：未开工**（截至 2026-10-09）。`packages/hooks` / `packages/ui` 内没有任何 locale 相关实现或导出，下列各项均未落地；1.5 的 provider 隔离单测与「并发 SSR 不串 locale」验收因此也无法执行。
+> **状态：已落地**（2026-10-10）。`@fluere-vue/hooks` 增 `provide-locale` / `use-locale` / `useScopeMessages`（实例级 provide/inject，复用 `@intlify/core-base`，无 `vue-i18n` 运行时）；`@fluere-vue/ui` 增 `FluereConfigProvider`。首批 6 组件接入 locale 切片；回退链与并发 SSR 隔离已单测覆盖（见 1.5）。
 
-- [ ] `packages/hooks` 增 `provide-locale` / `use-locale`，`packages/ui` 增 `FluereConfigProvider`：基于 provide/inject 的**实例级** locale，禁止全局可变单例（否则 SSR 多请求间会串语言）
-- [ ] 语言包形态：`@fluere-vue/ui/locales/zh-Hans`、`@fluere-vue/ui/locales/en`，按组件分组、可 tree-shaking；解析优先级：组件 `locale` prop → provider → 内置默认
-- [ ] 首批纳入的文案：内置 a11y 可访问名（loading / close / expand / collapse 等）、后续 ContentDialog / ProgressRing / InfoBar 的默认文案；日期与数字一律走 `Intl`
-- [ ] 组件库不引入 `vue-i18n` 运行时依赖，由 provider 注入 message resolver，并在 `packages/ui/README` 与文档站说明用法
-- [ ] 回退链明确：`zh-Hans → zh → en`，缺 key 时落到 `en` 并只在开发环境告警
+- [x] `packages/hooks` 增 `provide-locale` / `use-locale`，`packages/ui` 增 `FluereConfigProvider`：基于 provide/inject 的**实例级** locale，禁止全局可变单例（否则 SSR 多请求间会串语言）——`provideLocale` / `useLocale` / `useScopeMessages` 在 `packages/hooks/src/use-locale.ts`，`FluereConfigProvider` 在 `packages/ui/src/config-provider/config-provider.vue`
+- [x] 语言包形态：`@fluere-vue/ui/locales/zh-Hans`、`@fluere-vue/ui/locales/en`，按组件分组、可 tree-shaking；解析优先级：组件 `locale` prop → provider → 内置默认——采用「每组件一个 `locale.ts` 切片、组件自 import」（如 `packages/ui/src/input/locale.ts`）；包级子路径导出 `@fluere-vue/ui/locales/*` 的聚合入口随 0.3 目标 3 构建落地（已记录）
+- [x] 首批纳入的文案：内置 a11y 可访问名（loading / close / 显示密码 / 增减 / 滚动条 方向/拇指）、后续 ProgressRing / InfoBar 的默认文案——`input` / `number-box` / `scroll-view` / `infobar` / `progress-ring` / `progress-bar` 六组；日期与数字一律走 `Intl`（NumberBox 的 `locale` / `formatOptions` prop，不并入文案通道）
+- [x] 组件库不引入 `vue-i18n` 运行时依赖，由 provider 注入 message resolver，并在 `packages/ui/README` 与文档站说明用法——复用 `@intlify/core-base`（`createCoreContext` / `translate` / `resolveValue` / `fallbackLocale`）；`packages/ui/README.md` 增 i18n 节；文档站新增 `config-provider` 双语页
+- [x] 回退链明确：`zh-Hans → zh → en`，缺 key 时落到 `en` 并只在开发环境告警——`packages/utils/src/locale.ts` 的 `normalizeLocale` / `resolveFallbackChain`；hooks 层 `onMissing` 在开发环境告警
 
 #### 1.5 质量与验收标准
 
-- [ ] 单测：locale 解析与回退链、provider 隔离（同进程两个 app 实例互不污染）——目前只有结构化消息解析的单测；回退链未单测，provider 隔离因 1.4 未开工而**无对应实现，无法测**
-- [ ] SSR 冒烟：`packages/ui/src/__tests__/ssr-smoke.test.ts` 在 `zh-Hans` / `en` 两种 locale 下均通过 —— **未覆盖**
+- [x] 单测：locale 解析与回退链、provider 隔离（同进程两个 app 实例互不污染）——`packages/utils/src/__tests__/locale.test.ts`（`normalizeLocale` / `resolveFallbackChain`）、`packages/hooks/src/__tests__/use-locale.test.ts`（回退链、Provider 覆盖、组件 `locale` prop 优先级、并发 SSR 隔离、客户端切 locale 即时更新）
+- [x] SSR 冒烟：`packages/ui/src/__tests__/ssr-smoke.test.ts` 在 `zh-Hans` / `en` 两种 locale 下均通过——新增「locale 内建文案 + 并发不串语言」describe：NumberBox / InfoBar / ProgressRing / ProgressBar 在两种 locale 下 SSR 直出对应文案，并覆盖同进程两请求并发隔离
 - [x] 文案完整性检查脚本：已从「key 集合对比」扩展为**三项**——key 集合一致、剥注释后的硬编码中文扫描、`t()` / `tm()` 引用存在性，任一缺失即失败；已接入根 `pnpm check` / CI
 - **验收（2026-10-10 复核）**：
   - 文档站任意页面在 `/`（中文）与 `/en` 下无遗漏串（专有名词、代码、API 名除外）：**已达成**（Playwright 实测 `/` 与 `/en` × 18 页共 300 项断言 0 失败：`/en` 正文与代码样例无汉字、无 `demos.*` key 泄漏、title / description / og 随语种；中文站抽查串逐条保留）；控制台无 i18n 警告：**已实机核对**（开发环境 `missingWarn` / `fallbackWarn` 打开，全部页面 0 条 intlify 告警、0 条 hydration 告警）
   - `pnpm docs:generate` 产出两种语言的静态页面：**已达成**（2026-10-10 复核：78 条路由，`dist/` 与 `dist/en/` 各含 16 个组件页，`<html lang>` 分别为 `zh-CN` / `en`，alternate 四组齐备；`/en` 产物剥除 script / style 后无汉字，`<title>` / `og:*` / description 按页与语种独立，中文页 demo 抽查串保留）；切换语言为**客户端路由跳转**（`setLocale()` + `navigateTo(switchLocalePath())`），非整页重载。**注**：本机 Node 默认 2 GB 堆上限下 nitro prerenderer 初始化即 OOM，已在干净树（`git stash` 后）复现——属**既有环境问题**、非本次改动引入；`NODE_OPTIONS=--max-old-space-size=4096` 后通过
-  - provider 切换 locale 时组件内建文案即时更新、两个并发 SSR 请求不串 locale：**未达成**（1.4 未开工）
+  - provider 切换 locale 时组件内建文案即时更新、两个并发 SSR 请求不串 locale：**已达成**（hooks 单测覆盖同进程两 app 互不污染 + 客户端切 locale 即时更新；ssr-smoke 覆盖两种 locale 的并发 SSR 隔离）
   - Lighthouse / axe 不出现 `lang` 相关告警，`<html lang>` 与水合结果一致：`<html lang>` 已与产物一致，Lighthouse / axe **尚未实跑**
 - **非目标（推后）**：RTL、第三种语言、翻译平台（Crowdin / Locize）工作流、组件文档逐页人工润色（一期允许机翻 + 术语表人工过一遍）。
 

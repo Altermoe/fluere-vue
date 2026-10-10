@@ -1,6 +1,8 @@
 /* oxlint-disable prefer-named-capture-group, no-magic-numbers -- 样式契约测试要读 SFC 源码做文本解析，正则与下标属测试细节 */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { h } from 'vue'
+import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereProgressBar from './progress-bar.vue'
 import barSfc from './progress-bar.vue?raw'
 
@@ -321,5 +323,39 @@ describe('FluereProgressBar 状态样式（WinUI 3 ProgressBar 契约）', () =>
     const styleText = readStyleText()
     const colors = styleText.match(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g) ?? []
     expect(colors).toEqual([])
+  })
+})
+
+describe('FluereProgressBar i18n（不确定态可访问名）', () => {
+  it('determinate 无 label 时不补缺省名', () => {
+    const wrapper = mount(FluereProgressBar)
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-label')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('indeterminate 无 label 时取内置缺省 zh-Hans：加载中', () => {
+    const wrapper = mount(FluereProgressBar, { props: { indeterminate: true } })
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-label')).toBe('加载中')
+    wrapper.unmount()
+  })
+
+  it('FluereConfigProvider locale=en 时不确定态取英文侧', () => {
+    const wrapper = mount(FluereConfigProvider, {
+      props: { locale: 'en' },
+      slots: { default: () => h(FluereProgressBar, { indeterminate: true }) },
+    })
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-label')).toBe('Loading')
+    wrapper.unmount()
+  })
+
+  it('显式 label 压过 locale', () => {
+    const wrapper = mount(FluereConfigProvider, {
+      props: { locale: 'en' },
+      slots: {
+        default: () => h(FluereProgressBar, { indeterminate: true, label: '同步中' }),
+      },
+    })
+    expect(wrapper.get('[role="progressbar"]').attributes('aria-label')).toBe('同步中')
+    wrapper.unmount()
   })
 })

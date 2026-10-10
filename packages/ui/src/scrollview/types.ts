@@ -10,6 +10,7 @@
  * API 刻意使用 WinUI Vector2 风格的 { x, y } 分量名
  * （对齐 Windows.Foundation.Numerics.Vector2 的 X / Y），保证与原生 API 一一对应。
  */
+import type { FluereLocale } from '@fluere-vue/utils'
 
 /* ------------------------------------------------------------------ */
 /* 枚举（对应 WinUI ScrollingControls 共享枚举）                         */
@@ -321,6 +322,13 @@ interface FluereScrollViewProps {
    * 只在提供名称时才加 role：未命名的 region 会污染地标列表，不如不加。
    */
   label?: string
+
+  /**
+   * 本组件内建文案（滚动条两端步进按钮、滚动条拇指的可访问名）的 locale，
+   * 优先于 `FluereConfigProvider`，缺省内置 zh-Hans。归一由 `@fluere-vue/utils`
+   * 完成（`zh-CN` / `zh` 落到 `zh-Hans`），见 `./locale.ts`。
+   */
+  locale?: FluereLocale | string
 
   /**
    * 是否响应 DOM 命令事件（`fluere:scroll-to` / `fluere:scroll-by` /

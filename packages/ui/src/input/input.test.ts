@@ -1,7 +1,8 @@
 /* oxlint-disable prefer-named-capture-group, no-magic-numbers -- 样式契约测试要读 SFC 源码做文本解析，正则与下标属测试细节 */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { nextTick } from 'vue'
+import { h, nextTick } from 'vue'
+import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereInput from './input.vue'
 import inputSfc from './input.vue?raw'
 
@@ -237,7 +238,7 @@ describe('FluereInput 密码形态（PasswordBox）', () => {
     const reveal = wrapper.get('.fui-input__reveal')
     expect(reveal.attributes('type')).toBe('button')
     expect(reveal.attributes('tabindex')).toBe('-1')
-    expect(reveal.attributes('aria-label')).toBe('Show password')
+    expect(reveal.attributes('aria-label')).toBe('显示密码')
     expect(wrapper.get('span.fui-input').attributes('data-reveal')).toBeDefined()
     expect(wrapper.get('input').attributes('type')).toBe('password')
 
@@ -526,5 +527,67 @@ describe('FluereInput 状态样式（WinUI 3 TextBox 契约）', () => {
     expect(rules.get('.fui-input__control[data-composing]') ?? '').toContain(
       '-webkit-text-security: disc',
     )
+  })
+})
+
+describe('FluereInput i18n（显示按钮可访问名）', () => {
+  /** 聚焦 + 输入，钉住宽度让显示按钮出现 */
+  const revealUnder = async (
+    render: () => import('@vue/test-utils').VueWrapper,
+  ): Promise<import('@vue/test-utils').DOMWrapper<HTMLButtonElement>> => {
+    stubClientWidth(300)
+    const wrapper = render()
+    await wrapper.get('input').trigger('focusin')
+    await simulateTyping(wrapper, 'secret')
+    return wrapper.get(
+      '.fui-input__reveal',
+    ) as import('@vue/test-utils').DOMWrapper<HTMLButtonElement>
+  }
+
+  it('无 Provider 时内置缺省 zh-Hans：显示密码', async () => {
+    const reveal = await revealUnder(() => mount(FluereInput, { props: { type: 'password' } }))
+    expect(reveal.attributes('aria-label')).toBe('显示密码')
+  })
+
+  it('FluereConfigProvider locale=en 时取英文侧', async () => {
+    const reveal = await revealUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: { default: () => h(FluereInput, { type: 'password' }) },
+      }),
+    )
+    expect(reveal.attributes('aria-label')).toBe('Show password')
+  })
+
+  it('组件 locale prop 压过 Provider locale', async () => {
+    const reveal = await revealUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: { default: () => h(FluereInput, { type: 'password', locale: 'zh-Hans' }) },
+      }),
+    )
+    expect(reveal.attributes('aria-label')).toBe('显示密码')
+  })
+
+  it('显式 revealButtonLabel 压过 locale', async () => {
+    const reveal = await revealUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { locale: 'en' },
+        slots: {
+          default: () => h(FluereInput, { type: 'password', revealButtonLabel: '自定义' }),
+        },
+      }),
+    )
+    expect(reveal.attributes('aria-label')).toBe('自定义')
+  })
+
+  it('Provider messages 按 locale×scope 覆盖内置文案', async () => {
+    const reveal = await revealUnder(() =>
+      mount(FluereConfigProvider, {
+        props: { messages: { 'zh-Hans': { input: { showPassword: '覆盖' } } } },
+        slots: { default: () => h(FluereInput, { type: 'password' }) },
+      }),
+    )
+    expect(reveal.attributes('aria-label')).toBe('覆盖')
   })
 })

@@ -142,21 +142,26 @@ export interface FluereInputProps {
   passwordChar?: string
 
   /**
-   * 显示按钮的无障碍名（对应 WinUI 的本地化串 `UIA_PASSWORDBOX_REVEAL`，见 constants.ts）
+   * 显示按钮的无障碍名（对应 WinUI 的本地化串 `UIA_PASSWORDBOX_REVEAL`）。
+   * 显式传入时压过 locale；缺省取当前 locale 的内建文案（见 ./locale.ts）。
    */
   revealButtonLabel?: string
+
+  /**
+   * 本组件内建文案的 locale（优先于 `FluereConfigProvider`，缺省内置 zh-Hans）。
+   * 归一由 `@fluere-vue/utils` 完成（`zh-CN` / `zh` 落到 `zh-Hans`）。
+   */
+  locale?: FluereLocale | string
 }
 </script>
 
 <script setup lang="ts">
+import { useScopeMessages } from '@fluere-vue/hooks'
 import { FluentIconEye12Regular } from '@fluere-vue/icons'
+import type { FluereLocale } from '@fluere-vue/utils'
 import { computed, nextTick, ref, useAttrs, useId, useSlots, watch } from 'vue'
-import {
-  DEFAULT_MULTILINE_ROWS,
-  DEFAULT_REVEAL_BUTTON_LABEL,
-  MASK_HISTORY_LIMIT,
-  MASK_RANGE_INDEX,
-} from './constants'
+import { DEFAULT_MULTILINE_ROWS, MASK_HISTORY_LIMIT, MASK_RANGE_INDEX } from './constants'
+import { inputLocale } from './locale'
 import { maskPassword, resolveMaskChar, resolveMaskEdit } from './password-mask'
 import type { MaskEditRange } from './password-mask'
 import { usePasswordReveal } from './use-password-reveal'
@@ -174,10 +179,15 @@ const props = withDefaults(defineProps<FluereInputProps>(), {
   rows: DEFAULT_MULTILINE_ROWS,
   passwordRevealMode: 'peek',
   passwordChar: undefined,
-  revealButtonLabel: DEFAULT_REVEAL_BUTTON_LABEL,
+  revealButtonLabel: undefined,
 })
 
 const model = defineModel<string>()
+
+/** 本组件内建文案：scope=`input`，locale prop 优先、否则跟随 Provider */
+const inputI18n = useScopeMessages('input', inputLocale, () => props.locale)
+/** 显示按钮可访问名：显式 prop 压过 locale 内建文案 */
+const revealLabel = computed(() => props.revealButtonLabel || inputI18n.t('showPassword'))
 
 defineOptions({
   name: 'FluereInput',
@@ -613,7 +623,7 @@ const rootClass = computed(() => [
         type="button"
         class="fui-input__reveal"
         tabindex="-1"
-        :aria-label="revealButtonLabel"
+        :aria-label="revealLabel"
         @mousedown.prevent
         @pointerdown="onRevealPointerDown"
         @pointerup="onRevealPointerUp"

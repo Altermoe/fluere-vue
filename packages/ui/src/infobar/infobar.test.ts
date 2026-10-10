@@ -2,6 +2,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
+import FluereConfigProvider from '../config-provider/config-provider.vue'
 import { INFO_BAR_MIN_HEIGHT, INFO_BAR_SEVERITY_ICONS } from './constants'
 import FluereInfoBar from './infobar.vue'
 import infobarSfc from './infobar.vue?raw'
@@ -585,5 +586,33 @@ describe('FluereInfoBar 样式契约（WinUI 3 InfoBar 资源）', () => {
   it('样式块不含硬编码色值（只允许 var(--Token) 与 currentColor）', () => {
     const colors = readStyleText().match(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g) ?? []
     expect(colors).toEqual([])
+  })
+})
+
+describe('FluereInfoBar i18n（关闭按钮可访问名）', () => {
+  it('无 Provider 时内置缺省 zh-Hans：关闭', () => {
+    const wrapper = mount(FluereInfoBar, { props: { open: true, title: 't' } })
+    expect(wrapper.get('.fui-infobar__close').attributes('aria-label')).toBe('关闭')
+    wrapper.unmount()
+  })
+
+  it('FluereConfigProvider locale=en 时取英文侧', () => {
+    const wrapper = mount(FluereConfigProvider, {
+      props: { locale: 'en' },
+      slots: { default: () => h(FluereInfoBar, { open: true, title: 't' }) },
+    })
+    expect(wrapper.get('.fui-infobar__close').attributes('aria-label')).toBe('Close')
+    wrapper.unmount()
+  })
+
+  it('显式 closeButtonLabel 压过 locale', () => {
+    const wrapper = mount(FluereConfigProvider, {
+      props: { locale: 'en' },
+      slots: {
+        default: () => h(FluereInfoBar, { open: true, title: 't', closeButtonLabel: 'X' }),
+      },
+    })
+    expect(wrapper.get('.fui-infobar__close').attributes('aria-label')).toBe('X')
+    wrapper.unmount()
   })
 })

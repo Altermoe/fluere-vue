@@ -29,16 +29,6 @@ const DEFAULT_PASSWORD_CHAR = '\u25CF'
 const PASSWORD_REVEAL_MIN_WIDTH_EM = 5
 
 /**
- * 显示按钮的缺省无障碍名。
- *
- * 证据缺口：WinUI 走本地化资源 `UIA_PASSWORDBOX_REVEAL`（`PasswordBox_Partial.cpp`
- * 第 590 行），该资源串不在公开树内，取不到 A 级原值；这里的缺省值与官方样例
- * （WinUI Gallery `PasswordBoxPage.xaml` 的 "Show password" 复选框）用词一致，
- * 消费方可用 `revealButtonLabel` 覆盖。
- */
-const DEFAULT_REVEAL_BUTTON_LABEL = 'Show password'
-
-/**
  * 多行形态的缺省行数。
  *
  * WinUI 的 TextBox 没有「尺寸」概念，`AcceptsReturn=true` 时高度仍由 MinHeight
@@ -64,7 +54,6 @@ const MASK_HISTORY_LIMIT = 100
 export {
   DEFAULT_MULTILINE_ROWS,
   DEFAULT_PASSWORD_CHAR,
-  DEFAULT_REVEAL_BUTTON_LABEL,
   MASK_CHAR_INDEX,
   MASK_HISTORY_LIMIT,
   MASK_RANGE_INDEX,

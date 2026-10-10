@@ -23,6 +23,7 @@ import {
   FluentIconControlButton24Regular,
   FluentIconDataBarHorizontal24Regular,
   FluentIconDualScreenVerticalScroll24Regular,
+  FluentIconGlobe24Regular,
   FluentIconInfo24Regular,
   FluentIconNumberSymbol24Regular,
   FluentIconOptions24Regular,
@@ -214,6 +215,13 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'aspect-ratio', name: 'Aspect Ratio', implemented: false },
       { slug: 'avatar', name: 'Avatar', implemented: false },
       { slug: 'collapsible', name: 'Collapsible', implemented: false },
+      {
+        slug: 'config-provider',
+        name: 'Config Provider',
+        implemented: true,
+        summaryKey: 'config-provider',
+        icon: FluentIconGlobe24Regular,
+      },
       {
         slug: 'content-dialog',
         name: 'Content Dialog',
