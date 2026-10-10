@@ -17,7 +17,8 @@
   "scripts": {
     "extract": "node scripts/extract-tokens.mjs",
     "generate": "node scripts/generate.mjs",
-    "sync": "node scripts/extract-tokens.mjs && node scripts/generate.mjs"
+    "sync": "node scripts/extract-tokens.mjs && node scripts/generate.mjs",
+    "tsc": "tsc --noEmit"
   },
   "dependencies": {
     "@fluentui/tokens": "catalog:",

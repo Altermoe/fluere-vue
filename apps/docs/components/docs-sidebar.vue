@@ -25,7 +25,9 @@ const isDesktop = useMediaQuery('(min-width: 1024px)')
 
 // 断点升到桌面时强制收起抽屉：否则状态滞留为「开」，下次缩回移动端会意外弹出
 watch(isDesktop, (desktop) => {
-  if (desktop) close()
+  if (desktop) {
+    close()
+  }
 })
 
 // 选中新组件（路由变化）后收起抽屉，回到整页滚动视图
@@ -33,19 +35,28 @@ watch(() => route.fullPath, close)
 
 // Escape 收起抽屉；仅在展开期间挂监听
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') close()
+  if (event.key === 'Escape') {
+    close()
+  }
 }
 watch(
   open,
   (isOpen) => {
-    if (!import.meta.client) return
-    if (isOpen) window.addEventListener('keydown', onKeydown)
-    else window.removeEventListener('keydown', onKeydown)
+    if (!import.meta.client) {
+      return
+    }
+    if (isOpen) {
+      globalThis.addEventListener('keydown', onKeydown)
+    } else {
+      globalThis.removeEventListener('keydown', onKeydown)
+    }
   },
   { immediate: true },
 )
 onScopeDispose(() => {
-  if (import.meta.client) window.removeEventListener('keydown', onKeydown)
+  if (import.meta.client) {
+    globalThis.removeEventListener('keydown', onKeydown)
+  }
 })
 </script>
 

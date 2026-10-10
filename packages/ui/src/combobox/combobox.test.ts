@@ -62,7 +62,7 @@ const keydown = (element: Element, key: string, init: KeyboardEventInit = {}): v
 /** 宿主：默认挂到 document.body，弹层（Teleport 到 body）才能被查询到 */
 const host = (
   props: Record<string, unknown> = {},
-  options: { slots?: Record<string, string> } = {},
+  options: { slots?: Record<string, () => unknown> } = {},
 ) =>
   mount(FluereCombobox, {
     attachTo: document.body,
@@ -79,7 +79,7 @@ const settle = async (): Promise<void> => {
 const surface = (wrapper: ReturnType<typeof host>) => wrapper.get('.fui-combobox__surface')
 const input = (wrapper: ReturnType<typeof host>) =>
   wrapper.get<HTMLInputElement>('input[role="combobox"]')
-const popup = () => document.querySelector('.fui-combobox__popup')
+const popup = () => document.querySelector<HTMLElement>('.fui-combobox__popup')
 const options = () => [...document.querySelectorAll('.fui-combobox__item')]
 
 // 每个用例结束自动卸载（弹层 Teleport 到 body，卸载后会一并清掉）
@@ -97,14 +97,14 @@ beforeEach(() => {
 describe('FluereCombobox 渲染契约', () => {
   it('渲染控件外壳：只读输入框 + role=combobox + 箭头 + 无面板内容', () => {
     const wrapper = host()
-    expect(wrapper.get('.fui-combobox').exists()).toBe(true)
+    expect(wrapper.find('.fui-combobox').exists()).toBe(true)
 
     const control = input(wrapper)
     expect(control.attributes('role')).toBe('combobox')
     expect(control.attributes('readonly')).toBeDefined()
     expect(control.attributes('aria-expanded')).toBe('false')
     expect(control.attributes('aria-autocomplete')).toBe('none')
-    expect(wrapper.get('.fui-combobox__chevron').exists()).toBe(true)
+    expect(wrapper.find('.fui-combobox__chevron').exists()).toBe(true)
     // 面板未展开时不渲染下拉项
     expect(popup()).toBeNull()
     wrapper.unmount()
@@ -621,7 +621,7 @@ describe('FluereCombobox 自定义插槽', () => {
       props: { items: [{ value: 'a', text: 'Apple' }] },
       slots: {
         item: (slotProps: { item: FluereComboboxItem }) =>
-          h('b', { class: 'custom' }, slotProps.item.value),
+          h('b', { class: 'custom' }, String(slotProps.item.value)),
       },
     })
     pointerDown(surface(wrapper).element)

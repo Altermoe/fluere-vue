@@ -11,6 +11,11 @@
     "import/no-named-export": "off",
     "unicorn/prefer-export-from": "off",
     "no-duplicate-imports": "off", // 允许分开导入
+    // 本仓统一用具名导出：单导出文件（locale 切片、Nuxt composable 等）不改为 default ——
+    // Nuxt 的自动导入只识别具名导出，改 default 会直接断掉自动导入。故关闭该偏好规则。
+    "import/prefer-default-export": "off",
+    // 类型 / 接口有意紧邻其实现或使用处，不强求全部 export 沉到文件末尾。
+    "import/exports-last": "off",
     "sort-imports": "off", // 由 oxfmt 接管
     "sort-keys": "off",
     "max-statements": "off",
@@ -89,5 +94,14 @@
     "node": true,
     "vue": true
   },
+  "overrides": [
+    {
+      // scripts/ 是仓库自用的 Node 脚本（无浏览器产物），用 node: 内建模块是其职责本身。
+      "files": ["scripts/**/*.mjs"],
+      "rules": {
+        "import/no-nodejs-modules": "off"
+      }
+    }
+  ],
   "ignorePatterns": ["**/node_modules/", "**/dist/", "**/build/", "**/.eslintrc*", "*.config.*"]
 }

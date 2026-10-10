@@ -214,7 +214,7 @@ const isOpen = computed(() => model.value === true)
 watch(model, (value, previous) => {
   if (value) {
     lastCloseReason = 'programmatic'
-    void nextTick(() => {
+    void nextTick().then(() => {
       emit('opened')
     })
     return

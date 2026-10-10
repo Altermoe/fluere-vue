@@ -406,6 +406,9 @@ importers:
       vue:
         specifier: 'catalog:'
         version: 3.5.40(typescript@6.0.3)
+      vue-tsc:
+        specifier: 'catalog:'
+        version: 3.3.8(typescript@6.0.3)
 
   packages/utils: {}
 

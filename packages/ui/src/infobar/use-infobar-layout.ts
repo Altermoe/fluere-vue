@@ -66,7 +66,7 @@ const marginsOf = (
   horizontal: readonly [number, number, number, number]
 } => {
   switch (name) {
-    case 'title':
+    case 'title': {
       return {
         vertical: [INFO_BAR_METRICS.titleVerticalMarginTop, 0, 0, 0],
         horizontal: [
@@ -76,7 +76,8 @@ const marginsOf = (
           INFO_BAR_METRICS.titleHorizontalMarginStart,
         ],
       }
-    case 'message':
+    }
+    case 'message': {
       return {
         vertical: [INFO_BAR_METRICS.messageVerticalMarginTop, 0, 0, 0],
         horizontal: [
@@ -86,7 +87,8 @@ const marginsOf = (
           INFO_BAR_METRICS.messageHorizontalMarginStart,
         ],
       }
-    default:
+    }
+    default: {
       return {
         vertical: [INFO_BAR_METRICS.actionVerticalMarginTop, 0, 0, 0],
         horizontal: [
@@ -96,6 +98,7 @@ const marginsOf = (
           INFO_BAR_METRICS.actionHorizontalMarginStart,
         ],
       }
+    }
   }
 }
 
@@ -168,8 +171,8 @@ export const useInfoBarLayout = (deps: () => readonly unknown[]): InfoBarLayoutC
     void nextTick(measure)
   }
 
-  let cellObserver: ResizeObserver | undefined
-  let measureObserver: ResizeObserver | undefined
+  let cellObserver: ResizeObserver | undefined = undefined
+  let measureObserver: ResizeObserver | undefined = undefined
 
   onMounted(() => {
     const cell = contentCellRef.value

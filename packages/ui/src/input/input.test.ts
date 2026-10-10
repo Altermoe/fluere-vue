@@ -1,5 +1,5 @@
 /* oxlint-disable prefer-named-capture-group, no-magic-numbers -- 样式契约测试要读 SFC 源码做文本解析，正则与下标属测试细节 */
-import { mount } from '@vue/test-utils'
+import { mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { h, nextTick } from 'vue'
 import FluereConfigProvider from '../config-provider/config-provider.vue'
@@ -532,16 +532,12 @@ describe('FluereInput 状态样式（WinUI 3 TextBox 契约）', () => {
 
 describe('FluereInput i18n（显示按钮可访问名）', () => {
   /** 聚焦 + 输入，钉住宽度让显示按钮出现 */
-  const revealUnder = async (
-    render: () => import('@vue/test-utils').VueWrapper,
-  ): Promise<import('@vue/test-utils').DOMWrapper<HTMLButtonElement>> => {
+  const revealUnder = async (render: () => VueWrapper): Promise<DOMWrapper<HTMLButtonElement>> => {
     stubClientWidth(300)
     const wrapper = render()
     await wrapper.get('input').trigger('focusin')
     await simulateTyping(wrapper, 'secret')
-    return wrapper.get(
-      '.fui-input__reveal',
-    ) as import('@vue/test-utils').DOMWrapper<HTMLButtonElement>
+    return wrapper.get('.fui-input__reveal') as DOMWrapper<HTMLButtonElement>
   }
 
   it('无 Provider 时内置缺省 zh-Hans：显示密码', async () => {

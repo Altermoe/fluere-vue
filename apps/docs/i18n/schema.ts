@@ -16,7 +16,7 @@
  * JSON 可被 itty 直接 import，无需额外 resolveJsonModule 开关
  * （本仓 tsconfig.base.json 已开）。
  */
-import zhHans from './locales/zh-Hans.json'
+import type zhHans from './locales/zh-Hans.json'
 
 /** 由 zh-Hans 主语言推导出的完整 message 结构（运行时 JSON 的类型视图）。 */
 export type MessageSchema = typeof zhHans

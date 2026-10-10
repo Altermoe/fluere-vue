@@ -9,6 +9,7 @@ import fixtureSfc from './tooltip-fixture.vue?raw'
 import FluereTooltipProvider from './tooltip-provider.vue'
 import providerSfc from './tooltip-provider.vue?raw'
 import FluereTooltip from './tooltip.vue'
+import type { FluereTooltipAlign, FluereTooltipPlacement } from './types'
 
 /**
  * 从 SFC 的 `<style>` 块解析出「选择器 → 声明」，用于断言状态样式。
@@ -73,9 +74,9 @@ interface MountOptions {
   content?: string
   open?: boolean
   disabled?: boolean
-  placement?: string
+  placement?: FluereTooltipPlacement
   sideOffset?: number
-  align?: string
+  align?: FluereTooltipAlign
   delayDuration?: number
 }
 

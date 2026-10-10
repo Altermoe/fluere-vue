@@ -24,7 +24,7 @@ const createHarness = <T>(props: ComboboxSelectionProps<T> = {}) => {
   const selectionChanged = vi.fn()
   const textChange = vi.fn()
   const events: ComboboxSelectionEvents<T> = { valueChange, selectionChanged, textChange }
-  const model = useComboboxSelection<T>(state, events)
+  const model = useComboboxSelection<T>(state as ComboboxSelectionProps<T>, events)
   return { state, model, valueChange, selectionChanged, textChange }
 }
 

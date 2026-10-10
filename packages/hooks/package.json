@@ -10,7 +10,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {},
+  "scripts": {
+    "tsc": "tsc --noEmit"
+  },
   "dependencies": {
     "@fluere-vue/utils": "workspace:*",
     "@intlify/core-base": "catalog:"

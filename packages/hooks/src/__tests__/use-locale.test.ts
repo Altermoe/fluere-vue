@@ -1,9 +1,8 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, ref, type Component } from 'vue'
-import { createSSRApp } from 'vue'
+import { defineComponent, h, nextTick, ref, type Component, createSSRApp } from 'vue'
 import { renderToString } from 'vue/server-renderer'
-import type { ComponentLocaleSlice } from '../use-locale'
+import type { ComponentLocaleSlice, ProviderMessages } from '../use-locale'
 import { provideLocale, useScopeMessages } from '../use-locale'
 
 /** 一个只渲染自身 scope key 的探针组件，setup 里取 `t` 再渲染出结果。 */
@@ -17,7 +16,7 @@ function makeProbe(
   const component = defineComponent({
     name: 'LocaleProbe',
     inheritAttrs: false,
-    props: { locale: String },
+    props: { locale: { type: String, default: '' } },
     setup(props) {
       const { t } = useScopeMessages('probe', slice, props.locale)
       return () => h('span', t(key))
@@ -32,7 +31,7 @@ const renderProbe = (
   key: string,
   opts: {
     providerLocale?: string
-    messages?: Parameters<typeof provideLocale>[0]['messages']
+    messages?: ProviderMessages
     overrideLocale?: string
   } = {},
 ): Promise<string> => {

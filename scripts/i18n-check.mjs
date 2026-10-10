@@ -229,12 +229,13 @@ if (hits.length) {
 }
 
 // ---- key 引用存在性：源码里 t('…') / tm('…') 字面量必须能在主语言解析到节点 ----
-const KEY_REF_RE = /(?<![\w.$])([bt]m?)\(\s*('([^'\\]+)'|"([^"\\]+)")/g
+const KEY_REF_RE =
+  /(?<![\w.$])(?<fn>[bt]m?)\(\s*(?<quoted>'(?<single>[^'\\]+)'|"(?<double>[^"\\]+)")/g
 
 /** key 路径能否在消息树上解析到节点（容器 / 数组 / 叶子都算存在）。 */
 function keyExists(tree, path) {
   let node = tree
-  for (const part of path.replace(/\[(\d+)\]/g, '.$1').split('.')) {
+  for (const part of path.replace(/\[(?<index>\d+)\]/g, '.$<index>').split('.')) {
     if (node === null || typeof node !== 'object') {
       return false
     }
@@ -291,25 +292,25 @@ if (missingRefs.size) {
  */
 const UI_LOCALES_ROOT = join(ROOT, 'packages/ui/src')
 function collectLocaleSlices(dir) {
-  const files = []
+  const collected = []
   for (const name of readdirSync(dir)) {
     const abs = join(dir, name)
     if (statSync(abs).isDirectory()) {
       if (name !== '__tests__') {
-        files.push(...collectLocaleSlices(abs))
+        collected.push(...collectLocaleSlices(abs))
       }
     } else if (name === 'locale.ts') {
-      files.push(abs)
+      collected.push(abs)
     }
   }
-  return files
+  return collected
 }
 const objectKeySet = (block) =>
-  new Set([...block.matchAll(/^\s*([A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]))
+  new Set([...block.matchAll(/^\s*(?<key>[A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]))
 for (const file of collectLocaleSlices(UI_LOCALES_ROOT)) {
   const src = stripComments(readFileSync(file, 'utf8'), false)
-  const zh = /zhHans\s*:\s*\{([\s\S]*?)\}/.exec(src)
-  const en = /en\s*:\s*\{([\s\S]*?)\}/.exec(src)
+  const zh = /zhHans\s*:\s*\{(?<body>[\s\S]*?)\}/.exec(src)
+  const en = /en\s*:\s*\{(?<body>[\s\S]*?)\}/.exec(src)
   if (!zh || !en) {
     failed = true
     console.error(
@@ -324,8 +325,12 @@ for (const file of collectLocaleSlices(UI_LOCALES_ROOT)) {
   if (missingEn.length || extraEn.length) {
     failed = true
     console.error(`✗ ${relative(ROOT, file)} 组件 locale 切片 zh-Hans / en key 不一致：`)
-    if (missingEn.length) console.error(`   zh-Hans 有、en 缺: ${missingEn.join(', ')}`)
-    if (extraEn.length) console.error(`   en 有、zh-Hans 缺: ${extraEn.join(', ')}`)
+    if (missingEn.length) {
+      console.error(`   zh-Hans 有、en 缺: ${missingEn.join(', ')}`)
+    }
+    if (extraEn.length) {
+      console.error(`   en 有、zh-Hans 缺: ${extraEn.join(', ')}`)
+    }
   } else {
     console.log(`✓ ${relative(ROOT, file)}: ${zhKeys.size} 个 key 两侧一致`)
   }

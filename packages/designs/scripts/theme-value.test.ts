@@ -122,7 +122,7 @@ describe('token 数据 → CSS 声明契约', () => {
 
   it('中性阴影 6 档：两层阴影，每层颜色随明暗切换', () => {
     for (const step of SHADOW_SCALE) {
-      const value = tokens[`shadow${step}`]
+      const value = tokens[`shadow${step}`]!
       expect(value, `shadow${step} 应存在`).toBeDefined()
       const merged = mergeThemedValue(`shadow${step}`, value.light, value.dark)
       expect(readLightDarkBodies(merged)).toHaveLength(2)
@@ -132,7 +132,7 @@ describe('token 数据 → CSS 声明契约', () => {
 
   it('品牌阴影 6 档：明暗同值，保持字面量（不需要 light-dark()）', () => {
     for (const step of SHADOW_SCALE) {
-      const value = tokens[`shadow${step}Brand`]
+      const value = tokens[`shadow${step}Brand`]!
       expect(value, `shadow${step}Brand 应存在`).toBeDefined()
       expect(String(value.light)).toBe(String(value.dark))
       expect(value.light).not.toContain('light-dark(')

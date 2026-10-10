@@ -1,4 +1,5 @@
 /* oxlint-disable prefer-named-capture-group, no-magic-numbers -- 样式契约测试要读 SFC 源码做文本解析，正则与下标属测试细节 */
+/* oxlint-disable import/no-duplicates -- 同时 import 组件与 `?raw` 源码是 Vite 下的常规写法（本仓 16 个契约测试同形），oxlint 会误判为重复导入 */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { h } from 'vue'

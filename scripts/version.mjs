@@ -33,11 +33,17 @@ function collectTargets() {
   const targets = []
   for (const dir of WORKSPACE_DIRS) {
     const abs = join(ROOT, dir)
-    if (!existsSync(abs)) continue
+    if (!existsSync(abs)) {
+      continue
+    }
     for (const entry of readdirSync(abs, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue
+      if (!entry.isDirectory()) {
+        continue
+      }
       const pkg = join(abs, entry.name, 'package.json')
-      if (existsSync(pkg)) targets.push(pkg)
+      if (existsSync(pkg)) {
+        targets.push(pkg)
+      }
     }
   }
   return targets
@@ -52,7 +58,9 @@ function cmdSync(version) {
   let changed = 0
   for (const path of targets) {
     const pkg = readJson(path)
-    if (pkg.version === version) continue
+    if (pkg.version === version) {
+      continue
+    }
     const before = pkg.version
     pkg.version = version
     writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`)
@@ -69,13 +77,15 @@ function cmdSync(version) {
 function cmdCheck(version, tag) {
   const problems = []
   const targets = collectTargets()
-  if (targets.length === 0)
+  if (targets.length === 0) {
     problems.push('未找到任何子包 package.json（检查 pnpm-workspace.yaml 的 packages 目录）')
+  }
 
   for (const path of targets) {
     const actual = readJson(path).version
-    if (actual !== version)
+    if (actual !== version) {
       problems.push(`${rel(path)}: ${actual} != 根 package.json 的 ${version}`)
+    }
   }
 
   if (tag) {
@@ -91,7 +101,9 @@ function cmdCheck(version, tag) {
 
   if (problems.length > 0) {
     console.error('版本一致性检查失败：')
-    for (const p of problems) console.error(`  - ${p}`)
+    for (const p of problems) {
+      console.error(`  - ${p}`)
+    }
     process.exit(1)
   }
   console.log(
@@ -101,7 +113,7 @@ function cmdCheck(version, tag) {
 
 const [command, ...rest] = process.argv.slice(2)
 const tagIndex = rest.indexOf('--tag')
-const tag = tagIndex >= 0 ? rest[tagIndex + 1] : undefined
+const tag = tagIndex !== -1 ? rest[tagIndex + 1] : undefined
 const { version } = readJson(rootPkgPath)
 
 if (!version) {
@@ -110,13 +122,16 @@ if (!version) {
 }
 
 switch (command) {
-  case 'sync':
+  case 'sync': {
     cmdSync(version)
     break
-  case 'check':
+  }
+  case 'check': {
     cmdCheck(version, tag)
     break
-  default:
+  }
+  default: {
     console.error('用法：node scripts/version.mjs <sync|check> [--tag vX.Y.Z]')
     process.exit(2)
+  }
 }

@@ -15,6 +15,9 @@ import {
 import FluereInfoBadge from './info-badge.vue'
 import infoBadgeSfc from './info-badge.vue?raw'
 
+/** 自定义图标组件（提到模块作用域，避免每次用例重建）。 */
+const CustomIcon = () => h('svg', { 'data-test': 'custom' })
+
 /**
  * 从 SFC 的 `<style>` 块解析出「选择器 → 声明」，用于断言状态样式。
  *
@@ -118,8 +121,7 @@ describe('FluereInfoBadge 形态推导（对齐 InfoBadge.cpp#OnDisplayKindPrope
   })
 
   it('icon 传组件 ⇒ 直接作为图标（对齐显式设置 IconSource）', () => {
-    const Custom = () => h('svg', { 'data-test': 'custom' })
-    const wrapper = mount(FluereInfoBadge, { props: { icon: Custom } })
+    const wrapper = mount(FluereInfoBadge, { props: { icon: CustomIcon } })
     expect(wrapper.get('.fui-info-badge').attributes('data-display-kind')).toBe('icon')
     expect(wrapper.find('[data-test="custom"]').exists()).toBe(true)
   })
@@ -284,7 +286,7 @@ describe('FluereInfoBadge 样式契约（对齐 InfoBadge.xaml 模板与资源�
   it('所有视觉值要么是 token 变量，要么是带 WinUI 资源名的局部变量', () => {
     // 采集所有 px 字面量，逐个确认来自 --fui-info-badge-* 局部变量定义
     const literals = [...readStyleText().matchAll(/:\s*([^;{}]*\d+px[^;{}]*)/g)].map((m) =>
-      m[1].trim(),
+      m[1]!.trim(),
     )
     for (const literal of literals) {
       const allowed = literal.includes('var(--') || /^[0-9.]+px$/.test(literal)
@@ -295,7 +297,7 @@ describe('FluereInfoBadge 样式契约（对齐 InfoBadge.xaml 模板与资源�
 
 describe('FluereInfoBadge Severity 字形映射（对齐 *IconInfoBadgeStyle 的预置 IconSource）', () => {
   it('五档都有内建字形，值都是组件', () => {
-    expect(Object.keys(INFO_BADGE_SEVERITY_ICONS).sort()).toEqual([
+    expect(Object.keys(INFO_BADGE_SEVERITY_ICONS).toSorted()).toEqual([
       'attention',
       'caution',
       'critical',

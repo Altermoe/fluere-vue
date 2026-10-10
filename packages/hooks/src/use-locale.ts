@@ -104,10 +104,13 @@ export interface ScopeMessages {
 registerMessageCompiler(compile)
 
 /** 缺 key 只在开发环境告警（生产静默回退，不刷屏）。 */
-const isDev = (): boolean =>
-  typeof process === 'undefined' ||
-  process.env?.NODE_ENV === undefined ||
-  process.env.NODE_ENV !== 'production'
+const isDev = (): boolean => {
+  // 经 globalThis 取 NODE_ENV：浏览器端 process 不存在 → 视为开发环境；
+  // 不直接引用 `process` 全局，避免浏览器库类型检查被迫依赖 @types/node。
+  const nodeEnv = (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
+    ?.NODE_ENV
+  return nodeEnv === undefined || nodeEnv !== 'production'
+}
 
 /* ------------------------------------------------------------------ */
 /* Provider / 注入                                                     */
@@ -182,13 +185,21 @@ export function useLocale(): LocaleContext {
 /* Scope 级文案解析                                                    */
 /* ------------------------------------------------------------------ */
 
+/** `buildScopeContext` 的入参（聚成对象以满足最大参数个数约束）。 */
+interface BuildScopeContextInput {
+  scope: string
+  slice: ComponentLocaleSlice
+  resolvedLocale: FluereLocale
+  providerMessages: ProviderMessages | undefined
+}
+
 /** 构造 scope 级的 core context（locale / 回退 / 消息 / 编译器）。 */
-function buildScopeContext(
-  scope: string,
-  slice: ComponentLocaleSlice,
-  resolvedLocale: FluereLocale,
-  providerMessages: ProviderMessages | undefined,
-): CoreContext {
+function buildScopeContext({
+  scope,
+  slice,
+  resolvedLocale,
+  providerMessages,
+}: BuildScopeContextInput): CoreContext {
   // zh-Hans 与 zh 别名镜像同内容；en 为终值兜底。Provider 覆盖按 locale×scope 并入。
   const zh = providerMessages?.['zh-Hans']?.[scope]
   const en = providerMessages?.['en']?.[scope]
@@ -256,7 +267,12 @@ export function useScopeMessages(
   })
 
   const context = computed(() =>
-    buildScopeContext(scope, slice, resolvedLocale.value, ctx.messages.value),
+    buildScopeContext({
+      scope,
+      slice,
+      resolvedLocale: resolvedLocale.value,
+      providerMessages: ctx.messages.value,
+    }),
   )
 
   const t = (path: string, params?: Record<string, string | number>): string => {

@@ -219,9 +219,9 @@ describe('FluereInfoBar 关闭链路（对齐 InfoBar.cpp）', () => {
             'open': open.value,
             'title': 'Title',
             'closeButtonCommand': () => order.push('closeButtonCommand'),
-            'onUpdate:open': (value: boolean) => {
+            'onUpdate:open': (value: unknown) => {
               order.push('update:open')
-              open.value = value
+              open.value = value as boolean
             },
             'onCloseButtonClick': () => order.push('closeButtonClick'),
             'onClosing': () => order.push('closing'),

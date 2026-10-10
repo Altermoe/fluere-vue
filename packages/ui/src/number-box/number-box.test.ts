@@ -6,6 +6,12 @@ import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereNumberBox from './number-box.vue'
 import numberBoxSfc from './number-box.vue?raw'
 
+/** 读某次渲染下增减按钮的 aria-label 列表（提到模块作用域，避免每次用例重建）。 */
+const labelsUnder = (render: () => unknown) => {
+  const wrapper = render() as ReturnType<typeof mount>
+  return wrapper.findAll('.fui-number-box__spin-button').map((b) => b?.attributes('aria-label'))
+}
+
 /**
  * 从 SFC 的 `<style>` 块解析出「选择器 → 声明」，用于断言状态样式。
  *
@@ -39,7 +45,8 @@ const controlled = (initial: number | null, attrs = '', slots = '') =>
     template: `<FluereNumberBox v-model="model" ${attrs}>${slots}</FluereNumberBox>`,
   })
 
-const inputOf = (wrapper: ReturnType<typeof controlled>) => wrapper.get('.fui-number-box__input')
+const inputOf = (wrapper: ReturnType<typeof controlled>) =>
+  wrapper.get<HTMLInputElement>('.fui-number-box__input')
 
 const step = async (wrapper: ReturnType<typeof controlled>, key: string, init = {}) => {
   await inputOf(wrapper).trigger('keydown', { key, ...init })
@@ -516,11 +523,6 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
 })
 
 describe('FluereNumberBox i18n（增减按钮可访问名）', () => {
-  const labelsUnder = (render: () => unknown) => {
-    const wrapper = render() as ReturnType<typeof mount>
-    return wrapper.findAll('.fui-number-box__spin-button').map((b) => b?.attributes('aria-label'))
-  }
-
   it('无 Provider 时内置缺省 zh-Hans：增加 / 减少', () => {
     const labels = labelsUnder(() =>
       mount(FluereNumberBox, { props: { spinButtonPlacementMode: 'inline' } }),

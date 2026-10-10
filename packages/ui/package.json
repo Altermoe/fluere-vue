@@ -10,7 +10,9 @@
   "exports": {
     ".": "./index.ts"
   },
-  "scripts": {},
+  "scripts": {
+    "tsc": "vue-tsc --noEmit"
+  },
   "dependencies": {
     "@fluentui/svg-icons": "catalog:",
     "@fluentui/tokens": "catalog:",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "unocss": "catalog:",
-    "vue": "catalog:"
+    "vue": "catalog:",
+    "vue-tsc": "catalog:"
   }
 }

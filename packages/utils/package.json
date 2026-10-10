@@ -10,5 +10,7 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "scripts": {}
+  "scripts": {
+    "tsc": "tsc --noEmit"
+  }
 }

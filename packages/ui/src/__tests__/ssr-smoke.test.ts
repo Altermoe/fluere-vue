@@ -42,6 +42,14 @@ const renderServer = async (component: Component, slotText = ''): Promise<string
   return renderToString(app)
 }
 
+/** 把组件包进给定 locale 的 provider 渲染为 HTML */
+const renderUnder = async (locale: string, render: () => unknown): Promise<string> => {
+  const app = createSSRApp({
+    render: () => h(FluereConfigProvider, { locale }, { default: () => h(render() as Component) }),
+  })
+  return renderToString(app)
+}
+
 describe('SSR 兼容性冒烟测试', () => {
   it('FluereButton 可服务端渲染', async () => {
     const html = await renderServer(FluereButton, '确定')
@@ -332,15 +340,6 @@ describe('SSR 兼容性冒烟测试', () => {
 })
 
 describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', () => {
-  /** 把组件包进给定 locale 的 provider 渲染为 HTML */
-  const renderUnder = async (locale: string, render: () => unknown): Promise<string> => {
-    const app = createSSRApp({
-      render: () =>
-        h(FluereConfigProvider, { locale }, { default: () => h(render() as Component) }),
-    })
-    return renderToString(app)
-  }
-
   it('NumberBox 内联按钮在 locale=en 下 SSR 直出英文可访问名', async () => {
     const html = await renderUnder('en', () =>
       h(FluereNumberBox, { spinButtonPlacementMode: 'inline' }),
@@ -373,15 +372,9 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
   })
 
   it('两个并发 SSR 请求在不同 locale 下渲染，互不串语言（实例级 context）', async () => {
-    const render = (locale: string, component: Component) => {
-      const app = createSSRApp({
-        render: () => h(FluereConfigProvider, { locale }, { default: () => h(component) }),
-      })
-      return renderToString(app)
-    }
     const [zh, en] = await Promise.all([
-      render('zh-Hans', h(FluereProgressBar, { indeterminate: true })),
-      render('en', h(FluereProgressBar, { indeterminate: true })),
+      renderUnder('zh-Hans', () => h(FluereProgressBar, { indeterminate: true })),
+      renderUnder('en', () => h(FluereProgressBar, { indeterminate: true })),
     ])
     expect(zh).toContain('加载中')
     expect(en).toContain('Loading')
