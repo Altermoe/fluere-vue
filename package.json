@@ -32,7 +32,6 @@
     "lint:fix": "oxlint --fix --ignore-pattern .dsh --ignore-pattern packages/designs/generated --ignore-pattern packages/designs/data --ignore-pattern packages/icons/generated",
     "lint:ssr": "bash scripts/lint-ssr.sh",
     "i18n:check": "node scripts/i18n-check.mjs",
-    "i18n:check:scan": "node scripts/i18n-check.mjs --scan",
     "version:sync": "node scripts/version.mjs sync",
     "version:check": "node scripts/version.mjs check",
     "version:check-tag": "node scripts/version.mjs check --tag",
