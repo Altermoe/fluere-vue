@@ -24,6 +24,15 @@ definePageMeta({
 
 const { t } = useDocsI18n()
 const { implementedCards } = useComponentNav()
+
+// 每语言独立的 SEO meta（i18n 一期 1.1）：标题与描述句走 i18n key，随语种切换；
+// og:url / hreflang / og:locale 由 plugins/i18n-head.ts 的 useLocaleHead 统一输出。
+useSeoMeta({
+  title: () => t('components.overviewTitle'),
+  description: () => t('components.overviewLead', { count: implementedCards.value.length }),
+  ogTitle: () => t('components.overviewTitle'),
+  ogDescription: () => t('components.overviewLead', { count: implementedCards.value.length }),
+})
 </script>
 
 <template>

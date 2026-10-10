@@ -137,7 +137,8 @@ export default defineNuxtConfig({
     head: {
       // 说明：<html lang> 不再在这里硬编码，改由 @nuxtjs/i18n 的 useLocaleHead
       // 按路由前缀输出（zh-Hans→zh-CN、en→en），保证 SSR 与水合一致。
-      title: 'FluereVue',
+      // <title> 同理不在这里设：app.vue 的函数式 titleTemplate 在页面没给 title 时
+      // 回落 'FluereVue'；此处再写全局 title 会被模板叠加成「FluereVue · FluereVue」。
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
       // 首帧前按已保存偏好（或系统偏好）写入 <html>，避免明暗切换闪烁。
       // 与 composables/useColorMode.ts 保持同一套取值规则。

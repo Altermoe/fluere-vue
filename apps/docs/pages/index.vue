@@ -58,6 +58,14 @@ const ctLinks = computed(() => [
     to: localePath('/components'),
   },
 ])
+
+// 首页 SEO（i18n 一期 1.1）：description 走 i18n key，og:title 取品牌名；
+// `<title>` 不设——app.vue 的 titleTemplate 在无页面级 title 时回落 'FluereVue'。
+useSeoMeta({
+  description: () => t('home.metaDescription'),
+  ogTitle: 'FluereVue',
+  ogDescription: () => t('home.metaDescription'),
+})
 </script>
 
 <template>

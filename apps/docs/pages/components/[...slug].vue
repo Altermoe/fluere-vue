@@ -41,6 +41,19 @@ const { data: fallbackDoc } = await useAsyncData(
 // 实际渲染的文档与「是否处于回退态」：en 未命中 → 显示中文 + 提示条
 const displayDoc = computed(() => doc.value ?? fallbackDoc.value)
 const isFallback = computed(() => isEnglish.value && !doc.value)
+
+// 每语言独立的 SEO meta（i18n 一期 1.1）：title / description / og:title /
+// og:description 取**当前语种 collection 命中的正文 frontmatter**——en 命中英文版
+// 即英文 meta，回退态下展示的中文正文对应中文 meta，与页面内容保持一致。
+// hreflang alternate 与 og:locale / og:url 由 plugins/i18n-head.ts 的
+// useLocaleHead({ seo: true }) 统一输出，这里不重复设置。
+// 用 getter（函数值）而非立即取值：语种切换 / 正文就绪后 unhead 会重新求值。
+useSeoMeta({
+  title: () => displayDoc.value?.title,
+  description: () => displayDoc.value?.description,
+  ogTitle: () => displayDoc.value?.title,
+  ogDescription: () => displayDoc.value?.description,
+})
 </script>
 
 <template>
