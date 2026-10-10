@@ -94,7 +94,7 @@
 > 范围（已确认）：**文档站全站 + 组件库内建文案通道与语言包导出**。
 > 一期语言：`zh-Hans`（默认，兼容 `zh-CN`）与 `en`。
 
-**进度速览（2026-10-09）**：文档站一期已集成——1.1 / 1.3 基本收口，1.2 大部分落地，双语言产物已由 `pnpm docs:generate` 验证（`zh-Hans` 与 `en` 各含 16 个组件页）。仍未收口：**组件库 i18n 通道（1.4）尚未开工**、demo 预览文案仍为中文硬编码、1.1 的 per-page SEO 与 sitemap、1.5 的部分验收。
+**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap 未做）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。仍未收口：**组件库 i18n 通道（1.4）尚未开工**、1.1 的 sitemap、1.5 的 Lighthouse / axe 实跑与 1.4 相关项。
 
 #### 1.1 选型与基建
 
@@ -103,7 +103,7 @@
 - [x] 目录约定：界面串 `apps/docs/i18n/locales/{zh-Hans,en}.json`；正文 `apps/docs/content/{zh-Hans,en}/**`
 - [x] 首帧语言恢复：**未采用内联脚本方案**，改为「语言由路由前缀决定」——`<html lang>` 与路由一致，故无「先 zh 后切 en」闪烁，也不存在水合不匹配；浏览器偏好仅在根路径做服务端重定向
 - [x] `hreflang` alternate 与 `og:locale` / `og:url` 由 `useLocaleHead({ seo: true })` 输出，实测四组 alternate 齐备
-- [ ] 每语言独立的 `title` / `description` / `og:title` / `og:description`：**未做**——产物 `<title>` 均为全局 `FluereVue`，content frontmatter 未接进 head
+- [x] 每语言独立的 `title` / `description` / `og:title` / `og:description`：**已落地**——组件页取 content frontmatter（`pages/components/[...slug].vue` 的 `useSeoMeta`，回退态随正文为中文）、Overview 与首页取 i18n key；`<title>` 模板在 `app.vue`（`<页面标题> · FluereVue`，首页回落品牌名）。实测：`/components/checkbox` → `Checkbox 复选框 · FluereVue`，`/en/components/checkbox` → `Checkbox · FluereVue`，og 与 description 随语种
 - [ ] sitemap 按语言拆分：**未做**（未接入 `@nuxtjs/sitemap`）
 
 #### 1.2 界面串与导航
@@ -111,8 +111,8 @@
 - [x] 全部可见文案抽为 key（71 个）：首页 feature 卡片 / stats / ctLinks / `navLinks` / 主题切换 / 布局 header / 移动端 nav / 页脚；`pages/` 与 `layouts/` 下已无硬编码可见中文
 - [x] `components-nav.ts` 改为「结构化事实 + i18n key」，显示名与摘要按当前 locale 运行期解析，消除中英混写的双字段
 - [x] 语言切换控件 + 记住上次选择（cookie）。**当前落位在文档页 header**，迁到目标 2 的托盘 / 任务栏属目标 2 范围
-- [ ] 组件文档页内示例标题、说明、提示框文案双语：正文与示例标题已双语，但 **demo 预览内的可见文案仍为中文硬编码**（93 个 demo 文件里 81 个含中文），英文正文页复用同一批 demo，故 `/en` 下会露出中文
-- [ ] 站点内新增文案一律走 key：`pnpm i18n:check` 已阻断 key 集合不一致，但硬编码中文扫描仅提示、不阻断；语言切换按钮的可访问名为有意硬编码（应始终用**目标语种**）
+- [x] 组件文档页内示例标题、说明、提示框文案双语：正文与示例标题已双语；**demo 预览内的可见文案已全部抽 key**（结构 `demos.<目录>.<示例>.<角色>`，跨组件通用短语收敛 `demos.common.*`，script 侧取值一律包 `computed`），`en` 正文 `#code` 围栏译文与 `en.json` 逐字一致。证据：zh 值与 HEAD 逐字比对 434/434 且逐文件归属正确；浏览器实测 `/en` 全 18 页正文与代码样例无汉字
+- [x] 站点内新增文案一律走 key：`pnpm i18n:check`（接入 `pnpm check` / CI）现**阻断三件事**——key 集合一致、剥注释后残留硬编码中文、`t()` / `tm()` 字面量引用不存在的 key；语言切换按钮的目标语种可访问名与缩写为有意硬编码，已入 `scripts/i18n-check.mjs` 的 `HARDCODED_ALLOW` 白名单（带理由）
 
 #### 1.3 内容双语
 
@@ -134,10 +134,10 @@
 
 - [ ] 单测：locale 解析与回退链、provider 隔离（同进程两个 app 实例互不污染）——目前只有结构化消息解析的单测；回退链未单测，provider 隔离因 1.4 未开工而**无对应实现，无法测**
 - [ ] SSR 冒烟：`packages/ui/src/__tests__/ssr-smoke.test.ts` 在 `zh-Hans` / `en` 两种 locale 下均通过 —— **未覆盖**
-- [x] 文案完整性检查脚本（key 集合对比，缺失即失败）：已接入根 `pnpm check`
-- **验收（截至 2026-10-09 的判读）**：
-  - 文档站任意页面在 `/`（中文）与 `/en` 下无遗漏串（专有名词、代码、API 名除外）：**未达成**（demo 预览内仍是中文，见 1.2）；控制台无 i18n 警告：`missingWarn` / `fallbackWarn` 仅在开发环境打开，尚未实机核对
-  - `pnpm docs:generate` 产出两种语言的静态页面：**已达成**（`dist/` 与 `dist/en/` 各含 16 个组件页，`<html lang>` 分别为 `zh-CN` / `en`，alternate 齐备）；切换语言为**客户端路由跳转**（`setLocale()` + `navigateTo(switchLocalePath())`），非整页重载
+- [x] 文案完整性检查脚本：已从「key 集合对比」扩展为**三项**——key 集合一致、剥注释后的硬编码中文扫描、`t()` / `tm()` 引用存在性，任一缺失即失败；已接入根 `pnpm check` / CI
+- **验收（2026-10-10 复核）**：
+  - 文档站任意页面在 `/`（中文）与 `/en` 下无遗漏串（专有名词、代码、API 名除外）：**已达成**（Playwright 实测 `/` 与 `/en` × 18 页共 300 项断言 0 失败：`/en` 正文与代码样例无汉字、无 `demos.*` key 泄漏、title / description / og 随语种；中文站抽查串逐条保留）；控制台无 i18n 警告：**已实机核对**（开发环境 `missingWarn` / `fallbackWarn` 打开，全部页面 0 条 intlify 告警、0 条 hydration 告警）
+  - `pnpm docs:generate` 产出两种语言的静态页面：**已达成**（2026-10-10 复核：78 条路由，`dist/` 与 `dist/en/` 各含 16 个组件页，`<html lang>` 分别为 `zh-CN` / `en`，alternate 四组齐备；`/en` 产物剥除 script / style 后无汉字，`<title>` / `og:*` / description 按页与语种独立，中文页 demo 抽查串保留）；切换语言为**客户端路由跳转**（`setLocale()` + `navigateTo(switchLocalePath())`），非整页重载。**注**：本机 Node 默认 2 GB 堆上限下 nitro prerenderer 初始化即 OOM，已在干净树（`git stash` 后）复现——属**既有环境问题**、非本次改动引入；`NODE_OPTIONS=--max-old-space-size=4096` 后通过
   - provider 切换 locale 时组件内建文案即时更新、两个并发 SSR 请求不串 locale：**未达成**（1.4 未开工）
   - Lighthouse / axe 不出现 `lang` 相关告警，`<html lang>` 与水合结果一致：`<html lang>` 已与产物一致，Lighthouse / axe **尚未实跑**
 - **非目标（推后）**：RTL、第三种语言、翻译平台（Crowdin / Locize）工作流、组件文档逐页人工润色（一期允许机翻 + 术语表人工过一遍）。
@@ -257,14 +257,14 @@
 
 ### 风险与对策
 
-| 风险                                   | 影响                     | 对策                                                                              |
-| -------------------------------------- | ------------------------ | --------------------------------------------------------------------------------- |
-| 文档站「仿真」过度                     | 首屏慢、移动端卡顿       | 令牌化动效 + 性能预算 + 移动端降级全屏，仿真范围写入 README                       |
-| i18n 与 `@nuxt/content` + SSG 组合踩坑 | 双语路由与内容查询返工   | **文档站侧已消除**（spike 收口并落地）；残余风险转到 1.4 组件库通道与 demo 抽 key |
-| 纯 TS 源码入口被发布                   | 消费方无法使用、口碑受损 | 3.2 强制 `dist` + `types`，发布闸用 `publint` / `attw` 拦截                       |
-| 预发布污染 `latest`                    | 用户误装 rc 版           | `changeset pre enter rc` + `--tag rc`，发布后核对 `dist-tags`                     |
-| 双语文案长期不同步                     | 英文页无人维护           | 缺失回退 + CI key 完整性校验 + 页面标注英文状态                                   |
-| 组件清单与发布范围脱节                 | 发布内容与 README 不一致 | 发布前冻结范围，同步 README 与 `docs/todo.md`                                     |
+| 风险                                   | 影响                     | 对策                                                                                      |
+| -------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
+| 文档站「仿真」过度                     | 首屏慢、移动端卡顿       | 令牌化动效 + 性能预算 + 移动端降级全屏，仿真范围写入 README                               |
+| i18n 与 `@nuxt/content` + SSG 组合踩坑 | 双语路由与内容查询返工   | **文档站侧已消除**（spike 收口并落地，demo 抽 key 亦已收口）；残余风险仅剩 1.4 组件库通道 |
+| 纯 TS 源码入口被发布                   | 消费方无法使用、口碑受损 | 3.2 强制 `dist` + `types`，发布闸用 `publint` / `attw` 拦截                               |
+| 预发布污染 `latest`                    | 用户误装 rc 版           | `changeset pre enter rc` + `--tag rc`，发布后核对 `dist-tags`                             |
+| 双语文案长期不同步                     | 英文页无人维护           | 缺失回退 + CI key 完整性校验 + 页面标注英文状态                                           |
+| 组件清单与发布范围脱节                 | 发布内容与 README 不一致 | 发布前冻结范围，同步 README 与 `docs/todo.md`                                             |
 
 ---
 
