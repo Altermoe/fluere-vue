@@ -2,24 +2,62 @@
   "name": "@fluere-vue/ui",
   "version": "0.0.1",
   "description": "基于 Fluent Design 2 设计语言的 Vue3 组件实现",
-  "keywords": [],
+  "keywords": [
+    "component-library",
+    "design-system",
+    "fluent",
+    "fluere",
+    "fluere-vue",
+    "ui",
+    "vue",
+    "vue3"
+  ],
   "license": "MIT",
   "author": "夕云葛城",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Altermoe/fluere-vue.git",
+    "directory": "packages/ui"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
   "type": "module",
-  "main": "index.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./locales/zh-Hans": {
+      "types": "./dist/locales/zh-Hans.d.ts",
+      "import": "./dist/locales/zh-Hans.js"
+    },
+    "./locales/en": {
+      "types": "./dist/locales/en.d.ts",
+      "import": "./dist/locales/en.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "vite build && vue-tsc -p tsconfig.build.json",
     "tsc": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@fluentui/svg-icons": "catalog:",
-    "@fluentui/tokens": "catalog:",
     "@fluere-vue/designs": "workspace:*",
     "@fluere-vue/hooks": "workspace:*",
     "@fluere-vue/icons": "workspace:*",
-    "@fluere-vue/themes": "workspace:*",
     "@fluere-vue/utils": "workspace:*",
     "reka-ui": "catalog:"
   },
@@ -27,5 +65,11 @@
     "unocss": "catalog:",
     "vue": "catalog:",
     "vue-tsc": "catalog:"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

@@ -101,6 +101,14 @@
       "rules": {
         "import/no-nodejs-modules": "off"
       }
+    },
+    {
+      // locales/zh-Hans.ts 的文件名是 BCP-47 locale 标识（对应子路径导出 ./locales/zh-Hans），
+      // 不是 kebab-case 违规。
+      "files": ["packages/ui/locales/*.ts"],
+      "rules": {
+        "unicorn/filename-case": "off"
+      }
     }
   ],
   "ignorePatterns": ["**/node_modules/", "**/dist/", "**/build/", "**/.eslintrc*", "*.config.*"]

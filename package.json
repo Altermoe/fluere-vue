@@ -1,6 +1,7 @@
 {
   "name": "fluere-vue",
   "version": "0.0.1",
+  "private": true,
   "description": "FluereVue：Fluent Design 2 设计规范的 Vue3 实现",
   "keywords": [
     "component library",
@@ -24,7 +25,7 @@
     "docs:build": "pnpm --filter @fluere-vue/docs build",
     "docs:generate": "pnpm --filter @fluere-vue/docs generate",
     "docs:preview": "pnpm --filter @fluere-vue/docs preview",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter \"./packages/*\" build",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -40,9 +41,14 @@
     "format:fix": "oxfmt --write",
     "tsc": "pnpm -r tsc",
     "check": "pnpm lint && pnpm format && pnpm tsc && pnpm i18n:check && pnpm version:check",
-    "check:fix": "pnpm lint:fix && pnpm format:fix && pnpm tsc"
+    "check:fix": "pnpm lint:fix && pnpm format:fix && pnpm tsc",
+    "changeset": "changeset",
+    "version:packages": "changeset version && node scripts/version.mjs sync",
+    "release": "changeset publish"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@changesets/cli": "^3.0.3",
     "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "catalog:",
     "@vitest/coverage-v8": "catalog:",
@@ -50,8 +56,10 @@
     "jsdom": "catalog:",
     "oxfmt": "0.60.0",
     "oxlint": "1.75.0",
+    "publint": "^0.3.25",
     "typescript": "^6.0.3",
     "vite": "8.1.5",
+    "vite-plugin-dts": "^5.1.2",
     "vitest": "catalog:"
   },
   "devEngines": {

@@ -2,15 +2,43 @@
   "name": "@fluere-vue/utils",
   "version": "0.0.1",
   "description": "FluereVue 共享工具函数",
-  "keywords": [],
+  "keywords": [
+    "fluere",
+    "fluere-vue",
+    "utils",
+    "vue"
+  ],
   "license": "MIT",
   "author": "夕云葛城",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Altermoe/fluere-vue.git",
+    "directory": "packages/utils"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
-  "main": "src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "vite build",
     "tsc": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

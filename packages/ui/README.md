@@ -5,6 +5,21 @@
 本文件**只做组件索引**：列出本包的公开导出、源码位置与对应文档页。
 组件的规格、状态、动效、Props 契约与用法示例统一在顶层文档维护，见文末《相关文档》。
 
+## 安装与按需引入
+
+```bash
+pnpm add @fluere-vue/ui vue
+# 全局 token + 组件 scoped 样式：
+import '@fluere-vue/ui/style.css'
+```
+
+- **纯 ESM**；`vue` 为对等依赖（peer），由消费方提供。JS 可 tree-shake——`import { FluereButton } from '@fluere-vue/ui'` 只打包你引用的组件（组件 scoped 样式在 `style.css`，需全量引入）。
+- **子路径**：
+  - `@fluere-vue/ui/style.css` — 全部视觉样式（Flutter tokens + 组件 scoped）；
+  - `@fluere-vue/ui/locales/zh-Hans` / `@fluere-vue/ui/locales/en` — 语言包子路径导出
+    （各组件 locale 切片的聚合 bundle，供 `FluereConfigProvider` 传入 `messages`）。
+- 构建产物 `dist/` 由 `pnpm --filter @fluere-vue/ui build` 生成（Vite lib mode + `vue-tsc` 产出 `.d.ts`），详见 `docs/adr/0001-library-build-tooling.md`。
+
 ## 组件索引
 
 | 导出                                      | 源码                                                         | 文档                                                                                           |

@@ -200,25 +200,27 @@
 - 无库构建脚本、无 CI、无 Changesets / CHANGELOG，根目录无 `LICENSE` 文件
 - README「快速开始」仍标注「尚未发布」，文档站页脚硬编码 `v0.0.1`
 
+> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做：3.4（CI/CD）与 3.5（正式发布 rc），README「尚未发布」按 3.5 收口时移除。
+
 #### 3.1 包元数据与发布体检
 
-- [ ] 逐包补齐：`files`、完整 `exports`（`import` / `require` / `types`，外加 `./style.css`、按需子路径）、`types`、`sideEffects`（CSS 例外）、`publishConfig.access: "public"`、`repository.directory`、`engines.node`、`peerDependencies: { vue: "^3.5" }`
-- [ ] 根目录补 `LICENSE`（MIT © 夕云葛城）；为 `ui` / `designs` / `themes` / `icons` 补包级 README（用法与相互依赖关系）
-- [ ] 版本矩阵决策：所有 `@fluere-vue/*` 是否统一版本号（建议统一，便于用户理解与文档站展示），结论写入发布手册
+- [x] 逐包补齐：`files`、完整 `exports`（`import` / `require` / `types`，外加 `./style.css`、按需子路径）、`types`、`sideEffects`（CSS 例外）、`publishConfig.access: "public"`、`repository.directory`、`engines.node`、`peerDependencies: { vue: "^3.5" }`（**已落地**，含 `@fluere-vue/ui` 的 `./locales/zh-Hans` / `./locales/en` 子路径）
+- [x] 根目录补 `LICENSE`（MIT © 夕云葛城）；为 `ui` / `designs` / `themes` / `icons` 补包级 README（用法与相互依赖关系）——**LICENSE 已存在**；四个包 README 已有，本轮补齐了 `utils` / `hooks` 占位 README，并为 `ui` README 增加「安装与按需引入」节（`style.css` / locales 子路径）
+- [x] 版本矩阵决策：所有 `@fluere-vue/*` 统一版本号（建议统一，便于用户理解与文档站展示）——**统一**：Changesets `fixed` 分组 + `scripts/version.mjs` 双重约束，结论与操作写入 `docs/release.md`
 
 #### 3.2 构建管线
 
-- [ ] 选定构建器（Vite 8 lib mode / tsdown / unbuild 三选一），**先做 spike 对比**：`.d.ts` 质量、Vue SFC 处理、CSS 产出、SSR 友好性、构建耗时；结论以 ADR 形式记录
-- [ ] 构建顺序按拓扑：`designs`（先跑令牌生成）→ `themes` / `icons` / `hooks` / `utils` → `ui`；`pnpm -r build` 保证依赖顺序
-- [ ] 产物形态：ESM 为主、CJS 兼容策略明确、`.d.ts` 完整、`tokens.css` 与图标按需导入可用；`vue` / `reka-ui` / `unocss` **外部化**
-- [ ] tree-shaking 验证：`sideEffects` 正确，按需引入单组件后的体积符合预期并记录基线
-- [ ] 扩展 `pnpm check` / `pnpm test`：至少新增一条「从 `dist` 引入并渲染」的冒烟用例
+- [x] 选定构建器（Vite 8 lib mode / tsdown / unbuild 三选一），**先做 spike 对比**：`.d.ts` 质量、Vue SFC 处理、CSS 产出、SSR 友好性、构建耗时；结论以 ADR 形式记录——**Vite 8 lib mode（纯 ESM）**，spike 与理由见 `docs/adr/0001-library-build-tooling.md`
+- [x] 构建顺序按拓扑：`designs`（先跑令牌生成）→ `themes` / `icons` / `hooks` / `utils` → `ui`；`pnpm -r build` 保证依赖顺序——**已落地**（`pnpm -r --filter "./packages/*" build`）
+- [x] 产物形态：ESM 为主、CJS 兼容策略明确、`.d.ts` 完整、`tokens.css` 与图标按需导入可用；`vue` / `reka-ui` / `unocss` **外部化**——**纯 ESM**（用户已确认），`.d.ts` 完整（`ui` 用 `vue-tsc` 保精确 SFC Props），`tokens.css` / 图标按需可用，`vue`/`reka-ui`/`@fluere-vue/*` 外部化
+- [x] tree-shaking 验证：`sideEffects` 正确，按需引入单组件后的体积符合预期并记录基线——`// temp/treeshake` 实测：仅引 `FluereButton + useDisclosure + 1 图标` 消费产物体积 **62.13 kB（gzip 19.13 kB）**（对比全量 ui 297 kB / icons 12 MB）
+- [x] 扩展 `pnpm check` / `pnpm test`：至少新增一条「从 `dist` 引入并渲染」的冒烟用例——**`packages/ui/src/__tests__/dist-smoke.test.ts`**（从 dist 按 SSR 渲染多组件 + 纯 TS 包 dist 导入；未构建时自动跳过，已排除出 vue-tsc 纯类型检查）
 
 #### 3.3 版本与变更日志
 
-- [ ] 接入 Changesets：包间依赖联动 + `rc` 预发布模式（`changeset pre enter rc` / `pre exit`）
-- [ ] CHANGELOG 自动生成 + 逐包 `CHANGELOG.md`；沿用现有 emoji conventional commit 规范并固化到 `CONTRIBUTING`
-- [ ] 版本单一事实源：文档站页脚、README、`docs/todo.md` 标题一律从 `package.json` 读取或由发布流程注入，禁止硬编码
+- [x] 接入 Changesets：包间依赖联动 + `rc` 预发布模式（`changeset pre enter rc` / `pre exit`）——**已接入**（`.changeset/config.json`：`fixed` 六包统一版本 + `privatePackages.version`；根脚本 `changeset` / `version:packages` / `release`；首个 changeset `.changeset/dry-pumas-build.md`）
+- [x] CHANGELOG 自动生成 + 逐包 `CHANGELOG.md`；沿用现有 emoji conventional commit 规范并固化到 `CONTRIBUTING`——**配置已在**（changelog 提供方 `@changesets/cli/changelog-git`，`changeset version` 生成逐包 CHANGELOG）；操作流程写进 `docs/release.md`
+- [x] 版本单一事实源：文档站页脚、README、`docs/todo.md` 标题一律从 `package.json` 读取或由发布流程注入，禁止硬编码——**已达成**：文档站经 `nuxt.config.ts` 读根 `package.json` 注入版本（`use-docs-version` 归一）；`scripts/version.mjs` 改为「统一到最大版本」以配合 Changesets
 
 #### 3.4 发布流水线（CI/CD）
 

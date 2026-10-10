@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.3/schema.json",
+  "changelog": "@changesets/cli/changelog-git",
+  "commit": false,
+  "fixed": [
+    [
+      "fluere-vue",
+      "@fluere-vue/designs",
+      "@fluere-vue/hooks",
+      "@fluere-vue/icons",
+      "@fluere-vue/themes",
+      "@fluere-vue/ui",
+      "@fluere-vue/utils"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@fluere-vue/docs", "@fluere-vue/playground"],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  },
+  "snapshot": {
+    "useCalculatedVersion": true
+  }
+}

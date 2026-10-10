@@ -2,26 +2,68 @@
   "name": "@fluere-vue/designs",
   "version": "0.0.1",
   "description": "Fluent Design 2 设计语言（唯一事实源：data/fluent-tokens.json）",
-  "keywords": [],
+  "keywords": [
+    "design-tokens",
+    "fluent",
+    "fluere",
+    "fluere-vue",
+    "tokens",
+    "vue"
+  ],
   "license": "MIT",
   "author": "夕云葛城",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Altermoe/fluere-vue.git",
+    "directory": "packages/designs"
+  },
+  "files": [
+    "dist",
+    "data",
+    "generated",
+    "src",
+    "scripts",
+    "README.md"
+  ],
   "type": "module",
-  "main": "src/index.ts",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./data/fluent-tokens.json": "./data/fluent-tokens.json",
-    "./preset-fluent": "./generated/preset-fluent.ts",
-    "./token-names": "./generated/token-names.ts",
-    "./tokens.css": "./generated/tokens.css"
+    "./preset-fluent": {
+      "types": "./dist/preset-fluent.d.ts",
+      "import": "./dist/preset-fluent.js"
+    },
+    "./token-names": {
+      "types": "./dist/token-names.d.ts",
+      "import": "./dist/token-names.js"
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "extract": "node scripts/extract-tokens.mjs",
     "generate": "node scripts/generate.mjs",
     "sync": "node scripts/extract-tokens.mjs && node scripts/generate.mjs",
+    "build": "vite build",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
     "@fluentui/tokens": "catalog:",
     "unocss": "catalog:"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

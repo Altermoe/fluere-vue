@@ -2,12 +2,43 @@
   "name": "@fluere-vue/themes",
   "version": "0.0.1",
   "description": "基于 Fluent Design 2 设计语言的 unocss 主题适配层（生成自 @fluere-vue/designs 的 token 事实源）",
-  "keywords": [],
+  "keywords": [
+    "fluere",
+    "fluere-vue",
+    "theme",
+    "themes",
+    "unocss",
+    "vue"
+  ],
   "license": "MIT",
   "author": "夕云葛城",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Altermoe/fluere-vue.git",
+    "directory": "packages/themes"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
   "type": "module",
-  "main": "src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
+    "build": "vite build",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
@@ -20,5 +51,8 @@
   },
   "devDependencies": {
     "unocss": "catalog:"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }

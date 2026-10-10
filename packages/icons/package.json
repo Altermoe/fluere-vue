@@ -13,24 +13,50 @@
   ],
   "license": "MIT",
   "author": "夕云葛城",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Altermoe/fluere-vue.git",
+    "directory": "packages/icons"
+  },
+  "files": [
+    "dist",
+    "generated",
+    "src",
+    "README.md"
+  ],
   "type": "module",
-  "main": "src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./data": "./generated/icons.json"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./data": "./generated/icons.json",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "sync": "node scripts/sync-icons.mjs",
+    "build": "vite build",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
     "tsc": "tsc --noEmit"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@fluentui/svg-icons": "catalog:",
     "vue": "catalog:"
   },
-  "devDependencies": {
-    "@fluentui/svg-icons": "catalog:"
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
   }
 }
