@@ -40,7 +40,7 @@ Use `header` or the `#header` slot for the top title. When holding the thumb (or
 
 ```vue
 <FluereSlider v-model="fontSize" :min="9" :max="72" header="Font size">
-  <template #header>Font size（{{ fontSize }} px）</template>
+  <template #header>Font size ({{ fontSize }} px)</template>
 </FluereSlider>
 ```
 

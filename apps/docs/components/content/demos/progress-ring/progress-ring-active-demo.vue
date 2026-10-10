@@ -2,6 +2,8 @@
 import { FluereProgressRing, FluereToggleSwitch } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const active = ref(true)
 </script>
 
@@ -13,12 +15,16 @@ const active = ref(true)
     >
       <FluereProgressRing
         :active="active"
-        label="加载指示"
+        :label="t('demos.progress-ring.active.label')"
       />
-      <span class="text-sm text-colorNeutralForeground2">
-        {{ active ? '转圈中' : '已隐藏（IsActive=false）' }}
-      </span>
+      <span class="text-sm text-colorNeutralForeground2">{{
+        active
+          ? t('demos.progress-ring.active.statusSpinning')
+          : t('demos.progress-ring.active.statusHidden')
+      }}</span>
     </div>
-    <FluereToggleSwitch v-model="active">激活（IsActive）</FluereToggleSwitch>
+    <FluereToggleSwitch v-model="active">{{
+      t('demos.progress-ring.active.labelToggle')
+    }}</FluereToggleSwitch>
   </div>
 </template>

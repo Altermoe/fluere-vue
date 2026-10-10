@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { FluereNumberBox } from '@fluere-vue/ui'
+
+const { t } = useDocsI18n()
 </script>
 
 <template>
@@ -10,17 +12,16 @@ import { FluereNumberBox } from '@fluere-vue/ui'
       :max="100"
       disabled
       spin-button-placement-mode="inline"
-      header="禁用（含增减按钮）"
+      :header="t('demos.number-box.disabled.headerSpin')"
     />
     <FluereNumberBox
       :model-value="null"
       disabled
-      header="禁用（无值）"
-      placeholder="不可编辑"
+      :header="t('demos.number-box.disabled.headerEmpty')"
+      :placeholder="t('demos.number-box.disabled.placeholder')"
     />
     <p class="text-sm text-colorNeutralForeground3">
-      禁用时输入框落到 TextControl…Disabled 档，增减按钮移到
-      …ForegroundDisabled；标题与说明同时变灰。
+      {{ t('demos.number-box.disabled.note') }}
     </p>
   </div>
 </template>

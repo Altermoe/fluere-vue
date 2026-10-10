@@ -3,6 +3,8 @@ import { FluereScrollView, SCROLL_VIEW_AGENT_EVENTS } from '@fluere-vue/ui'
 import type { ScrollingAgentSettledDetail } from '@fluere-vue/ui'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /* 演示常量（避免 lint no-magic-numbers） */
 const ROW_COUNT = 30
 const AGENT_STEP = 200
@@ -66,7 +68,7 @@ onBeforeUnmount(() => {
       <FluereScrollView
         ref="sv"
         class="h-full"
-        label="日志列表"
+        :label="t('demos.scroll-view.agent.label')"
         @view-changed="refresh"
       >
         <div class="space-y-fluent-s p-fluent-m">
@@ -76,7 +78,7 @@ onBeforeUnmount(() => {
             :data-row="index"
             class="h-8 rounded-fluent-md bg-colorNeutralBackground2 border border-colorNeutralStroke2 flex items-center px-fluent-m text-xs text-colorNeutralForeground3"
           >
-            第 {{ index }} 行
+            {{ t('demos.scroll-view.agent.labelRow', { index }) }}
           </div>
         </div>
       </FluereScrollView>
@@ -89,24 +91,24 @@ onBeforeUnmount(() => {
           send(SCROLL_VIEW_AGENT_EVENTS.scrollBy, { y: AGENT_STEP, animationMode: 'disabled' })
         "
       >
-        模拟 Agent：下滚 {{ AGENT_STEP }}px
+        {{ t('demos.scroll-view.agent.buttonScrollBy', { step: AGENT_STEP }) }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="send(SCROLL_VIEW_AGENT_EVENTS.bringIntoView, { selector: TARGET_SELECTOR })"
       >
-        模拟 Agent：把第 {{ TARGET_ROW }} 行滚入视口
+        {{ t('demos.scroll-view.agent.buttonBringIntoView', { row: TARGET_ROW }) }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="send(SCROLL_VIEW_AGENT_EVENTS.scrollTo, { y: TOP_OFFSET })"
       >
-        模拟 Agent：回到顶部
+        {{ t('demos.scroll-view.agent.buttonScrollToTop') }}
       </button>
     </div>
 
     <code class="mt-fluent-m block text-xs font-mono text-colorNeutralForeground3 break-all">
-      {{ reflected || '（读取 data-* 中…）' }}
+      {{ reflected || t('demos.scroll-view.agent.readout') }}
     </code>
     <ul class="mt-fluent-s space-y-fluent-xs">
       <li

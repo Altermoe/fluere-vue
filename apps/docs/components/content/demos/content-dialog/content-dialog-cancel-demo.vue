@@ -3,6 +3,8 @@ import { FluereButton, FluereContentDialog } from '@fluere-vue/ui'
 import type { FluereContentDialogResult } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * 可取消的关闭：`closing` 的 `args.cancel = true` 让弹窗留在原地。
  *
@@ -17,10 +19,10 @@ const onClosing = (args: { result: FluereContentDialogResult; cancel: boolean })
   if (needsConfirm.value) {
     args.cancel = true
     needsConfirm.value = false
-    log.value.push(`closing 被取消（result=${args.result}）`)
+    log.value.push(t('demos.content-dialog.cancel.closingCancelled', { result: args.result }))
     return
   }
-  log.value.push(`closing 放行（result=${args.result}）`)
+  log.value.push(t('demos.content-dialog.cancel.closingAllowed', { result: args.result }))
 }
 
 const onClosed = (args: { result: FluereContentDialogResult }): void => {
@@ -41,9 +43,11 @@ const show = (): void => {
         data-cd-demo="cancel-open"
         @click="show"
       >
-        打开（关闭需二次确认）
+        {{ t('demos.content-dialog.cancel.openLabel') }}
       </FluereButton>
-      <span class="text-sm text-colorNeutralForeground2">第一次点「关闭」会被 cancel 拦下</span>
+      <span class="text-sm text-colorNeutralForeground2">{{
+        t('demos.content-dialog.cancel.note')
+      }}</span>
     </div>
 
     <ol
@@ -60,13 +64,13 @@ const show = (): void => {
 
     <FluereContentDialog
       v-model:open="open"
-      title="放弃未保存的更改？"
-      primary-button-text="放弃"
-      secondary-button-text="继续编辑"
+      :title="t('demos.content-dialog.cancel.title')"
+      :primary-button-text="t('demos.content-dialog.cancel.discardLabel')"
+      :secondary-button-text="t('demos.content-dialog.cancel.keepEditingLabel')"
       @closing="onClosing"
       @closed="onClosed"
     >
-      第一次点击「放弃」或按 Esc 会被 `closing.cancel` 拦下，再点一次才真正关闭。
+      {{ t('demos.content-dialog.cancel.description') }}
     </FluereContentDialog>
   </div>
 </template>

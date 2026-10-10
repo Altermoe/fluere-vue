@@ -1,25 +1,28 @@
 <script setup lang="ts">
 import { FluereButton, FluereTooltip } from '@fluere-vue/ui'
+import { computed } from 'vue'
 
-const longText =
-  'A ToolTip shows more information about a UI element. You might show information about what the element does, or what the user should do. 提示文本会在 320px 处自动换行。'
+const { t } = useDocsI18n()
+
+/** 长文本提示：WinUI Gallery 的英文样例句保持英文，换行说明走 i18n */
+const longText = computed(() => t('demos.tooltip.content.longText'))
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-fluent-l">
     <FluereTooltip content="Simple ToolTip">
-      <FluereButton>纯文本（content）</FluereButton>
+      <FluereButton>{{ t('demos.tooltip.content.plainTextLabel') }}</FluereButton>
     </FluereTooltip>
 
     <FluereTooltip :content="longText">
-      <FluereButton>长文本自动换行</FluereButton>
+      <FluereButton>{{ t('demos.tooltip.content.wrapLabel') }}</FluereButton>
     </FluereTooltip>
 
     <FluereTooltip>
-      <FluereButton>富内容（#content）</FluereButton>
+      <FluereButton>{{ t('demos.tooltip.content.richContentLabel') }}</FluereButton>
       <template #content>
         <span class="flex items-center gap-2">
-          <strong>保存</strong>
+          <strong>{{ t('demos.tooltip.content.saveLabel') }}</strong>
           <span>Ctrl + S</span>
         </span>
       </template>

@@ -2,6 +2,8 @@
 import { FluereSlider } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /** 演示用的初始值 */
 const INITIAL_BASS = 60
 const INITIAL_TREBLE = 35
@@ -19,22 +21,27 @@ const treble = ref(INITIAL_TREBLE)
         v-model="bass"
         orientation="vertical"
         :vertical-length="SLIDER_LENGTH"
-        label="低音"
+        :label="t('demos.slider.vertical.labelBass')"
       />
-      <span class="text-sm text-colorNeutralForeground3">低音 {{ bass }}</span>
+      <span class="text-sm text-colorNeutralForeground3">{{
+        t('demos.slider.vertical.noteBass', { bass })
+      }}</span>
     </div>
     <div class="flex flex-col items-center gap-fluent-m">
       <FluereSlider
         v-model="treble"
         orientation="vertical"
         :vertical-length="SLIDER_LENGTH"
-        label="高音"
+        :label="t('demos.slider.vertical.labelTreble')"
       />
-      <span class="text-sm text-colorNeutralForeground3">高音 {{ treble }}</span>
+      <span class="text-sm text-colorNeutralForeground3">{{
+        t('demos.slider.vertical.noteTreble', { treble })
+      }}</span>
     </div>
     <p class="text-sm text-colorNeutralForeground3 max-w-[16rem]">
-      纵向滑块的取值自下而上递增（与 WinUI 一致：最小值在底部）；传
-      <code>inverted</code> 可反向。
+      {{ t('demos.slider.vertical.noteBefore') }}
+      <code>inverted</code>
+      {{ t('demos.slider.vertical.noteAfter') }}
     </p>
   </div>
 </template>

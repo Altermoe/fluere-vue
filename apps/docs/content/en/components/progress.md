@@ -21,7 +21,7 @@ The styling aligns with the ProgressBar of WinUI 3 / Windows App SDK (`microsoft
 #code
 
 ```vue
-<FluereProgressBar indeterminate label="正在进行" />
+<FluereProgressBar indeterminate label="In progress" />
 ```
 
 ::
@@ -38,7 +38,7 @@ The example below matches WinUI3 Gallery's "A determinate progress bar": progres
 #code
 
 ```vue
-<FluereProgressBar v-model="value" label="确定态进度条示例" style="width: 130px" />
+<FluereProgressBar v-model="value" label="Determinate progress bar example" style="width: 130px" />
 <FluereNumberBox v-model="value" :min="0" :max="100" spin-button-placement-mode="inline" />
 ```
 

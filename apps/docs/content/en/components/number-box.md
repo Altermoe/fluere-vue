@@ -23,8 +23,8 @@ Values follow WinUI's **Value ↔ Text dual channel**: when the value changes, t
 #code
 
 ```vue
-<FluereNumberBox v-model="quantity" header="数量" />
-<FluereNumberBox v-model="price" header="单价" description="支持小数" />
+<FluereNumberBox v-model="quantity" header="Quantity" />
+<FluereNumberBox v-model="price" header="Unit price" description="Supports decimals" />
 ```
 
 ::
@@ -45,9 +45,9 @@ Values follow WinUI's **Value ↔ Text dual channel**: when the value changes, t
   :max="500"
   :step="10"
   :large-step="100"
-  header="数量"
+  header="Quantity"
 />
-<FluereNumberBox v-model="ratio" :min="0" :max="1" :step="0.1" header="比例" />
+<FluereNumberBox v-model="ratio" :min="0" :max="1" :step="0.1" header="Ratio" />
 ```
 
 ::
@@ -69,7 +69,7 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
   :min="9"
   :max="72"
   spin-button-placement-mode="inline"
-  header="字号"
+  header="Font size"
 />
 <FluereNumberBox
   v-model="zoom"
@@ -77,7 +77,7 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
   :max="3"
   :step="0.25"
   spin-button-placement-mode="inline"
-  header="缩放"
+  header="Zoom"
 />
 ```
 
@@ -94,7 +94,7 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
   :min="0"
   :max="100"
   spin-button-placement-mode="compact"
-  header="不透明度"
+  header="Opacity"
 />
 ```
 
@@ -110,7 +110,12 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
 #code
 
 ```vue
-<FluereNumberBox v-model="total" accepts-expression placeholder="例如 (2+3)*4^2" header="计算值" />
+<FluereNumberBox
+  v-model="total"
+  accepts-expression
+  placeholder="e.g. (2+3)*4^2"
+  header="Computed value"
+/>
 ```
 
 ::
@@ -130,13 +135,13 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
 #code
 
 ```vue
-<FluereNumberBox v-model="strict" :min="0" :max="100" header="默认：非法输入被覆盖" />
+<FluereNumberBox v-model="strict" :min="0" :max="100" header="Default: invalid input overwritten" />
 <FluereNumberBox
   v-model="lenient"
   :min="0"
   :max="100"
   validation-mode="disabled"
-  header="保留输入"
+  header="Keep input"
 />
 ```
 
@@ -157,14 +162,14 @@ WinUI's default `DecimalFormatter` is set to `IntegerDigits(1)` + `FractionDigit
 <FluereNumberBox
   v-model="integer"
   :format-options="{ maximumFractionDigits: 0 }"
-  header="整数外观"
+  header="Integer appearance"
 />
 <FluereNumberBox
   v-model="fixed"
   :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
-  header="固定两位小数"
+  header="Fixed two decimal places"
 />
-<FluereNumberBox v-model="german" locale="de-DE" header="de-DE：1.234,5" />
+<FluereNumberBox v-model="german" locale="de-DE" header="de-DE: 1.234,5" />
 ```
 
 ::
@@ -183,7 +188,7 @@ WinUI's default `DecimalFormatter` is set to `IntegerDigits(1)` + `FractionDigit
   :max="100"
   disabled
   spin-button-placement-mode="inline"
-  header="禁用"
+  header="Disabled"
 />
 ```
 
@@ -200,8 +205,8 @@ When placed inside a `<form>` with a `name`, it adds a hidden native `<input typ
 
 ```vue
 <form @submit.prevent="onSubmit">
-  <FluereNumberBox v-model="amount" name="amount" :min="0" :step="8" spin-button-placement-mode="inline" header="金额" />
-  <FluereButton type="submit" appearance="primary">提交</FluereButton>
+  <FluereNumberBox v-model="amount" name="amount" :min="0" :step="8" spin-button-placement-mode="inline" header="Amount" />
+  <FluereButton type="submit" appearance="primary">Submit</FluereButton>
 </form>
 ```
 

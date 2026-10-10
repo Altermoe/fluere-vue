@@ -2,6 +2,8 @@
 import { FluereToggleSwitch } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const offDisabled = ref(false)
 const onDisabled = ref(true)
 </script>
@@ -12,13 +14,13 @@ const onDisabled = ref(true)
       v-model="offDisabled"
       disabled
     >
-      未开启（禁用）
+      {{ t('demos.toggle-switch.disabled.offLabel') }}
     </FluereToggleSwitch>
     <FluereToggleSwitch
       v-model="onDisabled"
       disabled
     >
-      已开启（禁用）
+      {{ t('demos.toggle-switch.disabled.onLabel') }}
     </FluereToggleSwitch>
   </div>
 </template>

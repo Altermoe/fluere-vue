@@ -3,6 +3,8 @@ import { FluentIconArrowSync20Regular, FluentIconImportant16Filled } from '@flue
 import { FluereButton, FluereInfoBadge } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * 对齐 Gallery 示例 3「Placing an InfoBadge Inside Another Control」：
  * 200×60 的按钮中央是 `SymbolIcon Symbol=Sync`，右上角叠一个 InfoBadge。
@@ -42,7 +44,9 @@ const refreshCount = ref(0)
       />
     </div>
 
-    <p class="text-sm text-colorNeutralForeground3">已刷新 {{ refreshCount }} 次</p>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ t('demos.info-badge.overlay.refreshedLabel', { refreshCount }) }}
+    </p>
   </div>
 </template>
 

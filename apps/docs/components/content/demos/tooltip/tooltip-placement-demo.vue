@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { FluereButton, FluereTooltip } from '@fluere-vue/ui'
+
+const { t } = useDocsI18n()
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-fluent-l">
     <FluereTooltip
-      content="Placement = Top（默认）"
+      :content="t('demos.tooltip.placement.topContent')"
       placement="top"
     >
       <FluereButton>Top</FluereButton>

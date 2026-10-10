@@ -7,6 +7,8 @@ import { FluereButton, FluereInput } from '@fluere-vue/ui'
 import { computed, ref, watch } from 'vue'
 import type { Component } from 'vue'
 
+const { t } = useDocsI18n()
+
 const PAGE_SIZE = 40
 /** 页码从 1 开始 */
 const FIRST_PAGE = 1
@@ -132,7 +134,7 @@ const copyName = async (exportName: string): Promise<void> => {
       <FluereInput
         v-model="keyword"
         type="search"
-        placeholder="搜索图标名，如 access_time"
+        :placeholder="t('demos.icons.browser.placeholder')"
         class="max-w-sm"
       />
       <div class="flex gap-fluent-xs flex-wrap items-center">
@@ -150,7 +152,7 @@ const copyName = async (exportName: string): Promise<void> => {
           :selected="sizeFilter === 'all'"
           @click="sizeFilter = 'all'"
         >
-          全部尺寸
+          {{ t('demos.icons.browser.buttonAllSizes') }}
         </FluereButton>
       </div>
       <div class="flex gap-fluent-xs flex-wrap items-center">
@@ -168,14 +170,19 @@ const copyName = async (exportName: string): Promise<void> => {
           :selected="styleFilter === 'all'"
           @click="styleFilter = 'all'"
         >
-          全部风格
+          {{ t('demos.icons.browser.buttonAllStyles') }}
         </FluereButton>
       </div>
     </div>
 
     <p class="text-colorNeutralForeground2 text-sm mb-fluent-l">
-      共 {{ combos.length }} 个图标，每页 {{ PAGE_SIZE }} 个，当前渲染
-      {{ visibleCombos.length }} 个。
+      {{
+        t('demos.icons.browser.note', {
+          total: combos.length,
+          pageSize: PAGE_SIZE,
+          visible: visibleCombos.length,
+        })
+      }}
     </p>
 
     <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-fluent-s">
@@ -201,14 +208,14 @@ const copyName = async (exportName: string): Promise<void> => {
     <div class="mt-fluent-l flex items-center gap-fluent-m flex-wrap">
       <nav
         class="flex items-center gap-fluent-xs"
-        aria-label="分页"
+        :aria-label="t('demos.icons.browser.labelPager')"
       >
         <FluereButton
           appearance="outline"
           :disabled="currentPage <= 1"
           @click="goToPage(currentPage - 1)"
         >
-          上一页
+          {{ t('demos.icons.browser.buttonPrev') }}
         </FluereButton>
         <span class="text-sm text-colorNeutralForeground2">
           {{ currentPage }} / {{ totalPages }}
@@ -218,14 +225,14 @@ const copyName = async (exportName: string): Promise<void> => {
           :disabled="currentPage >= totalPages"
           @click="goToPage(currentPage + 1)"
         >
-          下一页
+          {{ t('demos.icons.browser.buttonNext') }}
         </FluereButton>
       </nav>
       <span
         v-if="copiedName"
         class="text-sm text-colorBrandForeground1"
       >
-        已复制：{{ copiedName }}
+        {{ t('demos.icons.browser.status', { name: copiedName }) }}
       </span>
     </div>
   </div>

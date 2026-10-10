@@ -54,6 +54,7 @@
     "readyTitle": "Ready to get started?",
     "ctaIntro": "Whether you're building an internal tool or a customer-facing product, FluereVue gives you a smooth feel close to native Windows apps on the web.",
     "footer": "© 2026 FluereVue. MIT License.",
+    "metaDescription": "A Vue 3 component library built to native WinUI 3 standards — sizes, corner radii, press feel and motion matched against a real Windows 11 install, right in your browser.",
     "features": {
       "accessibility": {
         "title": "Accessibility out of the box.",
@@ -118,5 +119,501 @@
     "copied": "Copied",
     "viewCode": "View code",
     "hideCode": "Hide code"
+  },
+  "demos": {
+    "common": {
+      "close": "Close"
+    },
+    "content-dialog": {
+      "basic": {
+        "openLabel": "Delete draft",
+        "title": "Delete this draft?",
+        "primaryLabel": "Delete",
+        "cancelLabel": "Cancel",
+        "description": "Deleting removes it from both this PC and the cloud, and it cannot be undone."
+      },
+      "buttons": {
+        "title": "Command area button combinations",
+        "presetAllLabel": "Three buttons",
+        "presetPrimarySecondaryLabel": "Primary + secondary",
+        "presetPrimaryCloseLabel": "Primary + close",
+        "presetSecondaryCloseLabel": "Secondary + close",
+        "presetPrimaryLabel": "Primary only",
+        "presetSecondaryLabel": "Secondary only",
+        "presetCloseLabel": "Close button only",
+        "presetNoneLabel": "No buttons (Esc closes)",
+        "saveLabel": "Save",
+        "dontSaveLabel": "Don't save",
+        "cancelLabel": "Cancel",
+        "okLabel": "OK",
+        "laterLabel": "Later",
+        "currentPresetPrefix": "Current combination: ",
+        "currentPresetSuffix": " ({label})."
+      },
+      "cancel": {
+        "openLabel": "Open (close needs confirmation)",
+        "note": "The first Close click is blocked by cancel",
+        "title": "Discard unsaved changes?",
+        "discardLabel": "Discard",
+        "keepEditingLabel": "Keep editing",
+        "description": "The first click on Discard (or pressing Esc) is blocked by `closing.cancel`; click again to close for real.",
+        "closingCancelled": "closing cancelled (result={result})",
+        "closingAllowed": "closing allowed (result={result})"
+      },
+      "defaultButton": {
+        "title": "Default button and Enter",
+        "primaryLabel": "OK",
+        "secondaryLabel": "Cancel",
+        "optionLabels": [
+          "No default button",
+          "Primary button is default",
+          "Secondary button is default",
+          "Close button is default"
+        ],
+        "focusHint": "Put focus on this text and press Enter to activate the default button ({button}).",
+        "inputPlaceholder": "When focus is in the input, Enter is handled by the input itself"
+      },
+      "fullSize": {
+        "openLabel": "Open full-size dialog",
+        "title": "Full-size dialog",
+        "primaryLabel": "OK",
+        "description": "`fullSizeDesired` makes the dialog frame fill the available space vertically (the cap is still `ContentDialogMaxHeight` = 756), staying centered horizontally without exceeding `ContentDialogMaxWidth` = 548.",
+        "scrollNote": "The content still scrolls: past the height limit the content area scrolls internally while the command area stays pinned to the bottom."
+      },
+      "longContent": {
+        "openLabel": "Open long-content dialog",
+        "title": "Terms of service summary (no buttons)",
+        "paragraph": "Paragraph {index}: once the content exceeds `ContentDialogMaxHeight` (756), the content area scrolls internally while the command area stays at the bottom; this example has no buttons, so Esc closes it (result `none`)."
+      }
+    },
+    "icons": {
+      "browser": {
+        "placeholder": "Search icon names, e.g. access_time",
+        "buttonAllSizes": "All sizes",
+        "buttonAllStyles": "All styles",
+        "note": "A total of {total} icons, {pageSize} per page, {visible} currently rendered.",
+        "labelPager": "Pagination",
+        "buttonPrev": "Previous page",
+        "buttonNext": "Next page",
+        "status": "Copied: {name}"
+      }
+    },
+    "info-badge": {
+      "kinds": {
+        "dotCaption": "Dot (no value / no icon)",
+        "valueSingleCaption": "Value (a single digit is a perfect circle)",
+        "valueTwoDigitCaption": "Value (two digits become a capsule)",
+        "iconBuiltinCaption": "Icon (severity's built-in glyph)",
+        "iconPropCaption": "Icon (custom icon prop)",
+        "iconSlotCaption": "Icon (#icon slot, highest priority)"
+      },
+      "overlay": {
+        "refreshedLabel": "Refreshed {refreshCount} times"
+      },
+      "navigation": {
+        "navLabel": "Navigation example"
+      },
+      "dynamic": {
+        "currentValue": "Current Value: {value} (≥ 0 shows the number, < 0 shows the dot)"
+      }
+    },
+    "infobar": {
+      "closable": {
+        "title": "Draft not saved yet",
+        "message": "The first click on Close is blocked by cancel (the button and message change); click again to close for real.",
+        "confirmDiscardLabel": "Confirm discard draft",
+        "reopenLabel": "Reopen",
+        "closeStats": "Closed {closeCount} times · Latest reason {lastReason}"
+      },
+      "content": {
+        "withBannerLabel": "With Title / Message (content moves up when removed)",
+        "syncTitle": "Sync from cloud drive",
+        "syncMessage": "Syncing 128 files; you can keep using other features.",
+        "syncedLabel": "Synced {progress}%"
+      },
+      "icon": {
+        "uploadTitle": "Custom icon",
+        "uploadMessage": "The InfoBar's IconSource is swapped for a cloud-upload icon; Severity still decides the background color.",
+        "severityTitle": "Custom icon and custom background",
+        "severityMessage": "The icon changes along with Severity, but the icon itself is fully supplied by the consumer.",
+        "hiddenTitle": "Custom icon with icon display turned off",
+        "hiddenMessage": "With is-icon-visible=false the custom icon is not rendered either (aligned with the NoIconVisible branch)."
+      },
+      "message": {
+        "hyperlinkMessage": "The action can also be a hyperlink:",
+        "learnMoreLabel": "Learn more"
+      },
+      "options": {
+        "sharedOpenMessage": "Both InfoBars share the same Is Open and stay in sync when toggled.",
+        "eventLog": "Event log: {entries}",
+        "notTriggered": "(not triggered)"
+      }
+    },
+    "number-box": {
+      "basic": {
+        "headerQuantity": "Quantity",
+        "headerPrice": "Unit price",
+        "description": "Supports decimals: formatted to the step's decimal places on blur or Enter",
+        "note": "Quantity: {quantity} · Unit price: {price} (clearing the input yields null, corresponding to WinUI's NaN)"
+      },
+      "compact": {
+        "headerOpacity": "Opacity",
+        "headerColumns": "Grid columns (up / down buttons appear on focus)",
+        "note": "Compact mode shows up / down indicators to the right of the input box; on focus a 36×36 button panel floats out on the right (corner radius 8 + shadow depth 16) and collapses on blur."
+      },
+      "disabled": {
+        "headerSpin": "Disabled (with spin buttons)",
+        "headerEmpty": "Disabled (no value)",
+        "placeholder": "Not editable",
+        "note": "When disabled, the input box falls to the TextControl…Disabled tier and the spin buttons move to …ForegroundDisabled; the header and description both gray out."
+      },
+      "expression": {
+        "placeholder": "e.g. (2+3)*4^2",
+        "headerResult": "Computed value",
+        "headerBudget": "Budget (you can enter 200*3+500)",
+        "headerTaxRate": "Tax rate",
+        "description": "Evaluated on blur or Enter, using parentheses and the precedence ^ > * / > + −",
+        "note": "Computed value: {total} · Budget: {budget} · Tax rate: {taxRate}"
+      },
+      "form": {
+        "headerAmount": "Amount",
+        "buttonSubmit": "Submit",
+        "note": "Submitted amount: {submitted}"
+      },
+      "format": {
+        "headerInteger": "Integer appearance (maximumFractionDigits: 0)",
+        "descriptionInteger": "25.8 displays as 26 — the same look as WinUI's default DecimalFormatter with FractionDigits(0)",
+        "headerFixed": "Fixed two decimal places",
+        "headerLocale": "de-DE: 1.234,5",
+        "descriptionLocale": "The decimal point and group separators follow the locale, and parsing accepts the same set of symbols"
+      },
+      "inline": {
+        "headerFontSize": "Font size (hold the button to keep stepping)",
+        "headerZoom": "Zoom",
+        "note": "The inline buttons and the input box share one TextBox border: the buttons are 32×24 with margin 4 and corner radius 4, repeating every 250ms while held (the WinUI RepeatButton Delay / Interval defaults)."
+      },
+      "step": {
+        "headerQuantity": "Quantity (0–500)",
+        "headerRatio": "Ratio (0–1, step 0.1)",
+        "note": "Arrow keys / wheel move by step, PageUp / PageDown by largeStep; out-of-range values are clamped to the range, and — as with WinUI — there is no step snapping."
+      },
+      "validation": {
+        "headerDefault": "Default: invalid input overwritten",
+        "descriptionDefault": "Try typing abc — it returns to 20 on blur; type 150 — it is clamped to 100",
+        "headerDisabled": "ValidationMode=Disabled: Keep input",
+        "descriptionDisabled": "The text is kept as typed, while the value stays at the last successfully parsed result",
+        "note": "Strict mode: {strict} · Lenient mode: {lenient}"
+      }
+    },
+    "progress-ring": {
+      "active": {
+        "label": "Loading indicator",
+        "statusSpinning": "Spinning",
+        "statusHidden": "Hidden (IsActive=false)",
+        "labelToggle": "Active (IsActive)"
+      },
+      "background": {
+        "labelIndeterminate": "Indeterminate (with track)",
+        "noteIndeterminate": "Indeterminate + track",
+        "labelDeterminate": "Determinate (with track)",
+        "noteDeterminate": "Determinate 20% + track"
+      },
+      "basic": {
+        "label": "Loading",
+        "note": "Loading, please wait…"
+      },
+      "determinate": {
+        "label": "Download progress",
+        "header": "Drag to change progress"
+      },
+      "disabled": {
+        "labelIndeterminate": "Disabled spinner",
+        "labelDeterminate": "Disabled progress"
+      },
+      "size": {
+        "labelSmall": "Small",
+        "labelMedium": "Medium",
+        "labelLarge": "Large",
+        "noteMedium": "medium 32 (WinUI default)"
+      }
+    },
+    "progress": {
+      "background": {
+        "labelDefault": "Default track color",
+        "noteDefault": "Default (semantic token)",
+        "labelWinui": "Track color aligned with WinUI's original value",
+        "noteWinui": "rgba(0, 0, 0, 0.45) (WinUI original value)"
+      },
+      "determinate": {
+        "label": "Determinate progress bar example",
+        "labelNumberBox": "Adjust the progress bar value"
+      },
+      "disabled": {
+        "labelDeterminate": "Disabled determinate progress bar",
+        "noteDeterminate": "disabled (determinate)",
+        "labelIndeterminate": "Disabled indeterminate progress bar",
+        "noteIndeterminate": "disabled (indeterminate)"
+      },
+      "indeterminate": {
+        "label": "Indeterminate progress bar example",
+        "note": "In progress; the amount of progress cannot be quantified…"
+      },
+      "states": {
+        "label": "Indeterminate progress bar state example"
+      },
+      "statusColor": {
+        "labelNormal": "Normal",
+        "labelPaused": "Paused",
+        "labelError": "Error"
+      }
+    },
+    "scroll-view": {
+      "agent": {
+        "label": "Log list",
+        "labelRow": "Row {index}",
+        "buttonScrollBy": "Simulate Agent: scroll down {step}px",
+        "buttonBringIntoView": "Simulate Agent: scroll row {row} into view",
+        "buttonScrollToTop": "Simulate Agent: back to top",
+        "readout": "(reading data-*)"
+      },
+      "api": {
+        "buttonScrollDown": "Scroll down 120px",
+        "buttonScrollUp": "Scroll up 120px",
+        "buttonTop": "Back to top",
+        "buttonZoomIn": "Zoom in",
+        "buttonZoomOut": "Zoom out",
+        "readout": "(shown after interaction)"
+      },
+      "barVisibility": {
+        "labelAuto": "auto (default, overlay)",
+        "labelVisible": "visible (always shown)",
+        "labelHidden": "hidden (still scrollable)"
+      },
+      "horizontal": {
+        "label": "Card {index}"
+      },
+      "nested": {
+        "labelOuter": "Outer content {index} · the wheel scrolls the outer view only when the pointer is here",
+        "labelInnerA": "Inner A · row {index} (the outer view stays still at the end)",
+        "labelInnerB": "Inner B · row {index} (the outer view stays still at the end)",
+        "labelOuterTail": "Outer tail content {index}"
+      },
+      "vertical": {
+        "label": "Row {index} — native Windows 11 scrolling experience"
+      },
+      "zoom": {
+        "label": "Ctrl + wheel to zoom"
+      }
+    },
+    "slider": {
+      "basic": {
+        "headerVolume": "Volume",
+        "headerBrightness": "Brightness",
+        "note": "Volume: {volume} · Brightness: {brightness}"
+      },
+      "disabled": {
+        "headerInteractiveOff": "Disabled (interaction off)",
+        "headerMin": "Disabled (minimum)",
+        "headerMax": "Disabled (maximum)",
+        "note": "When disabled, the track, value fill, thumb and title all fall to the …Disabled tier; the thumb moves to the …Disabled size (the inner dot grows to 14px in WinUI's Disabled state)."
+      },
+      "form": {
+        "header": "Gain",
+        "buttonSubmit": "Submit",
+        "note": "Submitted gain: {submitted}"
+      },
+      "header": {
+        "header": "Font size",
+        "headerSlot": "Font size ({fontSize} px)",
+        "label": "Font size slider",
+        "note": "While holding the thumb (or when it has keyboard focus), a WinUI value tooltip (Disambiguation UI) floats above the thumb."
+      },
+      "step": {
+        "headerPrice": "Price (0–1000, step 50)",
+        "headerRatio": "Zoom (0–1, step 0.1)",
+        "note": "¥{price} · {ratio}× — arrow keys move by step; PageUp / PageDown or Shift + arrow keys jump 10 steps."
+      },
+      "ticks": {
+        "headerInline": "Ticks inside the track (TickPlacement=Inline)",
+        "headerOutside": "Ticks outside the track (TickPlacement=Outside)",
+        "note": "Same as WinUI: no tick lines are drawn when `tickFrequency` is 0 (the default)."
+      },
+      "vertical": {
+        "labelBass": "Bass",
+        "noteBass": "Bass {bass}",
+        "labelTreble": "Treble",
+        "noteTreble": "Treble {treble}",
+        "noteBefore": "Values increase from bottom to top on a vertical slider (same as WinUI: the minimum is at the bottom); pass",
+        "noteAfter": "to reverse it."
+      }
+    },
+    "checkbox": {
+      "basic": {
+        "agreeLabel": "Agree to the terms of service",
+        "subscribeLabel": "Subscribe to product updates",
+        "statusLine": "Agree: {agree} · Subscribe: {subscribe}"
+      },
+      "disabled": {
+        "uncheckedLabel": "Unchecked (disabled)",
+        "checkedLabel": "Checked (disabled)",
+        "indeterminateLabel": "Indeterminate (disabled)"
+      },
+      "indeterminate": {
+        "selectAllLabel": "Select all (indeterminate state)",
+        "items": ["Option A", "Option B", "Option C"]
+      }
+    },
+    "combobox": {
+      "basic": {
+        "colors": ["Blue", "Green", "Red", "Yellow"],
+        "header": "Colors",
+        "placeholder": "Select a color",
+        "currentNote": "Currently selected: {value} (shows the placeholder when nothing is selected)"
+      },
+      "customItem": {
+        "colors": ["Brand blue", "Green", "Red", "Yellow"],
+        "header": "Accent color",
+        "currentNote": "Current: {value}"
+      },
+      "disabled": {
+        "plans": ["Free", "Professional", "Team (in preview)", "Enterprise"],
+        "enabledHeader": "Selectable: arrow keys and type-to-search skip disabled items",
+        "disabledHeader": "Disabled entirely"
+      },
+      "editable": {
+        "header": "Name (customizable)",
+        "placeholder": "Type or select",
+        "submitNote": "Submitted text not in the list: {text} (selection cleared, text kept)",
+        "selectedNote": "Selected: {value}"
+      },
+      "form": {
+        "shippingOptions": ["Standard shipping (3-5 days)", "Next-day delivery", "Store pickup"],
+        "header": "Shipping method",
+        "submitLabel": "Submit",
+        "submittedNote": "Submitted shipping option: {value}",
+        "emptyValue": "(empty)"
+      },
+      "header": {
+        "header": "Body font size",
+        "description": "The header doubles as the default accessible name; the description is attached via aria-describedby",
+        "label": "Body font size selector",
+        "sizeNote": "Font size: {value}"
+      },
+      "longList": {
+        "header": "States (type w to try text search)",
+        "placeholder": "Select or type the first letter",
+        "currentNote": "Current: {value}"
+      },
+      "object": {
+        "cities": ["Beijing", "Shanghai", "Guangzhou", "Shenzhen"],
+        "defaultSelection": "Shanghai",
+        "header": "Cities (object items + by)",
+        "selectionNote": "+{added} (index {addedIndex}) −{removed} (index {removedIndex})"
+      }
+    },
+    "input": {
+      "appearance": {
+        "outlinePlaceholder": "Outline (default)",
+        "underlinePlaceholder": "Underline"
+      },
+      "basic": {
+        "placeholder": "Enter text",
+        "disabledPlaceholder": "Disabled",
+        "valueNote": "Current value: {value}",
+        "emptyValue": "(empty)"
+      },
+      "header": {
+        "header": "Display name",
+        "description": "Shown on your profile page",
+        "emailLabel": "Email",
+        "emailDescription": "Used for notifications; never shown publicly",
+        "noteLead": "The title renders as the element pointed to by",
+        "noteMiddle": "and the description is attached to",
+        "noteTail": "; both default texts can be overridden with named slots."
+      },
+      "invalid": {
+        "placeholder": "Invalid input",
+        "errorHint": "Please enter a valid value."
+      },
+      "multiline": {
+        "header": "Notes",
+        "description": "3 rows by default; drag the bottom-right corner to resize",
+        "placeholder": "Enter notes",
+        "feedbackHeader": "Feedback",
+        "feedbackSeed": "First line\nSecond line"
+      },
+      "password": {
+        "placeholder": "Enter password",
+        "header": "Password",
+        "note": "WinUI rule: the reveal button appears only after focus, and only after typing has begun from empty during that focus. The password box above is prefilled — clear it and type again to see the button; the one below (the native masking path) has no prefilled content, so typing shows it immediately."
+      },
+      "passwordReveal": {
+        "ariaLabel": "Example password field",
+        "note": "The third variant of the official WinUI sample: `passwordRevealMode` is switched between `hidden` and `visible` by the consumer, so the built-in “Show” button does not appear (mutually exclusive with `peek`)."
+      }
+    },
+    "radio": {
+      "basic": {
+        "items": ["Tomato red", "Teal", "Starlight blue"],
+        "currentLabel": "Current: {color}"
+      },
+      "disabled": {
+        "groupDisabledLabel": "Entire group disabled",
+        "itemDisabledLabel": "Individual option disabled",
+        "planItems": ["Free", "Pro"],
+        "cellularLabel": "Cellular (5G)",
+        "airplaneLabel": "Airplane mode",
+        "maintenanceNote": " (maintenance)",
+        "ethernetLabel": "Ethernet"
+      },
+      "orientation": {
+        "items": ["Left", "Center", "Right"],
+        "alignLabel": "Alignment: {align}"
+      }
+    },
+    "toggle-switch": {
+      "basic": {
+        "bluetoothLabel": "Bluetooth",
+        "statusLine": "Wi-Fi: {wifi} · Bluetooth: {bluetooth} · VPN: {vpn}"
+      },
+      "disabled": {
+        "offLabel": "Off (disabled)",
+        "onLabel": "On (disabled)"
+      },
+      "headerContent": {
+        "notifyHeader": "System notifications",
+        "notifyOffLabel": "Off",
+        "notifyOnLabel": "On",
+        "notifyLabel": "Receive desktop notifications",
+        "promoHeader": "Promotions and events",
+        "promoLabel": "Allow product updates to be pushed"
+      },
+      "size": {
+        "smallLabel": "small (32×16)",
+        "mediumLabel": "medium (40×20 · WinUI standard)",
+        "largeLabel": "large (48×24)"
+      }
+    },
+    "tooltip": {
+      "content": {
+        "plainTextLabel": "Plain text (content)",
+        "wrapLabel": "Long text wraps automatically",
+        "richContentLabel": "Rich content (#content)",
+        "saveLabel": "Save",
+        "longText": "A ToolTip shows more information about a UI element. You might show information about what the element does, or what the user should do. The text wraps automatically at 320px."
+      },
+      "delay": {
+        "defaultDelayLabel": "Default 400ms",
+        "instantContent": "Show immediately"
+      },
+      "disabled": {
+        "showContent": "This will show",
+        "hideContent": "This won't show",
+        "enabledLabel": "Enabled"
+      },
+      "placement": {
+        "topContent": "Placement = Top (default)"
+      }
+    }
   }
 }

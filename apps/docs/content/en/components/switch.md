@@ -35,9 +35,9 @@ The standard WinUI ToggleSwitch track is 40×20 (`medium`). The web side additio
 #code
 
 ```vue
-<FluereToggleSwitch size="small">small（32×16）</FluereToggleSwitch>
-<FluereToggleSwitch size="medium">medium（40×20）</FluereToggleSwitch>
-<FluereToggleSwitch size="large">large（48×24）</FluereToggleSwitch>
+<FluereToggleSwitch size="small">small (32×16)</FluereToggleSwitch>
+<FluereToggleSwitch size="medium">medium (40×20, WinUI standard)</FluereToggleSwitch>
+<FluereToggleSwitch size="large">large (48×24)</FluereToggleSwitch>
 ```
 
 ::

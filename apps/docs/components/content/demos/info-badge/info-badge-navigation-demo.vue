@@ -13,6 +13,8 @@ import {
 } from '@fluere-vue/ui'
 import { computed, ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * 对齐 Gallery 示例 1「InfoBadge embedded in NavigationView」：
  * 徽章挂在「Inbox」导航项上，右侧选项面板控制 `InfoBadge.Opacity` 与
@@ -45,7 +47,7 @@ const itemLabel = (label: string, badge: number | null): string | undefined =>
     <nav
       class="ib-nav-demo__pane"
       :class="{ 'ib-nav-demo__pane--compact': paneDisplayMode === 'LeftCompact' }"
-      aria-label="导航示例"
+      :aria-label="t('demos.info-badge.navigation.navLabel')"
     >
       <ul class="ib-nav-demo__list">
         <li

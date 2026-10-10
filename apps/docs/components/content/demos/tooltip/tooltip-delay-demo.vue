@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { FluereButton, FluereTooltip, FluereTooltipProvider } from '@fluere-vue/ui'
+
+const { t } = useDocsI18n()
 </script>
 
 <template>
@@ -11,10 +13,10 @@ import { FluereButton, FluereTooltip, FluereTooltipProvider } from '@fluere-vue/
   >
     <div class="flex flex-wrap items-center gap-fluent-l">
       <FluereTooltip content="Simple ToolTip">
-        <FluereButton>默认 400ms</FluereButton>
+        <FluereButton>{{ t('demos.tooltip.delay.defaultDelayLabel') }}</FluereButton>
       </FluereTooltip>
       <FluereTooltip
-        content="立即显示"
+        :content="t('demos.tooltip.delay.instantContent')"
         :delay-duration="0"
       >
         <FluereButton>delayDuration = 0</FluereButton>

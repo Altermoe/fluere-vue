@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import type { FluereComboboxItem } from '@fluere-vue/ui'
 import { FluereButton, FluereCombobox } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
-const SHIPPING: FluereComboboxItem<string>[] = [
-  { value: 'standard', text: '标准配送（3-5 天）' },
-  { value: 'express', text: '次日达' },
-  { value: 'pickup', text: '自提点自取' },
-]
+const { t, tm } = useDocsI18n()
+
+const SHIPPING_VALUES = ['standard', 'express', 'pickup']
+const shippingTexts = computed(() => tm('demos.combobox.form.shippingOptions'))
+const SHIPPING = computed<FluereComboboxItem<string>[]>(() =>
+  SHIPPING_VALUES.map((value, index) => ({ value, text: shippingTexts.value[index] ?? '' })),
+)
 
 const shipping = ref<string | null>('standard')
 const submitted = ref('')
 
 const onSubmit = (): void => {
-  submitted.value = `提交的配送方式：${shipping.value ?? '（空）'}`
+  submitted.value = t('demos.combobox.form.submittedNote', {
+    value: shipping.value ?? t('demos.combobox.form.emptyValue'),
+  })
 }
 </script>
 
@@ -26,13 +30,13 @@ const onSubmit = (): void => {
       v-model="shipping"
       :items="SHIPPING"
       name="shipping"
-      header="配送方式"
+      :header="t('demos.combobox.form.header')"
     />
     <FluereButton
       type="submit"
       appearance="primary"
     >
-      提交
+      {{ t('demos.combobox.form.submitLabel') }}
     </FluereButton>
     <p
       v-if="submitted"

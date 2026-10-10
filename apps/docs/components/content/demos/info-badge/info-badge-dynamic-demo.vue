@@ -2,6 +2,8 @@
 import { FluereInfoBadge, FluereNumberBox } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * 对齐 Gallery 示例 4「InfoBadge with Dynamic Value」：
  * `NumberBox`（`Minimum=-1`、`SpinButtonPlacementMode=Inline`）驱动 `InfoBadge.Value`。
@@ -30,7 +32,7 @@ const value = () => badgeValue.value ?? -1
         spin-button-placement-mode="inline"
       />
       <p class="text-sm text-colorNeutralForeground3">
-        当前 Value：{{ value() }}（≥ 0 显示数字，&lt; 0 显示圆点）
+        {{ t('demos.info-badge.dynamic.currentValue', { value: value() }) }}
       </p>
     </div>
   </div>

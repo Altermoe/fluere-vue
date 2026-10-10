@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { FluereComboboxItem } from '@fluere-vue/ui'
 import { FluereCombobox } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t } = useDocsI18n()
 
 /** 长列表：面板最高 504px（约 15 项）后滚轮滚动，输入首字母可直接跳选 */
 const STATES: FluereComboboxItem<string>[] = [
@@ -38,6 +40,9 @@ const STATES: FluereComboboxItem<string>[] = [
 ].map((name) => ({ value: name, text: name }))
 
 const state = ref<string | null>(null)
+const currentNote = computed(() =>
+  t('demos.combobox.longList.currentNote', { value: state.value ?? '—' }),
+)
 </script>
 
 <template>
@@ -45,10 +50,12 @@ const state = ref<string | null>(null)
     <FluereCombobox
       v-model="state"
       :items="STATES"
-      header="州（输入 w 试试文本搜索）"
-      placeholder="选择或直接输入首字母"
+      :header="t('demos.combobox.longList.header')"
+      :placeholder="t('demos.combobox.longList.placeholder')"
       :max-drop-down-height="200"
     />
-    <p class="text-sm text-colorNeutralForeground3">当前：{{ state ?? '—' }}</p>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ currentNote }}
+    </p>
   </div>
 </template>

@@ -2,6 +2,8 @@
 import { FluereToggleSwitch } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const small = ref(true)
 const medium = ref(true)
 const large = ref(false)
@@ -13,19 +15,19 @@ const large = ref(false)
       v-model="small"
       size="small"
     >
-      small（32×16）
+      {{ t('demos.toggle-switch.size.smallLabel') }}
     </FluereToggleSwitch>
     <FluereToggleSwitch
       v-model="medium"
       size="medium"
     >
-      medium（40×20 · WinUI 标准）
+      {{ t('demos.toggle-switch.size.mediumLabel') }}
     </FluereToggleSwitch>
     <FluereToggleSwitch
       v-model="large"
       size="large"
     >
-      large（48×24）
+      {{ t('demos.toggle-switch.size.largeLabel') }}
     </FluereToggleSwitch>
   </div>
 </template>

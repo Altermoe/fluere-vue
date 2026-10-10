@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import type { FluereComboboxItem } from '@fluere-vue/ui'
 import { FluereCombobox } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t, tm } = useDocsI18n()
 
 /** 含不可选项的列表：不可选项不参与方向键选区与文本搜索 */
-const PLANS: FluereComboboxItem<string>[] = [
-  { value: 'free', text: '免费版' },
-  { value: 'pro', text: '专业版' },
-  { value: 'team', text: '团队版（内测中）', disabled: true },
-  { value: 'enterprise', text: '企业版' },
+const PLAN_VALUES: { value: string; disabled?: boolean }[] = [
+  { value: 'free' },
+  { value: 'pro' },
+  { value: 'team', disabled: true },
+  { value: 'enterprise' },
 ]
+const planTexts = computed(() => tm('demos.combobox.disabled.plans'))
+const PLANS = computed<FluereComboboxItem<string>[]>(() =>
+  PLAN_VALUES.map((item, index) => ({ ...item, text: planTexts.value[index] ?? '' })),
+)
 
 const plan = ref<string | null>('pro')
 const locked = ref<string | null>('team')
@@ -20,13 +26,13 @@ const locked = ref<string | null>('team')
     <FluereCombobox
       v-model="plan"
       :items="PLANS"
-      header="可选中：方向键与文本搜索都会跳过禁用项"
+      :header="t('demos.combobox.disabled.enabledHeader')"
     />
     <FluereCombobox
       v-model="locked"
       :items="PLANS"
       disabled
-      header="整体禁用"
+      :header="t('demos.combobox.disabled.disabledHeader')"
     />
   </div>
 </template>

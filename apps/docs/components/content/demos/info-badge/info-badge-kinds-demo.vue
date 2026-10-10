@@ -2,6 +2,8 @@
 import { FluentIconAdd16Filled } from '@fluere-vue/icons'
 import { FluereInfoBadge } from '@fluere-vue/ui'
 
+const { t } = useDocsI18n()
+
 /**
  * 三种形态的最小对照（对齐 `InfoBadge.cpp#OnDisplayKindPropertiesChanged` 的三分支）：
  *   Dot    ← `Value = -1` 且没有 `IconSource`
@@ -19,17 +21,17 @@ const BADGE_VALUE = 10
   <div class="ib-kinds-demo">
     <figure>
       <FluereInfoBadge />
-      <figcaption>Dot（无 value / 无 icon）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.dotCaption') }}</figcaption>
     </figure>
 
     <figure>
       <FluereInfoBadge :value="SINGLE_DIGIT" />
-      <figcaption>Value（单个数字是正圆）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.valueSingleCaption') }}</figcaption>
     </figure>
 
     <figure>
       <FluereInfoBadge :value="BADGE_VALUE" />
-      <figcaption>Value（两位数变成胶囊）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.valueTwoDigitCaption') }}</figcaption>
     </figure>
 
     <figure>
@@ -37,12 +39,12 @@ const BADGE_VALUE = 10
         severity="success"
         icon
       />
-      <figcaption>Icon（severity 内建字形）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.iconBuiltinCaption') }}</figcaption>
     </figure>
 
     <figure>
       <FluereInfoBadge :icon="FluentIconAdd16Filled" />
-      <figcaption>Icon（自定义 icon Prop）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.iconPropCaption') }}</figcaption>
     </figure>
 
     <figure>
@@ -51,7 +53,7 @@ const BADGE_VALUE = 10
           <FluentIconAdd16Filled />
         </template>
       </FluereInfoBadge>
-      <figcaption>Icon（#icon 插槽，优先级最高）</figcaption>
+      <figcaption>{{ t('demos.info-badge.kinds.iconSlotCaption') }}</figcaption>
     </figure>
   </div>
 </template>

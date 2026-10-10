@@ -19,8 +19,8 @@ Bind a boolean value with `v-model`; by default the checkbox toggles after a sin
 #code
 
 ```vue
-<FluereCheckbox v-model="agree">同意服务条款</FluereCheckbox>
-<FluereCheckbox v-model="subscribe">订阅产品更新</FluereCheckbox>
+<FluereCheckbox v-model="agree">Agree to the terms of service</FluereCheckbox>
+<FluereCheckbox v-model="subscribe">Subscribe to product updates</FluereCheckbox>
 ```
 
 ::
@@ -36,11 +36,11 @@ Bind a boolean value with `v-model`; by default the checkbox toggles after a sin
 
 ```vue
 <FluereCheckbox :model-value="allState" @update:model-value="toggleAll">
-  全选
+  Select all
 </FluereCheckbox>
-<FluereCheckbox v-model="a">选项 A</FluereCheckbox>
-<FluereCheckbox v-model="b">选项 B</FluereCheckbox>
-<FluereCheckbox v-model="c">选项 C</FluereCheckbox>
+<FluereCheckbox v-model="a">Option A</FluereCheckbox>
+<FluereCheckbox v-model="b">Option B</FluereCheckbox>
+<FluereCheckbox v-model="c">Option C</FluereCheckbox>
 ```
 
 ::
@@ -55,9 +55,9 @@ When `disabled`, it is not interactive, and the fill, stroke, glyph, and text fa
 #code
 
 ```vue
-<FluereCheckbox disabled>未勾选（禁用）</FluereCheckbox>
-<FluereCheckbox disabled :model-value="true">已勾选（禁用）</FluereCheckbox>
-<FluereCheckbox disabled :model-value="'indeterminate'">不确定（禁用）</FluereCheckbox>
+<FluereCheckbox disabled>Unchecked (disabled)</FluereCheckbox>
+<FluereCheckbox disabled :model-value="true">Checked (disabled)</FluereCheckbox>
+<FluereCheckbox disabled :model-value="'indeterminate'">Indeterminate (disabled)</FluereCheckbox>
 ```
 
 ::
@@ -73,7 +73,7 @@ When placed inside a `<form>` with a `name` prop, a hidden native `<input type="
 
 ```vue
 <form @submit.prevent>
-  <FluereCheckbox name="opt-in" value="yes">同意接收邮件</FluereCheckbox>
+  <FluereCheckbox name="opt-in" value="yes">Agree to receive emails</FluereCheckbox>
 </form>
 ```
 

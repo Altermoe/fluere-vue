@@ -2,14 +2,20 @@
 import { FluereCheckbox } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const agree = ref(false)
 const subscribe = ref(true)
 </script>
 
 <template>
   <div class="flex flex-col gap-fluent-l max-w-sm">
-    <FluereCheckbox v-model="agree"> 同意服务条款 </FluereCheckbox>
-    <FluereCheckbox v-model="subscribe"> 订阅产品更新 </FluereCheckbox>
-    <p class="text-sm text-colorNeutralForeground3">同意：{{ agree }} · 订阅：{{ subscribe }}</p>
+    <FluereCheckbox v-model="agree">{{ t('demos.checkbox.basic.agreeLabel') }}</FluereCheckbox>
+    <FluereCheckbox v-model="subscribe">{{
+      t('demos.checkbox.basic.subscribeLabel')
+    }}</FluereCheckbox>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ t('demos.checkbox.basic.statusLine', { agree, subscribe }) }}
+    </p>
   </div>
 </template>

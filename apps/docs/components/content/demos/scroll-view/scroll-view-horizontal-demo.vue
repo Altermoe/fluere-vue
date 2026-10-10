@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { FluereScrollView } from '@fluere-vue/ui'
 
+const { t } = useDocsI18n()
+
 /* 演示常量（避免 lint no-magic-numbers） */
 const HORIZONTAL_CARD_COUNT = 10
 </script>
@@ -17,7 +19,7 @@ const HORIZONTAL_CARD_COUNT = 10
           :key="index"
           class="w-56 h-28 shrink-0 rounded-fluent-lg border border-colorNeutralStroke2 bg-colorNeutralBackground2 flex items-center justify-center text-colorNeutralForeground2"
         >
-          卡片 {{ index }}
+          {{ t('demos.scroll-view.horizontal.label', { index }) }}
         </div>
       </div>
     </FluereScrollView>

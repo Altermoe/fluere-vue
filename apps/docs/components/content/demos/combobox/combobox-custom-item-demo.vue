@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import type { FluereComboboxItem } from '@fluere-vue/ui'
 import { FluereCombobox } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t, tm } = useDocsI18n()
 
 /** 自定义项：用 #item 插槽给每项加色块（对应 WinUI 的 ItemTemplate） */
-const COLORS: FluereComboboxItem<string>[] = [
-  { value: '#0f6cbd', text: '品牌蓝' },
-  { value: '#107c10', text: '绿' },
-  { value: '#d13438', text: '红' },
-  { value: '#ffb900', text: '黄' },
-]
+const COLOR_VALUES = ['#0f6cbd', '#107c10', '#d13438', '#ffb900']
+const colorTexts = computed(() => tm('demos.combobox.customItem.colors'))
+const COLORS = computed<FluereComboboxItem<string>[]>(() =>
+  COLOR_VALUES.map((value, index) => ({ value, text: colorTexts.value[index] ?? '' })),
+)
 
 const color = ref<string | null>('#0f6cbd')
+const currentNote = computed(() =>
+  t('demos.combobox.customItem.currentNote', { value: color.value ?? '—' }),
+)
 </script>
 
 <template>
@@ -19,7 +23,7 @@ const color = ref<string | null>('#0f6cbd')
     <FluereCombobox
       v-model="color"
       :items="COLORS"
-      header="强调色"
+      :header="t('demos.combobox.customItem.header')"
     >
       <template #item="{ item }">
         <span class="flex items-center gap-2">
@@ -31,6 +35,8 @@ const color = ref<string | null>('#0f6cbd')
         </span>
       </template>
     </FluereCombobox>
-    <p class="text-sm text-colorNeutralForeground3">当前：{{ color ?? '—' }}</p>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ currentNote }}
+    </p>
   </div>
 </template>

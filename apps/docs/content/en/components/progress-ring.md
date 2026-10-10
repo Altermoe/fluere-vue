@@ -17,7 +17,7 @@ The styling aligns with the WinUI 3 / Windows App SDK ProgressRing (`microsoft-u
 #code
 
 ```vue
-<FluereProgressRing label="正在加载" />
+<FluereProgressRing label="Loading" />
 ```
 
 ::
@@ -49,7 +49,7 @@ Default 32×32 (aligned with the WinUI default size). Also provides `small=16` (
 #code
 
 ```vue
-<FluereProgressRing :model-value="40" :indeterminate="false" label="下载进度" />
+<FluereProgressRing :model-value="40" :indeterminate="false" label="Download progress" />
 ```
 
 ::

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { FluereComboboxItem } from '@fluere-vue/ui'
 import { FluereCombobox } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t } = useDocsI18n()
 
 /** 设置项风格的列表：标题 + 说明 + 可访问名 */
 const FONT_SIZES: FluereComboboxItem<number>[] = [
@@ -15,6 +17,9 @@ const FONT_SIZES: FluereComboboxItem<number>[] = [
 const DEFAULT_FONT_SIZE = 14
 
 const fontSize = ref<number | null>(DEFAULT_FONT_SIZE)
+const sizeNote = computed(() =>
+  t('demos.combobox.header.sizeNote', { value: fontSize.value ?? '—' }),
+)
 </script>
 
 <template>
@@ -22,10 +27,12 @@ const fontSize = ref<number | null>(DEFAULT_FONT_SIZE)
     <FluereCombobox
       v-model="fontSize"
       :items="FONT_SIZES"
-      header="正文字号"
-      description="Header 同时作为缺省的可访问名；description 会挂到 aria-describedby"
-      label="正文字号选择器"
+      :header="t('demos.combobox.header.header')"
+      :description="t('demos.combobox.header.description')"
+      :label="t('demos.combobox.header.label')"
     />
-    <p class="text-sm text-colorNeutralForeground3">字号：{{ fontSize ?? '—' }}</p>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ sizeNote }}
+    </p>
   </div>
 </template>

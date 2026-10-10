@@ -21,7 +21,7 @@ By default `content-orientation="vertical"`; the wheel / touch panning / draggin
 
 ```vue
 <FluereScrollView class="h-80">
-  <div v-for="row in rows" :key="row">Row {{ row }} · native Windows 11 scrolling experience</div>
+  <div v-for="row in rows" :key="row">Row {{ row }} — native Windows 11 scrolling experience</div>
 </FluereScrollView>
 ```
 

@@ -2,6 +2,8 @@
 import { FluereInfoBar } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * `Closing` 可取消：把 `args.cancel` 置为 true，组件会把 `open` 回滚为 true
  * （对齐 WinUI `InfoBarClosingEventArgs.Cancel`）。下面的示例「先确认再关闭」。
@@ -36,9 +38,13 @@ const reopen = () => {
     <FluereInfoBar
       v-model:open="open"
       severity="warning"
-      title="草稿尚未保存"
-      message="首次点击关闭会被 cancel 拦下（按钮与提示语会变化），再点一次才真正关闭。"
-      :close-button-label="pendingAfterCancel ? '确认放弃草稿' : '关闭'"
+      :title="t('demos.infobar.closable.title')"
+      :message="t('demos.infobar.closable.message')"
+      :close-button-label="
+        pendingAfterCancel
+          ? t('demos.infobar.closable.confirmDiscardLabel')
+          : t('demos.common.close')
+      "
       @closing="onClosing"
       @closed="onClosed"
     />
@@ -49,11 +55,11 @@ const reopen = () => {
         class="fui-infobar-demo-btn"
         @click="reopen"
       >
-        重新打开
+        {{ t('demos.infobar.closable.reopenLabel') }}
       </button>
-      <span class="text-sm text-colorNeutralForeground2">
-        已关闭 {{ closeCount }} 次 · 最近原因 {{ lastReason }}
-      </span>
+      <span class="text-sm text-colorNeutralForeground2">{{
+        t('demos.infobar.closable.closeStats', { closeCount, lastReason })
+      }}</span>
     </div>
   </div>
 </template>

@@ -21,7 +21,7 @@ Vue 3 icon components for WinUI 3 / Fluent System Icons, generated from the offi
 import { FluentIconAdd20Filled } from '@fluere-vue/icons'
 
 <FluentIconAdd20Filled />
-<FluentIconAdd20Filled size="24" title="添加" />
+<FluentIconAdd20Filled size="24" title="Add" />
 ```
 
 ::

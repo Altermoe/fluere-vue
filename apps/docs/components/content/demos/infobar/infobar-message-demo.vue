@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { FluereInfoBar } from '@fluere-vue/ui'
 
+const { t } = useDocsI18n()
+
 /**
  * 对齐 Gallery 示例 2：长短消息 + Action Button / Hyperlink。
  *
@@ -17,13 +19,13 @@ const longMessage =
       open
       title="Title"
       message="Essential app message for your users to be informed of, acknowledge, or take action on."
-      close-button-label="关闭"
+      :close-button-label="t('demos.common.close')"
     />
     <FluereInfoBar
       open
       title="Title"
       :message="longMessage"
-      close-button-label="关闭"
+      :close-button-label="t('demos.common.close')"
     >
       <template #action>
         <button
@@ -37,14 +39,14 @@ const longMessage =
     <FluereInfoBar
       open
       title="Title"
-      message="Action 也可以是超链接："
-      close-button-label="关闭"
+      :message="t('demos.infobar.message.hyperlinkMessage')"
+      :close-button-label="t('demos.common.close')"
     >
       <template #action>
         <a
           class="fui-infobar-demo-link"
           href="#infobar"
-          >了解更多</a
+          >{{ t('demos.infobar.message.learnMoreLabel') }}</a
         >
       </template>
     </FluereInfoBar>

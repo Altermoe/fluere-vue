@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { FluereProgressRing } from '@fluere-vue/ui'
+
+const { t } = useDocsI18n()
 </script>
 
 <template>
@@ -7,18 +9,22 @@ import { FluereProgressRing } from '@fluere-vue/ui'
     <div class="flex flex-col items-center gap-fluent-s">
       <FluereProgressRing
         background-color="var(--colorNeutralStroke1)"
-        label="不确定态（带轨道）"
+        :label="t('demos.progress-ring.background.labelIndeterminate')"
       />
-      <span class="text-xs text-colorNeutralForeground3">不确定 + 轨道</span>
+      <span class="text-xs text-colorNeutralForeground3">{{
+        t('demos.progress-ring.background.noteIndeterminate')
+      }}</span>
     </div>
     <div class="flex flex-col items-center gap-fluent-s">
       <FluereProgressRing
         :model-value="20"
         :indeterminate="false"
         background-color="var(--colorNeutralStroke1)"
-        label="确定态（带轨道）"
+        :label="t('demos.progress-ring.background.labelDeterminate')"
       />
-      <span class="text-xs text-colorNeutralForeground3">确定 20% + 轨道</span>
+      <span class="text-xs text-colorNeutralForeground3">{{
+        t('demos.progress-ring.background.noteDeterminate')
+      }}</span>
     </div>
   </div>
 </template>

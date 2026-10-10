@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { FluereButton, FluereContentDialog } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t } = useDocsI18n()
 
 /**
  * 八种按钮组合：对齐 WinUI 模板的 `ButtonsVisibilityStates`。
@@ -16,22 +18,65 @@ interface ButtonPreset {
   close?: string
 }
 
-const presets: ButtonPreset[] = [
-  { key: 'all', label: '三个按钮', primary: '保存', secondary: '不保存', close: '取消' },
-  { key: 'primary-secondary', label: '主 + 次', primary: '保存', secondary: '不保存' },
-  { key: 'primary-close', label: '主 + 关', primary: '确定', close: '取消' },
-  { key: 'secondary-close', label: '次 + 关', secondary: '稍后再说', close: '取消' },
-  { key: 'primary', label: '仅主按钮', primary: '确定' },
-  { key: 'secondary', label: '仅次按钮', secondary: '稍后再说' },
-  { key: 'close', label: '仅关闭按钮', close: '关闭' },
-  { key: 'none', label: '无按钮（Esc 关闭）' },
-]
+// 组合 key 是固定枚举（非文案）留在代码里；文案按角色取 demos.content-dialog.buttons.*，
+// 逐字为「关闭」的关闭按钮文案统一复用 demos.common.close
+const presets = computed<ButtonPreset[]>(() => [
+  {
+    key: 'all',
+    label: t('demos.content-dialog.buttons.presetAllLabel'),
+    primary: t('demos.content-dialog.buttons.saveLabel'),
+    secondary: t('demos.content-dialog.buttons.dontSaveLabel'),
+    close: t('demos.content-dialog.buttons.cancelLabel'),
+  },
+  {
+    key: 'primary-secondary',
+    label: t('demos.content-dialog.buttons.presetPrimarySecondaryLabel'),
+    primary: t('demos.content-dialog.buttons.saveLabel'),
+    secondary: t('demos.content-dialog.buttons.dontSaveLabel'),
+  },
+  {
+    key: 'primary-close',
+    label: t('demos.content-dialog.buttons.presetPrimaryCloseLabel'),
+    primary: t('demos.content-dialog.buttons.okLabel'),
+    close: t('demos.content-dialog.buttons.cancelLabel'),
+  },
+  {
+    key: 'secondary-close',
+    label: t('demos.content-dialog.buttons.presetSecondaryCloseLabel'),
+    secondary: t('demos.content-dialog.buttons.laterLabel'),
+    close: t('demos.content-dialog.buttons.cancelLabel'),
+  },
+  {
+    key: 'primary',
+    label: t('demos.content-dialog.buttons.presetPrimaryLabel'),
+    primary: t('demos.content-dialog.buttons.okLabel'),
+  },
+  {
+    key: 'secondary',
+    label: t('demos.content-dialog.buttons.presetSecondaryLabel'),
+    secondary: t('demos.content-dialog.buttons.laterLabel'),
+  },
+  {
+    key: 'close',
+    label: t('demos.content-dialog.buttons.presetCloseLabel'),
+    close: t('demos.common.close'),
+  },
+  {
+    key: 'none',
+    label: t('demos.content-dialog.buttons.presetNoneLabel'),
+  },
+])
 
 const open = ref(false)
-const active = ref<ButtonPreset>(presets[0] as ButtonPreset)
+const activeKey = ref('all')
+const active = computed(
+  () =>
+    presets.value.find((preset) => preset.key === activeKey.value) ??
+    (presets.value[0] as ButtonPreset),
+)
 
 const show = (preset: ButtonPreset): void => {
-  active.value = preset
+  activeKey.value = preset.key
   open.value = true
 }
 </script>
@@ -52,12 +97,14 @@ const show = (preset: ButtonPreset): void => {
 
     <FluereContentDialog
       v-model:open="open"
-      title="命令区按钮组合"
+      :title="t('demos.content-dialog.buttons.title')"
       :primary-button-text="active.primary"
       :secondary-button-text="active.secondary"
       :close-button-text="active.close"
     >
-      当前组合：<code>data-buttons="{{ active.key }}"</code> （{{ active.label }}）。
+      {{ t('demos.content-dialog.buttons.currentPresetPrefix')
+      }}<code>data-buttons="{{ active.key }}"</code
+      >{{ t('demos.content-dialog.buttons.currentPresetSuffix', { label: active.label }) }}
     </FluereContentDialog>
   </div>
 </template>

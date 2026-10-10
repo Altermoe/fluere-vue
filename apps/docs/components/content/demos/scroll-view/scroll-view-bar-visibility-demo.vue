@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { FluereScrollView } from '@fluere-vue/ui'
 
+const { t } = useDocsI18n()
+
 /* 演示常量（避免 lint no-magic-numbers） */
 const BAR_ROW_COUNT = 12
 </script>
@@ -8,7 +10,9 @@ const BAR_ROW_COUNT = 12
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-fluent-l">
     <div>
-      <p class="text-sm text-colorNeutralForeground3 mb-2">auto（默认，overlay）</p>
+      <p class="text-sm text-colorNeutralForeground3 mb-2">
+        {{ t('demos.scroll-view.barVisibility.labelAuto') }}
+      </p>
       <div class="h-40">
         <FluereScrollView class="h-full">
           <div class="space-y-fluent-s p-fluent-m">
@@ -22,7 +26,9 @@ const BAR_ROW_COUNT = 12
       </div>
     </div>
     <div>
-      <p class="text-sm text-colorNeutralForeground3 mb-2">visible（常驻）</p>
+      <p class="text-sm text-colorNeutralForeground3 mb-2">
+        {{ t('demos.scroll-view.barVisibility.labelVisible') }}
+      </p>
       <div class="h-40">
         <FluereScrollView
           class="h-full"
@@ -39,7 +45,9 @@ const BAR_ROW_COUNT = 12
       </div>
     </div>
     <div>
-      <p class="text-sm text-colorNeutralForeground3 mb-2">hidden（仍可滚动）</p>
+      <p class="text-sm text-colorNeutralForeground3 mb-2">
+        {{ t('demos.scroll-view.barVisibility.labelHidden') }}
+      </p>
       <div class="h-40">
         <FluereScrollView
           class="h-full"

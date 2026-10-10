@@ -2,6 +2,8 @@
 import { FluereInfoBar } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * `#content` 对应 WinUI 的 `InfoBar.Content`：它落在模板的第 2 行。
  *
@@ -19,17 +21,17 @@ const progress = ref(40)
         v-model="withBanner"
         type="checkbox"
       />
-      带 Title / Message（去掉后内容上移）
+      {{ t('demos.infobar.content.withBannerLabel') }}
     </label>
 
     <FluereInfoBar
       open
-      :title="withBanner ? '从云盘同步' : ''"
-      :message="withBanner ? '正在同步 128 个文件，可继续使用其他功能。' : ''"
+      :title="withBanner ? t('demos.infobar.content.syncTitle') : ''"
+      :message="withBanner ? t('demos.infobar.content.syncMessage') : ''"
     >
       <template #content>
         <div class="fui-infobar-demo-content">
-          <span>已同步 {{ progress }}%</span>
+          <span>{{ t('demos.infobar.content.syncedLabel', { progress }) }}</span>
           <input
             v-model.number="progress"
             type="range"

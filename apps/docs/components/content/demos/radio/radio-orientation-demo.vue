@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { FluereRadioButton, FluereRadioGroup } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t, tm } = useDocsI18n()
 
 const align = ref('left')
+
+/** 三个对齐选项的可见文案（数组叶子：demos.radio.orientation.items） */
+const alignTexts = computed(() => tm('demos.radio.orientation.items'))
 </script>
 
 <template>
@@ -12,10 +17,12 @@ const align = ref('left')
       orientation="horizontal"
       class="flex-wrap"
     >
-      <FluereRadioButton value="left">左对齐</FluereRadioButton>
-      <FluereRadioButton value="center">居中</FluereRadioButton>
-      <FluereRadioButton value="right">右对齐</FluereRadioButton>
+      <FluereRadioButton value="left">{{ alignTexts[0] }}</FluereRadioButton>
+      <FluereRadioButton value="center">{{ alignTexts[1] }}</FluereRadioButton>
+      <FluereRadioButton value="right">{{ alignTexts[2] }}</FluereRadioButton>
     </FluereRadioGroup>
-    <p class="text-sm text-colorNeutralForeground3">对齐：{{ align }}</p>
+    <p class="text-sm text-colorNeutralForeground3">
+      {{ t('demos.radio.orientation.alignLabel', { align }) }}
+    </p>
   </div>
 </template>

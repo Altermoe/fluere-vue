@@ -43,7 +43,7 @@ Wrap any element; `content` corresponds to the WinUI `ToolTipService.ToolTip="te
 #code
 
 ```vue
-<FluereTooltip content="Placement = Top（默认）" placement="top">
+<FluereTooltip content="Placement = Top (default)" placement="top">
   <FluereButton>Top</FluereButton>
 </FluereTooltip>
 <FluereTooltip content="Placement = Bottom" placement="bottom">…</FluereTooltip>
@@ -65,9 +65,9 @@ WinUI delegates the delay to the process-level `ToolTipService`: first show = `S
 ```vue
 <FluereTooltipProvider :delay-duration="400" :skip-delay-duration="200">
   <FluereTooltip content="Simple ToolTip">
-    <FluereButton>默认 400ms</FluereButton>
+    <FluereButton>Default 400ms</FluereButton>
   </FluereTooltip>
-  <FluereTooltip content="立即显示" :delay-duration="0">…</FluereTooltip>
+  <FluereTooltip content="Show immediately" :delay-duration="0">…</FluereTooltip>
 </FluereTooltipProvider>
 ```
 
@@ -86,17 +86,17 @@ WinUI delegates the delay to the process-level `ToolTipService`: first show = `S
 
 ```vue
 <FluereTooltip content="Simple ToolTip">
-  <FluereButton>纯文本（content）</FluereButton>
+  <FluereButton>Plain text (content)</FluereButton>
 </FluereTooltip>
 
 <FluereTooltip :content="longText">
-  <FluereButton>长文本自动换行</FluereButton>
+  <FluereButton>Long text wraps automatically</FluereButton>
 </FluereTooltip>
 
 <FluereTooltip>
-  <FluereButton>富内容（#content）</FluereButton>
+  <FluereButton>Rich content (#content)</FluereButton>
   <template #content>
-    <span><strong>保存</strong> Ctrl + S</span>
+    <span><strong>Save</strong> Ctrl + S</span>
   </template>
 </FluereTooltip>
 ```
@@ -109,7 +109,7 @@ WinUI delegates the delay to the process-level `ToolTipService`: first show = `S
 #code
 
 ```vue
-<FluereTooltip content="这条不会显示" disabled>
+<FluereTooltip content="This won't show" disabled>
   <FluereButton>disabled</FluereButton>
 </FluereTooltip>
 ```
@@ -121,8 +121,8 @@ WinUI delegates the delay to the process-level `ToolTipService`: first show = `S
 `v-model:open` corresponds to `ToolTip.IsOpen`; combined with `delay-duration` it can implement guides like "explain elsewhere after clicking a button".
 
 ```vue
-<FluereTooltip v-model:open="open" content="受控显示的提示">
-  <FluereButton @click="open = !open">切换</FluereButton>
+<FluereTooltip v-model:open="open" content="Controlled tooltip">
+  <FluereButton @click="open = !open">Toggle</FluereButton>
 </FluereTooltip>
 ```
 

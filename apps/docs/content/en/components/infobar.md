@@ -100,9 +100,9 @@ const onClosing = (args) => { if (!confirmed.value) { args.cancel = true // roll
 #code
 
 ```vue
-<FluereInfoBar open :title="withBanner ? '从云盘同步' : ''">
+<FluereInfoBar open :title="withBanner ? 'Sync from cloud drive' : ''">
   <template #content>
-    <span>已同步 40%</span>
+    <span>Synced 40%</span>
   </template>
 </FluereInfoBar>
 ```
@@ -119,7 +119,7 @@ The `#icon` slot corresponds to WinUI's `IconSource`: when provided, it takes th
 #code
 
 ```vue
-<FluereInfoBar open title="自定义图标" message="…">
+<FluereInfoBar open title="Custom icon" message="…">
   <template #icon>
     <FluentIconCloudArrowUp20Regular :size="16" />
   </template>

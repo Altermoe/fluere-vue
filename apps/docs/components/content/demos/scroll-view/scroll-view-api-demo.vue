@@ -2,6 +2,8 @@
 import { FluereScrollView } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /* 演示常量（避免 lint no-magic-numbers） */
 const GRID_CELL_COUNT = 64
 const SCROLL_STEP = 120
@@ -57,34 +59,34 @@ const refreshReadout = (): void => {
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="sv?.scrollBy(0, SCROLL_STEP)"
       >
-        下滚 120px
+        {{ t('demos.scroll-view.api.buttonScrollDown') }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="sv?.scrollBy(0, -SCROLL_STEP)"
       >
-        上滚 120px
+        {{ t('demos.scroll-view.api.buttonScrollUp') }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="sv?.scrollTo(TOP_OFFSET, TOP_OFFSET)"
       >
-        回到顶部
+        {{ t('demos.scroll-view.api.buttonTop') }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="sv?.zoomBy(ZOOM_STEP)"
       >
-        放大
+        {{ t('demos.scroll-view.api.buttonZoomIn') }}
       </button>
       <button
         class="px-fluent-m py-fluent-s rounded-fluent-md border border-colorNeutralStroke1 bg-colorNeutralBackground1 hover:bg-colorNeutralBackground1Hover text-sm"
         @click="sv?.zoomBy(-ZOOM_STEP)"
       >
-        缩小
+        {{ t('demos.scroll-view.api.buttonZoomOut') }}
       </button>
       <code class="text-xs text-colorNeutralForeground3 break-all">{{
-        readout || '（交互后显示）'
+        readout || t('demos.scroll-view.api.readout')
       }}</code>
     </div>
   </div>

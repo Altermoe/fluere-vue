@@ -27,7 +27,7 @@ Three value-handling conventions aligned with WinUI:
 #code
 
 ```vue
-<FluereCombobox v-model="picked" :items="COLORS" header="颜色" placeholder="请选择颜色" />
+<FluereCombobox v-model="picked" :items="COLORS" header="Colors" placeholder="Select a color" />
 ```
 
 ::
@@ -45,9 +45,9 @@ Three value-handling conventions aligned with WinUI:
 <FluereCombobox
   v-model="fontSize"
   :items="FONT_SIZES"
-  header="正文字号"
-  description="Header 同时作为缺省的可访问名"
-  label="正文字号选择器"
+  header="Body font size"
+  description="The header doubles as the default accessible name; the description is attached via aria-describedby"
+  label="Body font size selector"
 />
 ```
 
@@ -67,7 +67,7 @@ Elements of `items` can be of any type: use `by` to specify item identity (field
   v-model="city"
   :items="CITIES.map((item) => ({ value: item, text: item.name }))"
   by="id"
-  header="城市（对象项 + by）"
+  header="Cities (object items + by)"
   @selection-changed="onSelectionChanged"
 />
 ```
@@ -108,8 +108,8 @@ Text search shares WinUI's semantics: item text is first `TrimStart(' ')` and th
 <FluereCombobox
   v-model="state"
   :items="STATES"
-  header="州（输入 w 试试文本搜索）"
-  placeholder="选择或直接输入首字母"
+  header="States (type w to try text search)"
+  placeholder="Select or type the first letter"
   :max-drop-down-height="200"
 />
 ```
@@ -138,8 +138,8 @@ The panel's maximum height defaults to 504px (WinUI `DefaultComboBoxStyle` `MaxD
   v-model="name"
   :items="RECENT_NAMES"
   editable
-  header="名称（可自定义）"
-  placeholder="输入或选择"
+  header="Name (customizable)"
+  placeholder="Type or select"
   @text-submitted="onTextSubmitted"
 />
 ```
@@ -156,7 +156,7 @@ Use the `#item` slot to override row content (maps to WinUI `ItemTemplate`); slo
 #code
 
 ```vue
-<FluereCombobox v-model="color" :items="COLORS" header="强调色">
+<FluereCombobox v-model="color" :items="COLORS" header="Accent color">
   <template #item="{ item }">
     <span class="flex items-center gap-2">
       <span class="inline-block w-4 h-4 rounded-fluent-sm" :style="{ backgroundColor: item.value }" />
@@ -178,8 +178,12 @@ Use the `#item` slot to override row content (maps to WinUI `ItemTemplate`); slo
 #code
 
 ```vue
-<FluereCombobox v-model="plan" :items="PLANS" header="可选中" />
-<FluereCombobox v-model="locked" :items="PLANS" disabled header="整体禁用" />
+<FluereCombobox
+  v-model="plan"
+  :items="PLANS"
+  header="Selectable: arrow keys and type-to-search skip disabled items"
+/>
+<FluereCombobox v-model="locked" :items="PLANS" disabled header="Disabled entirely" />
 ```
 
 ::
@@ -195,8 +199,8 @@ When placed inside a `<form>` with a `name`, it adds a hidden native `<input typ
 
 ```vue
 <form @submit.prevent="onSubmit">
-  <FluereCombobox v-model="shipping" :items="SHIPPING" name="shipping" header="配送方式" />
-  <FluereButton type="submit" appearance="primary">提交</FluereButton>
+  <FluereCombobox v-model="shipping" :items="SHIPPING" name="shipping" header="Shipping method" />
+  <FluereButton type="submit" appearance="primary">Submit</FluereButton>
 </form>
 ```
 

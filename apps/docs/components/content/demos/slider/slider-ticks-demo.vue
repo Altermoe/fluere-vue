@@ -2,6 +2,8 @@
 import { FluereSlider } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /** 演示用的初始值 */
 const INITIAL_INLINE = 30
 const INITIAL_OUTSIDE = 30
@@ -18,16 +20,16 @@ const outside = ref(INITIAL_OUTSIDE)
       v-model="inline"
       tick-placement="inline"
       :tick-frequency="TICK_FREQUENCY"
-      header="刻度在轨道内（TickPlacement=Inline）"
+      :header="t('demos.slider.ticks.headerInline')"
     />
     <FluereSlider
       v-model="outside"
       tick-placement="outside"
       :tick-frequency="TICK_FREQUENCY"
-      header="刻度在轨道外（TickPlacement=Outside）"
+      :header="t('demos.slider.ticks.headerOutside')"
     />
     <p class="text-sm text-colorNeutralForeground3">
-      与 WinUI 一致：`tickFrequency` 为 0（默认）时不画刻度线。
+      {{ t('demos.slider.ticks.note') }}
     </p>
   </div>
 </template>

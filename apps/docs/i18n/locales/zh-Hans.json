@@ -54,6 +54,7 @@
     "readyTitle": "准备好了吗？",
     "ctaIntro": "无论你是在构建内部工具还是面向客户的产品，FluereVue 都能让你在 Web 上获得接近 Windows 原生应用的顺滑手感。",
     "footer": "© 2026 FluereVue. MIT 许可证。",
+    "metaDescription": "以 WinUI 3 原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机复刻每个控件的尺寸、圆角、按压力感与动效，在浏览器里还原原生 Windows 质感。",
     "features": {
       "accessibility": {
         "title": "Accessibility out of the box.",
@@ -108,5 +109,496 @@
     "copied": "已复制",
     "viewCode": "查看代码",
     "hideCode": "收起代码"
+  },
+  "demos": {
+    "common": {
+      "close": "关闭"
+    },
+    "content-dialog": {
+      "basic": {
+        "openLabel": "删除草稿",
+        "title": "要删除这份草稿吗？",
+        "primaryLabel": "删除",
+        "cancelLabel": "取消",
+        "description": "删除后将从本机与云端一并移除，且无法恢复。"
+      },
+      "buttons": {
+        "title": "命令区按钮组合",
+        "presetAllLabel": "三个按钮",
+        "presetPrimarySecondaryLabel": "主 + 次",
+        "presetPrimaryCloseLabel": "主 + 关",
+        "presetSecondaryCloseLabel": "次 + 关",
+        "presetPrimaryLabel": "仅主按钮",
+        "presetSecondaryLabel": "仅次按钮",
+        "presetCloseLabel": "仅关闭按钮",
+        "presetNoneLabel": "无按钮（Esc 关闭）",
+        "saveLabel": "保存",
+        "dontSaveLabel": "不保存",
+        "cancelLabel": "取消",
+        "okLabel": "确定",
+        "laterLabel": "稍后再说",
+        "currentPresetPrefix": "当前组合：",
+        "currentPresetSuffix": " （{label}）。"
+      },
+      "cancel": {
+        "openLabel": "打开（关闭需二次确认）",
+        "note": "第一次点「关闭」会被 cancel 拦下",
+        "title": "放弃未保存的更改？",
+        "discardLabel": "放弃",
+        "keepEditingLabel": "继续编辑",
+        "description": "第一次点击「放弃」或按 Esc 会被 `closing.cancel` 拦下，再点一次才真正关闭。",
+        "closingCancelled": "closing 被取消（result={result}）",
+        "closingAllowed": "closing 放行（result={result}）"
+      },
+      "defaultButton": {
+        "title": "默认按钮与 Enter",
+        "primaryLabel": "确定",
+        "secondaryLabel": "取消",
+        "optionLabels": ["无默认按钮", "主按钮为默认", "次按钮为默认", "关闭按钮为默认"],
+        "focusHint": "把焦点放在这段文字上按 Enter，会激活默认按钮（{button}）。",
+        "inputPlaceholder": "焦点在输入框里时，Enter 交给输入框自己处理"
+      },
+      "fullSize": {
+        "openLabel": "打开全尺寸弹窗",
+        "title": "全尺寸弹窗",
+        "primaryLabel": "确定",
+        "description": "`fullSizeDesired` 让弹窗外框纵向撑满可用空间（上限仍是 `ContentDialogMaxHeight` = 756），横向保持居中且不超过 `ContentDialogMaxWidth` = 548。",
+        "scrollNote": "内容仍是滚动的：超出高度时内容区内部滚动，命令区固定在底部。"
+      },
+      "longContent": {
+        "openLabel": "打开长内容弹窗",
+        "title": "服务条款摘要（无按钮）",
+        "paragraph": "第 {index} 段：内容超过 `ContentDialogMaxHeight`（756）后由内容区内部滚动， 命令区留在底部；本示例没有任何按钮，因此按 Esc 关闭（结果 `none`）。"
+      }
+    },
+    "icons": {
+      "browser": {
+        "placeholder": "搜索图标名，如 access_time",
+        "buttonAllSizes": "全部尺寸",
+        "buttonAllStyles": "全部风格",
+        "note": "共 {total} 个图标，每页 {pageSize} 个，当前渲染 {visible} 个。",
+        "labelPager": "分页",
+        "buttonPrev": "上一页",
+        "buttonNext": "下一页",
+        "status": "已复制：{name}"
+      }
+    },
+    "info-badge": {
+      "kinds": {
+        "dotCaption": "Dot（无 value / 无 icon）",
+        "valueSingleCaption": "Value（单个数字是正圆）",
+        "valueTwoDigitCaption": "Value（两位数变成胶囊）",
+        "iconBuiltinCaption": "Icon（severity 内建字形）",
+        "iconPropCaption": "Icon（自定义 icon Prop）",
+        "iconSlotCaption": "Icon（#icon 插槽，优先级最高）"
+      },
+      "overlay": {
+        "refreshedLabel": "已刷新 {refreshCount} 次"
+      },
+      "navigation": {
+        "navLabel": "导航示例"
+      },
+      "dynamic": {
+        "currentValue": "当前 Value：{value}（≥ 0 显示数字，< 0 显示圆点）"
+      }
+    },
+    "infobar": {
+      "closable": {
+        "title": "草稿尚未保存",
+        "message": "首次点击关闭会被 cancel 拦下（按钮与提示语会变化），再点一次才真正关闭。",
+        "confirmDiscardLabel": "确认放弃草稿",
+        "reopenLabel": "重新打开",
+        "closeStats": "已关闭 {closeCount} 次 · 最近原因 {lastReason}"
+      },
+      "content": {
+        "withBannerLabel": "带 Title / Message（去掉后内容上移）",
+        "syncTitle": "从云盘同步",
+        "syncMessage": "正在同步 128 个文件，可继续使用其他功能。",
+        "syncedLabel": "已同步 {progress}%"
+      },
+      "icon": {
+        "uploadTitle": "自定义图标",
+        "uploadMessage": "InfoBar 的 IconSource 换成云盘上传图标，Severity 仍决定底色。",
+        "severityTitle": "自定义图标 + 自定底色",
+        "severityMessage": "图标随 Severity 一起换，但图标本身完全由消费方提供。",
+        "hiddenTitle": "自定义图标但关闭图标显示",
+        "hiddenMessage": "is-icon-visible=false 时自定义图标同样不渲染（对齐 NoIconVisible 分支）。"
+      },
+      "message": {
+        "hyperlinkMessage": "Action 也可以是超链接：",
+        "learnMoreLabel": "了解更多"
+      },
+      "options": {
+        "sharedOpenMessage": "两个 InfoBar 共用同一个 Is Open，切换时都能同步。",
+        "eventLog": "事件日志：{entries}",
+        "notTriggered": "（未触发）"
+      }
+    },
+    "number-box": {
+      "basic": {
+        "headerQuantity": "数量",
+        "headerPrice": "单价",
+        "description": "支持小数：失焦或回车后按 step 的小数位格式化",
+        "note": "数量：{quantity} · 单价：{price}（清空输入框会得到 null，对应 WinUI 的 NaN）"
+      },
+      "compact": {
+        "headerOpacity": "不透明度",
+        "headerColumns": "栅格列数（聚焦后浮出上 / 下按钮）",
+        "note": "紧凑模式在输入框右侧显示上 / 下指示器，聚焦时于右侧浮出 36×36 的按钮面板（圆角 8 + 阴影深度 16），失焦即收起。"
+      },
+      "disabled": {
+        "headerSpin": "禁用（含增减按钮）",
+        "headerEmpty": "禁用（无值）",
+        "placeholder": "不可编辑",
+        "note": "禁用时输入框落到 TextControl…Disabled 档，增减按钮移到 …ForegroundDisabled；标题与说明同时变灰。"
+      },
+      "expression": {
+        "placeholder": "例如 (2+3)*4^2",
+        "headerResult": "计算值",
+        "headerBudget": "预算（可输入 200*3+500）",
+        "headerTaxRate": "税率",
+        "description": "失焦或回车时求值，按 ^ > * / > + − 的优先级与括号计算",
+        "note": "计算值：{total} · 预算：{budget} · 税率：{taxRate}"
+      },
+      "form": {
+        "headerAmount": "金额",
+        "buttonSubmit": "提交",
+        "note": "提交到的 amount：{submitted}"
+      },
+      "format": {
+        "headerInteger": "整数外观（maximumFractionDigits: 0）",
+        "descriptionInteger": "25.8 显示为 26 —— 与 WinUI 默认 DecimalFormatter 的 FractionDigits(0) 同观感",
+        "headerFixed": "固定两位小数",
+        "headerLocale": "de-DE：1.234,5",
+        "descriptionLocale": "小数点与分组分隔符跟随 locale，解析也认同一套符号"
+      },
+      "inline": {
+        "headerFontSize": "字号（按住按钮可连续步进）",
+        "headerZoom": "缩放",
+        "note": "内联按钮与输入框共用一个 TextBox 边框：按钮 32×24、外边距 4、圆角 4，按下后每 250ms 重复一次（WinUI RepeatButton 的 Delay / Interval 缺省值）。"
+      },
+      "step": {
+        "headerQuantity": "数量（0–500）",
+        "headerRatio": "比例（0–1，步进 0.1）",
+        "note": "方向键 / 滚轮按 step 走，PageUp / PageDown 按 largeStep 走；越界被钳制在区间内，与 WinUI 一致不做步长吸附。"
+      },
+      "validation": {
+        "headerDefault": "默认：非法输入被覆盖",
+        "descriptionDefault": "试试输入 abc —— 失焦后回到 20；输入 150 —— 钳制到 100",
+        "headerDisabled": "ValidationMode=Disabled：保留输入",
+        "descriptionDisabled": "文本原样保留，值仍停在最后一次合法解析结果",
+        "note": "严格模式：{strict} · 宽松模式：{lenient}"
+      }
+    },
+    "progress-ring": {
+      "active": {
+        "label": "加载指示",
+        "statusSpinning": "转圈中",
+        "statusHidden": "已隐藏（IsActive=false）",
+        "labelToggle": "激活（IsActive）"
+      },
+      "background": {
+        "labelIndeterminate": "不确定态（带轨道）",
+        "noteIndeterminate": "不确定 + 轨道",
+        "labelDeterminate": "确定态（带轨道）",
+        "noteDeterminate": "确定 20% + 轨道"
+      },
+      "basic": {
+        "label": "正在加载",
+        "note": "正在加载，请稍候…"
+      },
+      "determinate": {
+        "label": "下载进度",
+        "header": "拖动改变进度"
+      },
+      "disabled": {
+        "labelIndeterminate": "禁用的转圈",
+        "labelDeterminate": "禁用的进度"
+      },
+      "size": {
+        "labelSmall": "小型",
+        "labelMedium": "中等",
+        "labelLarge": "大型",
+        "noteMedium": "medium 32（WinUI 默认）"
+      }
+    },
+    "progress": {
+      "background": {
+        "labelDefault": "默认轨道色",
+        "noteDefault": "默认（语义 token）",
+        "labelWinui": "对齐 WinUI 原值轨道色",
+        "noteWinui": "rgba(0, 0, 0, 0.45)（WinUI 原值）"
+      },
+      "determinate": {
+        "label": "确定态进度条示例",
+        "labelNumberBox": "调整进度条数值"
+      },
+      "disabled": {
+        "labelDeterminate": "禁用的确定态进度条",
+        "noteDeterminate": "disabled（确定态）",
+        "labelIndeterminate": "禁用的不确定态进度条",
+        "noteIndeterminate": "disabled（不确定态）"
+      },
+      "indeterminate": {
+        "label": "不确定态进度条示例",
+        "note": "正在进行，无法量化进度…"
+      },
+      "states": {
+        "label": "不确定态进度条状态示例"
+      },
+      "statusColor": {
+        "labelNormal": "正常",
+        "labelPaused": "已暂停",
+        "labelError": "出错"
+      }
+    },
+    "scroll-view": {
+      "agent": {
+        "label": "日志列表",
+        "labelRow": "第 {index} 行",
+        "buttonScrollBy": "模拟 Agent：下滚 {step}px",
+        "buttonBringIntoView": "模拟 Agent：把第 {row} 行滚入视口",
+        "buttonScrollToTop": "模拟 Agent：回到顶部",
+        "readout": "（读取 data-* 中…）"
+      },
+      "api": {
+        "buttonScrollDown": "下滚 120px",
+        "buttonScrollUp": "上滚 120px",
+        "buttonTop": "回到顶部",
+        "buttonZoomIn": "放大",
+        "buttonZoomOut": "缩小",
+        "readout": "（交互后显示）"
+      },
+      "barVisibility": {
+        "labelAuto": "auto（默认，overlay）",
+        "labelVisible": "visible（常驻）",
+        "labelHidden": "hidden（仍可滚动）"
+      },
+      "horizontal": {
+        "label": "卡片 {index}"
+      },
+      "nested": {
+        "labelOuter": "外层内容 {index} · 指针在此处滚轮才会滚动外层",
+        "labelInnerA": "内层 A · 第 {index} 行（滚到底后外层不动）",
+        "labelInnerB": "内层 B · 第 {index} 行（滚到底后外层不动）",
+        "labelOuterTail": "外层尾部内容 {index}"
+      },
+      "vertical": {
+        "label": "第 {index} 行内容 · Windows 11 原生滚动体验"
+      },
+      "zoom": {
+        "label": "Ctrl + 滚轮缩放"
+      }
+    },
+    "slider": {
+      "basic": {
+        "headerVolume": "音量",
+        "headerBrightness": "亮度",
+        "note": "音量：{volume} · 亮度：{brightness}"
+      },
+      "disabled": {
+        "headerInteractiveOff": "禁用（可交互态已关闭）",
+        "headerMin": "禁用（最小值）",
+        "headerMax": "禁用（最大值）",
+        "note": "禁用时轨道、数值填充、滑块与标题一起落到 …Disabled 档；滑块移到 …Disabled 尺寸（对应 WinUI Disabled 状态里内点放大到 14px）。"
+      },
+      "form": {
+        "header": "增益",
+        "buttonSubmit": "提交",
+        "note": "提交到的 gain：{submitted}"
+      },
+      "header": {
+        "header": "字号",
+        "headerSlot": "字号（{fontSize} px）",
+        "label": "字号滑块",
+        "note": "按住滑块或在键盘聚焦时，滑块上方会浮出 WinUI 的数值提示（Disambiguation UI）。"
+      },
+      "step": {
+        "headerPrice": "价格（0–1000，步进 50）",
+        "headerRatio": "缩放（0–1，步进 0.1）",
+        "note": "¥{price} · {ratio}× —— 方向键按 step 走，PageUp / PageDown 或 Shift + 方向键跳 10 步。"
+      },
+      "ticks": {
+        "headerInline": "刻度在轨道内（TickPlacement=Inline）",
+        "headerOutside": "刻度在轨道外（TickPlacement=Outside）",
+        "note": "与 WinUI 一致：`tickFrequency` 为 0（默认）时不画刻度线。"
+      },
+      "vertical": {
+        "labelBass": "低音",
+        "noteBass": "低音 {bass}",
+        "labelTreble": "高音",
+        "noteTreble": "高音 {treble}",
+        "noteBefore": "纵向滑块的取值自下而上递增（与 WinUI 一致：最小值在底部）；传",
+        "noteAfter": "可反向。"
+      }
+    },
+    "checkbox": {
+      "basic": {
+        "agreeLabel": "同意服务条款",
+        "subscribeLabel": "订阅产品更新",
+        "statusLine": "同意：{agree} · 订阅：{subscribe}"
+      },
+      "disabled": {
+        "uncheckedLabel": "未勾选（禁用）",
+        "checkedLabel": "已勾选（禁用）",
+        "indeterminateLabel": "不确定（禁用）"
+      },
+      "indeterminate": {
+        "selectAllLabel": "全选（不确定态）",
+        "items": ["选项 A", "选项 B", "选项 C"]
+      }
+    },
+    "combobox": {
+      "basic": {
+        "colors": ["蓝色", "绿色", "红色", "黄色"],
+        "header": "颜色",
+        "placeholder": "请选择颜色",
+        "currentNote": "当前选中：{value}（未选中时输入框显示 placeholder）"
+      },
+      "customItem": {
+        "colors": ["品牌蓝", "绿", "红", "黄"],
+        "header": "强调色",
+        "currentNote": "当前：{value}"
+      },
+      "disabled": {
+        "plans": ["免费版", "专业版", "团队版（内测中）", "企业版"],
+        "enabledHeader": "可选中：方向键与文本搜索都会跳过禁用项",
+        "disabledHeader": "整体禁用"
+      },
+      "editable": {
+        "header": "名称（可自定义）",
+        "placeholder": "输入或选择",
+        "submitNote": "提交了列表外的文本：{text}（选中项已清空，文本保留）",
+        "selectedNote": "选中项：{value}"
+      },
+      "form": {
+        "shippingOptions": ["标准配送（3-5 天）", "次日达", "自提点自取"],
+        "header": "配送方式",
+        "submitLabel": "提交",
+        "submittedNote": "提交的配送方式：{value}",
+        "emptyValue": "（空）"
+      },
+      "header": {
+        "header": "正文字号",
+        "description": "Header 同时作为缺省的可访问名；description 会挂到 aria-describedby",
+        "label": "正文字号选择器",
+        "sizeNote": "字号：{value}"
+      },
+      "longList": {
+        "header": "州（输入 w 试试文本搜索）",
+        "placeholder": "选择或直接输入首字母",
+        "currentNote": "当前：{value}"
+      },
+      "object": {
+        "cities": ["北京", "上海", "广州", "深圳"],
+        "defaultSelection": "上海",
+        "header": "城市（对象项 + by）",
+        "selectionNote": "+{added}（下标 {addedIndex}） −{removed}（下标 {removedIndex}）"
+      }
+    },
+    "input": {
+      "appearance": {
+        "outlinePlaceholder": "Outline（默认）",
+        "underlinePlaceholder": "Underline（下划线）"
+      },
+      "basic": {
+        "placeholder": "请输入内容",
+        "disabledPlaceholder": "禁用状态",
+        "valueNote": "当前值：{value}",
+        "emptyValue": "（空）"
+      },
+      "header": {
+        "header": "显示名称",
+        "description": "将展示在个人资料页",
+        "emailLabel": "邮箱",
+        "emailDescription": "用于接收通知，不会公开",
+        "noteLead": "标题渲染成",
+        "noteMiddle": "指向的元素，说明挂到",
+        "noteTail": "；两者都可用具名插槽替换默认文案。"
+      },
+      "invalid": {
+        "placeholder": "错误输入",
+        "errorHint": "请输入有效的内容。"
+      },
+      "multiline": {
+        "header": "备注",
+        "description": "缺省 3 行，可拖动右下角调整高度",
+        "placeholder": "请输入备注",
+        "feedbackHeader": "反馈",
+        "feedbackSeed": "第一行\n第二行"
+      },
+      "password": {
+        "placeholder": "请输入密码",
+        "header": "密码",
+        "note": "WinUI 规则：聚焦后按钮才出现，且只在本次聚焦期间「从空输入了内容」之后。上面的密码框预置了内容， 清空后重新输入即可看到按钮；下面那个未预置内容的（原生掩码路径）直接输入就会出现。"
+      },
+      "passwordReveal": {
+        "ariaLabel": "示例密码框",
+        "note": "对应 WinUI 官方样例的第三种形态：`passwordRevealMode` 在 `hidden` / `visible` 之间由消费方切换， 此时不出现内建「显示」按钮（与 `peek` 模式互斥）。"
+      }
+    },
+    "radio": {
+      "basic": {
+        "items": ["番茄红", "蓝绿", "星辰蓝"],
+        "currentLabel": "当前：{color}"
+      },
+      "disabled": {
+        "groupDisabledLabel": "整组禁用",
+        "itemDisabledLabel": "单选项禁用",
+        "planItems": ["免费版", "专业版"],
+        "cellularLabel": "蜂窝网络（5G）",
+        "airplaneLabel": "飞行模式",
+        "maintenanceNote": "（维护中）",
+        "ethernetLabel": "以太网"
+      },
+      "orientation": {
+        "items": ["左对齐", "居中", "右对齐"],
+        "alignLabel": "对齐：{align}"
+      }
+    },
+    "toggle-switch": {
+      "basic": {
+        "bluetoothLabel": "蓝牙",
+        "statusLine": "Wi-Fi：{wifi} · 蓝牙：{bluetooth} · VPN：{vpn}"
+      },
+      "disabled": {
+        "offLabel": "未开启（禁用）",
+        "onLabel": "已开启（禁用）"
+      },
+      "headerContent": {
+        "notifyHeader": "系统通知",
+        "notifyOffLabel": "关",
+        "notifyOnLabel": "开",
+        "notifyLabel": "接收桌面通知",
+        "promoHeader": "推广与活动",
+        "promoLabel": "允许推送产品更新"
+      },
+      "size": {
+        "smallLabel": "small（32×16）",
+        "mediumLabel": "medium（40×20 · WinUI 标准）",
+        "largeLabel": "large（48×24）"
+      }
+    },
+    "tooltip": {
+      "content": {
+        "plainTextLabel": "纯文本（content）",
+        "wrapLabel": "长文本自动换行",
+        "richContentLabel": "富内容（#content）",
+        "saveLabel": "保存",
+        "longText": "A ToolTip shows more information about a UI element. You might show information about what the element does, or what the user should do. 提示文本会在 320px 处自动换行。"
+      },
+      "delay": {
+        "defaultDelayLabel": "默认 400ms",
+        "instantContent": "立即显示"
+      },
+      "disabled": {
+        "showContent": "这条会显示",
+        "hideContent": "这条不会显示",
+        "enabledLabel": "可用"
+      },
+      "placement": {
+        "topContent": "Placement = Top（默认）"
+      }
+    }
   }
 }

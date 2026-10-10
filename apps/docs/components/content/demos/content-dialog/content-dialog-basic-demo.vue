@@ -3,6 +3,8 @@ import { FluereButton, FluereContentDialog } from '@fluere-vue/ui'
 import type { FluereContentDialogResult } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /**
  * 基础示例：标题 + 正文 + 主/次按钮，`defaultButton` 为 Primary。
  *
@@ -20,20 +22,20 @@ const result = ref<FluereContentDialogResult | '—'>('—')
         data-cd-demo="basic-open"
         @click="open = true"
       >
-        删除草稿
+        {{ t('demos.content-dialog.basic.openLabel') }}
       </FluereButton>
       <span class="text-sm text-colorNeutralForeground2">closed.result：{{ result }}</span>
     </div>
 
     <FluereContentDialog
       v-model:open="open"
-      title="要删除这份草稿吗？"
-      primary-button-text="删除"
-      secondary-button-text="取消"
+      :title="t('demos.content-dialog.basic.title')"
+      :primary-button-text="t('demos.content-dialog.basic.primaryLabel')"
+      :secondary-button-text="t('demos.content-dialog.basic.cancelLabel')"
       default-button="primary"
       @closed="(args) => (result = args.result)"
     >
-      删除后将从本机与云端一并移除，且无法恢复。
+      {{ t('demos.content-dialog.basic.description') }}
     </FluereContentDialog>
   </div>
 </template>

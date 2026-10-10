@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { FluereButton, FluereContentDialog } from '@fluere-vue/ui'
 import type { FluereContentDialogButton } from '@fluere-vue/ui'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+
+const { t, tm } = useDocsI18n()
 
 /**
  * 默认按钮（`DefaultButton`）：获得强调样式，并作为 Enter 的激活目标。
@@ -9,12 +11,13 @@ import { ref } from 'vue'
  * 焦点规则与 WinUI 一致：焦点不在命令区（或正好落在默认按钮上）时保留强调态；
  * 焦点移到命令区里的**其它**按钮时，强调态会消失。
  */
-const options: { value: FluereContentDialogButton; label: string }[] = [
-  { value: 'none', label: '无默认按钮' },
-  { value: 'primary', label: '主按钮为默认' },
-  { value: 'secondary', label: '次按钮为默认' },
-  { value: 'close', label: '关闭按钮为默认' },
-]
+// 选项值是固定枚举（非文案）留在代码里；文案为有序数组叶子
+// demos.content-dialog.defaultButton.optionLabels
+const OPTION_VALUES: FluereContentDialogButton[] = ['none', 'primary', 'secondary', 'close']
+const optionLabels = computed(() => tm('demos.content-dialog.defaultButton.optionLabels'))
+const options = computed(() =>
+  OPTION_VALUES.map((value, index) => ({ value, label: optionLabels.value[index] ?? '' })),
+)
 
 const open = ref(false)
 const defaultButton = ref<FluereContentDialogButton>('primary')
@@ -41,14 +44,16 @@ const show = (value: FluereContentDialogButton): void => {
 
     <FluereContentDialog
       v-model:open="open"
-      title="默认按钮与 Enter"
-      primary-button-text="确定"
-      secondary-button-text="取消"
-      close-button-text="关闭"
+      :title="t('demos.content-dialog.defaultButton.title')"
+      :primary-button-text="t('demos.content-dialog.defaultButton.primaryLabel')"
+      :secondary-button-text="t('demos.content-dialog.defaultButton.secondaryLabel')"
+      :close-button-text="t('demos.common.close')"
       :default-button="defaultButton"
     >
-      <p>把焦点放在这段文字上按 Enter，会激活默认按钮（{{ defaultButton }}）。</p>
-      <p><input placeholder="焦点在输入框里时，Enter 交给输入框自己处理" /></p>
+      <p>{{ t('demos.content-dialog.defaultButton.focusHint', { button: defaultButton }) }}</p>
+      <p>
+        <input :placeholder="t('demos.content-dialog.defaultButton.inputPlaceholder')" />
+      </p>
     </FluereContentDialog>
   </div>
 </template>

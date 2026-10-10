@@ -2,6 +2,8 @@
 import { FluereNumberBox } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /** 演示用的初始值 */
 const INITIAL_FONT_SIZE = 14
 const INITIAL_ZOOM = 1.25
@@ -17,7 +19,7 @@ const zoom = ref<number | null>(INITIAL_ZOOM)
       :min="9"
       :max="72"
       spin-button-placement-mode="inline"
-      header="字号（按住按钮可连续步进）"
+      :header="t('demos.number-box.inline.headerFontSize')"
     />
     <FluereNumberBox
       v-model="zoom"
@@ -25,11 +27,10 @@ const zoom = ref<number | null>(INITIAL_ZOOM)
       :max="3"
       :step="0.25"
       spin-button-placement-mode="inline"
-      header="缩放"
+      :header="t('demos.number-box.inline.headerZoom')"
     />
     <p class="text-sm text-colorNeutralForeground3">
-      内联按钮与输入框共用一个 TextBox 边框：按钮 32×24、外边距 4、圆角 4，按下后每 250ms
-      重复一次（WinUI RepeatButton 的 Delay / Interval 缺省值）。
+      {{ t('demos.number-box.inline.note') }}
     </p>
   </div>
 </template>

@@ -2,6 +2,8 @@
 import { FluereProgressBar } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const value = ref(60)
 </script>
 
@@ -11,19 +13,23 @@ const value = ref(60)
       <FluereProgressBar
         v-model="value"
         disabled
-        label="禁用的确定态进度条"
+        :label="t('demos.progress.disabled.labelDeterminate')"
         class="w-[130px]"
       />
-      <span class="text-sm text-colorNeutralForeground2">disabled（确定态）</span>
+      <span class="text-sm text-colorNeutralForeground2">{{
+        t('demos.progress.disabled.noteDeterminate')
+      }}</span>
     </div>
     <div class="flex items-center gap-fluent-m">
       <FluereProgressBar
         indeterminate
         disabled
-        label="禁用的不确定态进度条"
+        :label="t('demos.progress.disabled.labelIndeterminate')"
         class="w-[130px]"
       />
-      <span class="text-sm text-colorNeutralForeground2">disabled（不确定态）</span>
+      <span class="text-sm text-colorNeutralForeground2">{{
+        t('demos.progress.disabled.noteIndeterminate')
+      }}</span>
     </div>
   </div>
 </template>

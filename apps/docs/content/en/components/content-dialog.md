@@ -33,16 +33,16 @@ const open = ref(false)
 </script>
 
 <template>
-  <FluereButton @click="open = true">删除草稿</FluereButton>
+  <FluereButton @click="open = true">Delete draft</FluereButton>
   <FluereContentDialog
     v-model:open="open"
-    title="要删除这份草稿吗？"
-    primary-button-text="删除"
-    secondary-button-text="取消"
+    title="Delete this draft?"
+    primary-button-text="Delete"
+    secondary-button-text="Cancel"
     default-button="primary"
     @closed="(args) => console.log(args.result)"
   >
-    删除后将从本机与云端一并移除，且无法恢复。
+    Deleting removes it from both this PC and the cloud, and it cannot be undone.
   </FluereContentDialog>
 </template>
 ```
@@ -70,7 +70,7 @@ The command-area state is derived purely from "whether each of the three button 
 ```vue
 <FluereContentDialog
   v-model:open="open"
-  title="命令区按钮组合"
+  title="Command area button combinations"
   :primary-button-text="active.primary"
   :secondary-button-text="active.secondary"
   :close-button-text="active.close"
@@ -91,10 +91,10 @@ The command-area state is derived purely from "whether each of the three button 
 ```vue
 <FluereContentDialog
   v-model:open="open"
-  title="默认按钮与 Enter"
-  primary-button-text="确定"
-  secondary-button-text="取消"
-  close-button-text="关闭"
+  title="Default button and Enter"
+  primary-button-text="OK"
+  secondary-button-text="Cancel"
+  close-button-text="Close"
   default-button="primary"
 />
 ```
@@ -123,7 +123,7 @@ const onClosing = (args) => {
 <template>
   <FluereContentDialog
     v-model:open="open"
-    title="放弃未保存的更改？"
+    title="Discard unsaved changes?"
     @closing="onClosing"
   />
 </template>
@@ -141,7 +141,7 @@ const onClosing = (args) => {
 #code
 
 ```vue
-<FluereContentDialog v-model:open="open" title="全尺寸弹窗" full-size-desired />
+<FluereContentDialog v-model:open="open" title="Full-size dialog" full-size-desired />
 ```
 
 ::
@@ -153,8 +153,8 @@ const onClosing = (args) => {
 
 ```vue
 <!-- giving none of the three button texts ⇒ data-buttons="none", command area collapsed -->
-<FluereContentDialog v-model:open="open" title="服务条款摘要（无按钮）">
-  <p v-for="index in paragraphs" :key="index">第 {{ index }} 段…</p>
+<FluereContentDialog v-model:open="open" title="Terms of service summary (no buttons)">
+  <p v-for="index in paragraphs" :key="index">Paragraph {{ index }}…</p>
 </FluereContentDialog>
 ```
 

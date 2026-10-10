@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { FluereScrollView } from '@fluere-vue/ui'
 
+const { t } = useDocsI18n()
+
 /* 演示常量（避免 lint no-magic-numbers） */
 const VERTICAL_ROW_COUNT = 18
 </script>
@@ -14,7 +16,7 @@ const VERTICAL_ROW_COUNT = 18
           :key="index"
           class="rounded-fluent-lg border border-colorNeutralStroke2 bg-colorNeutralBackground2 px-fluent-l py-fluent-m text-colorNeutralForeground2"
         >
-          第 {{ index }} 行内容 · Windows 11 原生滚动体验
+          {{ t('demos.scroll-view.vertical.label', { index }) }}
         </div>
       </div>
     </FluereScrollView>

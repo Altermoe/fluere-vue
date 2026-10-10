@@ -9,7 +9,7 @@ nav:
 
 The input allows users to enter single-line or multi-line text. Its styling and behavior reproduce the WinUI 3 (Windows App SDK) **TextBox** and **PasswordBox**: the three-line template (header / control / description), the elevated stroke with bottom highlight, the password reveal button with the `Alt+F8` shortcut, and the mask character and password reveal modes are all checked against the source line by line.
 
-The password form has two mask paths, and the trade-off is described in [Password Box](#密码框): **without `passwordChar`** it uses the native browser `type="password"` (keeping the "password field" semantics for password managers / IMEs / screen readers, with the mask glyph determined by the browser); **with `passwordChar`** it uses a "display buffer" mask (glyph-accurate, but the field is `type="text"` in masked state, so screen readers and password managers no longer recognize it as a password field).
+The password form has two mask paths, and the trade-off is described in [Password Box](#password-box): **without `passwordChar`** it uses the native browser `type="password"` (keeping the "password field" semantics for password managers / IMEs / screen readers, with the mask glyph determined by the browser); **with `passwordChar`** it uses a "display buffer" mask (glyph-accurate, but the field is `type="text"` in masked state, so screen readers and password managers no longer recognize it as a password field).
 
 ## Basic usage
 
@@ -21,8 +21,8 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput v-model="value" placeholder="请输入内容" />
-<FluereInput placeholder="禁用状态" disabled />
+<FluereInput v-model="value" placeholder="Enter text" />
+<FluereInput placeholder="Disabled" disabled />
 ```
 
 ::
@@ -54,8 +54,8 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput appearance="outline" placeholder="Outline（默认）" />
-<FluereInput appearance="underline" placeholder="Underline（下划线）" />
+<FluereInput appearance="outline" placeholder="Outline (default)" />
+<FluereInput appearance="underline" placeholder="Underline" />
 ```
 
 ::
@@ -70,9 +70,13 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput v-model="displayName" header="显示名称" description="将展示在个人资料页" />
-<FluereInput v-model="email" type="email" description="用于接收通知，不会公开">
-  <template #header>邮箱 <span class="text-colorStatusDangerForeground1">*</span></template>
+<FluereInput v-model="displayName" header="Display name" description="Shown on your profile page" />
+<FluereInput
+  v-model="email"
+  type="email"
+  description="Used for notifications; never shown publicly"
+>
+  <template #header>Email <span class="text-colorStatusDangerForeground1">*</span></template>
 </FluereInput>
 ```
 
@@ -88,8 +92,13 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput v-model="note" multiline header="备注" description="缺省 3 行" />
-<FluereInput v-model="feedback" multiline :rows="6" header="反馈" />
+<FluereInput
+  v-model="note"
+  multiline
+  header="Notes"
+  description="3 rows by default; drag the bottom-right corner to resize"
+/>
+<FluereInput v-model="feedback" multiline :rows="6" header="Feedback" />
 ```
 
 ::
@@ -104,8 +113,8 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput invalid placeholder="错误输入" aria-describedby="input-error-hint" />
-<p id="input-error-hint">请输入有效的内容。</p>
+<FluereInput invalid placeholder="Invalid input" aria-describedby="input-error-hint" />
+<p id="input-error-hint">Please enter a valid value.</p>
 ```
 
 ::
@@ -123,12 +132,12 @@ Bind a string value with `v-model`; events and native attributes (`autocomplete`
 #code
 
 ```vue
-<FluereInput v-model="simple" type="password" placeholder="请输入密码" />
+<FluereInput v-model="simple" type="password" placeholder="Enter password" />
 <FluereInput
   v-model="custom"
   type="password"
-  header="密码"
-  placeholder="请输入密码"
+  header="Password"
+  placeholder="Enter password"
   password-char="#"
 />
 ```
@@ -160,7 +169,7 @@ A few details from the WinUI source (all guarded by contract tests): the button 
 <FluereInput
   v-model="password"
   type="password"
-  aria-label="示例密码框"
+  aria-label="Example password field"
   :password-reveal-mode="showPassword ? 'visible' : 'hidden'"
 />
 <FluereCheckbox v-model="showPassword">Show password</FluereCheckbox>
@@ -170,22 +179,22 @@ A few details from the WinUI source (all guarded by contract tests): the button 
 
 ## API
 
-| Prop (Props)         | Type                                                                        | Default           | Description                                                                                                                                                               |
-| -------------------- | --------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `modelValue`         | `string`                                                                    | `—`               | Input value (`v-model`)                                                                                                                                                   |
-| `size`               | `'small' \| 'medium' \| 'large'`                                            | `'medium'`        | Size, with heights of 24 / 32 / 40 px respectively (WinUI default is 32)                                                                                                  |
-| `appearance`         | `'outline' \| 'underline'`                                                  | `'outline'`       | Appearance; `outline` matches WinUI's "elevated stroke", `underline` is a library extension (only the bottom edge remains)                                                |
-| `disabled`           | `boolean`                                                                   | `false`           | Whether the input is disabled                                                                                                                                             |
-| `invalid`            | `boolean`                                                                   | `false`           | Invalid / error state; a library extension (the WinUI TextBox has no built-in error state), also renders `aria-invalid`                                                   |
-| `type`               | `'text' \| 'password' \| 'email' \| 'number' \| 'search' \| 'tel' \| 'url'` | `'text'`          | Native `type` (ignored when `multiline` is true)                                                                                                                          |
-| `placeholder`        | `string`                                                                    | `—`               | Placeholder                                                                                                                                                               |
-| `header`             | `string`                                                                    | `—`               | Header, rendered above the control (WinUI `TextBox.Header`); also used as the accessible-name source                                                                      |
-| `description`        | `string`                                                                    | `—`               | Description, rendered below the control (WinUI `TextBox.Description`), attached to `aria-describedby`                                                                     |
-| `multiline`          | `boolean`                                                                   | `false`           | Multiline form (WinUI `AcceptsReturn` + `TextWrapping=Wrap`), renders a `<textarea>`                                                                                      |
-| `rows`               | `number`                                                                    | `3`               | Number of multiline rows (only takes effect with `multiline`)                                                                                                             |
-| `passwordRevealMode` | `'peek' \| 'hidden' \| 'visible'`                                           | `'peek'`          | Password reveal mode (WinUI `PasswordBox.PasswordRevealMode`, only takes effect with `type="password"`)                                                                   |
-| `passwordChar`       | `string`                                                                    | `—`               | Mask character (WinUI `PasswordBox.PasswordChar`); without it the native `type="password"` is used, with it the display-buffer mask is used (see [Password Box](#密码框)) |
-| `revealButtonLabel`  | `string`                                                                    | `'Show password'` | Accessible name of the "show" button (corresponds to the WinUI localized string `UIA_PASSWORDBOX_REVEAL`)                                                                 |
+| Prop (Props)         | Type                                                                        | Default           | Description                                                                                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modelValue`         | `string`                                                                    | `—`               | Input value (`v-model`)                                                                                                                                                         |
+| `size`               | `'small' \| 'medium' \| 'large'`                                            | `'medium'`        | Size, with heights of 24 / 32 / 40 px respectively (WinUI default is 32)                                                                                                        |
+| `appearance`         | `'outline' \| 'underline'`                                                  | `'outline'`       | Appearance; `outline` matches WinUI's "elevated stroke", `underline` is a library extension (only the bottom edge remains)                                                      |
+| `disabled`           | `boolean`                                                                   | `false`           | Whether the input is disabled                                                                                                                                                   |
+| `invalid`            | `boolean`                                                                   | `false`           | Invalid / error state; a library extension (the WinUI TextBox has no built-in error state), also renders `aria-invalid`                                                         |
+| `type`               | `'text' \| 'password' \| 'email' \| 'number' \| 'search' \| 'tel' \| 'url'` | `'text'`          | Native `type` (ignored when `multiline` is true)                                                                                                                                |
+| `placeholder`        | `string`                                                                    | `—`               | Placeholder                                                                                                                                                                     |
+| `header`             | `string`                                                                    | `—`               | Header, rendered above the control (WinUI `TextBox.Header`); also used as the accessible-name source                                                                            |
+| `description`        | `string`                                                                    | `—`               | Description, rendered below the control (WinUI `TextBox.Description`), attached to `aria-describedby`                                                                           |
+| `multiline`          | `boolean`                                                                   | `false`           | Multiline form (WinUI `AcceptsReturn` + `TextWrapping=Wrap`), renders a `<textarea>`                                                                                            |
+| `rows`               | `number`                                                                    | `3`               | Number of multiline rows (only takes effect with `multiline`)                                                                                                                   |
+| `passwordRevealMode` | `'peek' \| 'hidden' \| 'visible'`                                           | `'peek'`          | Password reveal mode (WinUI `PasswordBox.PasswordRevealMode`, only takes effect with `type="password"`)                                                                         |
+| `passwordChar`       | `string`                                                                    | `—`               | Mask character (WinUI `PasswordBox.PasswordChar`); without it the native `type="password"` is used, with it the display-buffer mask is used (see [Password Box](#password-box)) |
+| `revealButtonLabel`  | `string`                                                                    | `'Show password'` | Accessible name of the "show" button (corresponds to the WinUI localized string `UIA_PASSWORDBOX_REVEAL`)                                                                       |
 
 | Slot (Slots)  | Description                                          |
 | ------------- | ---------------------------------------------------- |

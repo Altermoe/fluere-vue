@@ -2,8 +2,10 @@
 import { FluereInput } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 const note = ref('')
-const feedback = ref('第一行\n第二行')
+const feedback = ref(t('demos.input.multiline.feedbackSeed'))
 </script>
 
 <template>
@@ -11,15 +13,15 @@ const feedback = ref('第一行\n第二行')
     <FluereInput
       v-model="note"
       multiline
-      header="备注"
-      description="缺省 3 行，可拖动右下角调整高度"
-      placeholder="请输入备注"
+      :header="t('demos.input.multiline.header')"
+      :description="t('demos.input.multiline.description')"
+      :placeholder="t('demos.input.multiline.placeholder')"
     />
     <FluereInput
       v-model="feedback"
       multiline
       :rows="6"
-      header="反馈"
+      :header="t('demos.input.multiline.feedbackHeader')"
       description="rows=6"
     />
   </div>

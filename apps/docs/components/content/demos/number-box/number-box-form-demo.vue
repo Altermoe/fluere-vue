@@ -2,6 +2,8 @@
 import { FluereButton, FluereNumberBox } from '@fluere-vue/ui'
 import { ref } from 'vue'
 
+const { t } = useDocsI18n()
+
 /** 演示用的初始金额 */
 const INITIAL_AMOUNT = 128
 
@@ -26,17 +28,17 @@ const onSubmit = (event: Event) => {
       :max="10000"
       :step="8"
       spin-button-placement-mode="inline"
-      header="金额"
+      :header="t('demos.number-box.form.headerAmount')"
     />
     <div class="flex items-center gap-fluent-m">
       <FluereButton
         type="submit"
         appearance="primary"
       >
-        提交
+        {{ t('demos.number-box.form.buttonSubmit') }}
       </FluereButton>
       <span class="text-sm text-colorNeutralForeground3">
-        提交到的 amount：{{ submitted || '—' }}
+        {{ t('demos.number-box.form.note', { submitted: submitted || '—' }) }}
       </span>
     </div>
   </form>
