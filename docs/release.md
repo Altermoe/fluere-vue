@@ -40,12 +40,25 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 
 ## 发布前质量闸
 
-- `pnpm check`（lint + format + tsc + i18n + 版本一致性）
-- `pnpm test`（含「从 dist 引入并渲染」冒烟：`dist-smoke.test.ts`）
-- `pnpm build`（拓扑：designs → hooks/themes/icons/utils → ui）
-- `pnpm exec publint ./packages/*` + `pnpm exec attw --pack <each>`：主流（bundler）入口全绿；
-  `node16` 的 ESM-only 与「类型声明无扩展名相对导入」告警为**已知可接受**（见 ADR「已知限制」）。
-- `npm pack --dry-run` 复核 tarball 内容（不含源码测试、含 `dist/*.css` 与 `.d.ts`）。
+**CI 自动覆盖**（[.onedev-buildspec.yml](../.onedev-buildspec.yml)，分支与 tag 推送都跑）：
+
+- `check` job：`pnpm check`（lint + format + tsc + i18n + 版本一致性）。
+- `test` job：`pnpm test`（全量单测）。
+- `package-smoke` job：补上「仓库内全程走源码、dist 从不被解析」的缺口（各包 `exports`
+  指向源码，见 [ADR-0001 §4.1](./adr/0001-library-build-tooling.md#41-仓库内解析源码发布才用产物publishconfig-覆盖)），分三步：
+  1. `pnpm build`（拓扑：designs → hooks/themes/icons/utils → ui）；
+  2. `pnpm smoke:dist`（[scripts/smoke-dist.mjs](../scripts/smoke-dist.mjs)）——`pnpm pack` 出六个 tarball，
+     用 `publint` + `attw` 校验入口声明，再装进临时 fixture 工程以消费方身份按包名/子路径导入并 SSR 渲染；
+  3. `REQUIRE_DIST=1 pnpm exec vitest run packages/ui/src/__tests__/dist-smoke.test.ts`——
+     缺 dist 即**硬失败**，不再被 `skipIf` 静默放过。
+- attw 收敛口径：`--profile esm-only --entrypoints . --ignore-rules internal-resolution-error`——
+  `bundler` / `node16(ESM)` 全绿，跳过的 `node16` 提示为**已知可接受**（见 ADR「已知限制」）。
+- `deploy`（仅 tag）依赖 `package-smoke`，坏产物无法上线。
+
+**仅发布时人工**：
+
+- `pnpm build && pnpm smoke:dist` 本地复现产物链路（`smoke:dist` 需先 `build`）。
+- `npm pack --dry-run` 复核 tarball 内容与体积（不含源码测试、含 `dist/*.css` 与 `.d.ts`）。
 
 ## 回滚与补救
 

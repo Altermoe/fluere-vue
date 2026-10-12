@@ -2,10 +2,14 @@ version: 53
 
 # CI/CD。
 #
-# 结构：check / test / build 三个**并行** job，共享同一份 pnpm store 缓存（key=pnpm-store），
-# 任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
+# 结构：check / test / build / package-smoke 四个**并行** job，共享同一份 pnpm store 缓存
+# （key=pnpm-store），任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
 # （apps/docs/.output/public）发布成 artifact。
-# 第四个 job deploy 只在推 tag 时跑：依赖前三个 job，取 build 的 artifact 部署成本机的
+# package-smoke 专门验证**发布产物链路**（dist）：仓库内各包 exports 指向源码
+# （ADR-0001 §4.1），其余 job 全程走源码，dist 无人解析——本 job 先 pnpm build 出 dist，
+# 再 pack 成 tarball 装进临时 fixture 以消费方身份渲染，并用 publint / attw 校验入口声明，
+# 最后以 REQUIRE_DIST=1 跑 dist-smoke 单测（缺 dist 即硬失败）。见 scripts/smoke-dist.mjs。
+# 第五个 job deploy 只在推 tag 时跑：依赖前四个 job，取 build 的 artifact 部署成本机的
 # nginx 容器（只 listen 127.0.0.1:8080，TLS 与域名交给外层反代，见 docs/../README 的
 # 「持续集成与发布」一节与 scripts/deploy.sh）。
 #
@@ -230,6 +234,68 @@ jobs:
     retryDelay: 30
     timeout: 3600
 
+  # 发布产物（dist）冒烟：补上「仓库内全程走源码、dist 从不被解析」的验证缺口。
+  # 为什么独立成 job 而不是并进 build：build 只做文档站静态生成（源码链路），
+  # 与本 job 的发布产物链路是两条独立关注点，分开便于单独定位失败，且都要装在各自容器里跑。
+  # 单个 step 内完成（OneDev 每个 step 都是新容器，跨 step 拿不到上一步的 dist）：
+  #   pnpm build → pnpm smoke:dist（pack + publint/attw + fixture 安装 + SSR 渲染）
+  #   → REQUIRE_DIST=1 跑 dist-smoke 单测（缺 dist 即失败，不被 skipIf 放过）。
+  - name: package-smoke
+    jobExecutor: docker
+    steps:
+      - type: CheckoutStep
+        name: checkout
+        cloneCredential:
+          type: DefaultCredential
+        withLfs: false
+        withSubmodules: false
+        condition: SUCCESSFUL
+        optional: false
+      - type: SetupCacheStep
+        name: restore pnpm store
+        key: pnpm-store
+        checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
+        entries:
+          - path: .pnpm-store
+        uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
+        condition: SUCCESSFUL
+        optional: false
+      - type: CommandStep
+        name: build + dist consumer smoke
+        runInContainer: true
+        image: node:26-alpine
+        interpreter:
+          type: PosixInterpreter
+          shell: sh
+          commands: |
+            set -e
+            . ./scripts/ci-env.sh
+            . ./scripts/ci-bootstrap.sh
+            pnpm install --frozen-lockfile --store-dir .pnpm-store
+            # 构建六个库包到 dist（designs → hooks/themes/icons/utils → ui，拓扑由 pnpm 保证）
+            pnpm build
+            # 消费方链路：pack → publint / attw → fixture 安装 → 按包名/子路径导入并 SSR 渲染
+            pnpm smoke:dist
+            # 「从 dist 引入」单测在此必须真跑：REQUIRE_DIST=1 让缺 dist 从「跳过」变为「失败」
+            REQUIRE_DIST=1 pnpm exec vitest run packages/ui/src/__tests__/dist-smoke.test.ts
+        envVars:
+          - name: CI_HTTP_PROXY
+            value: '@secret:CI_HTTP_PROXY@'
+        runAs: 0:0
+        useTTY: false
+        condition: SUCCESSFUL
+        optional: false
+    triggers:
+      - type: BranchUpdateTrigger
+        branches: main
+        userMatch: anyone
+      - type: TagCreateTrigger
+        tags: v*
+    retryCondition: never
+    maxRetries: 3
+    retryDelay: 30
+    timeout: 3600
+
   # CD：把 build 产出的静态产物部署成本机的一个 nginx 容器（步骤细节见 scripts/deploy.sh 顶部注释）。
   #
   # 为什么用 docker CLI 而不是 OneDev 的 RunContainerStep / services：
@@ -277,7 +343,7 @@ jobs:
         condition: SUCCESSFUL
         optional: false
     jobDependencies:
-      # check / test / build 全部成功才部署；只有 build 需要取 artifact。
+      # check / test / build / package-smoke 全部成功才部署；只有 build 需要取 artifact。
       - jobName: check
         requireSuccessful: true
       - jobName: test
@@ -288,6 +354,8 @@ jobs:
         # artifact 内的路径相对于 build 的 sourcePath（apps/docs/.output/public），
         # 落到 site/ 下即站点根（site/index.html、site/_nuxt/...）。
         destinationPath: site
+      - jobName: package-smoke
+        requireSuccessful: true
     triggers:
       - type: TagCreateTrigger
         tags: v*

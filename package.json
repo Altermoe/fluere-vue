@@ -36,6 +36,7 @@
     "version:sync": "node scripts/version.mjs sync",
     "version:check": "node scripts/version.mjs check",
     "version:check-tag": "node scripts/version.mjs check --tag",
+    "smoke:dist": "node scripts/smoke-dist.mjs",
     "lint:buildspec": "python3 scripts/lint-buildspec.py .onedev-buildspec.yml",
     "format": "oxfmt --check",
     "format:fix": "oxfmt --write",
