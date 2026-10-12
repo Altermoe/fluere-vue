@@ -3,7 +3,7 @@
  * 组件导航的响应式外壳（Responsive Shell）。
  *
  * 职责仅限「在哪种视口下、以什么形态摆放导航面板」，不渲染任何导航条目：
- *  - ≥1024px（lg）：常驻在视口左缘、悬浮 header（h-14）之下的固定栏，
+ *  - ≥1024px（lg）：常驻在视口左缘、悬浮 header（`--docs-header-h`）之下的固定栏，
  *    自身独立 FluereScrollView 滚动；显隐用纯 CSS `hidden lg:block`（水合安全）。
  *  - <1024px：顶栏按钮（useDocsSidebar.toggle）驱动的抽屉浮层，向左滑出/滑入；
  *    展开时右侧覆盖半透明 blur 遮罩，点击遮罩收起。
@@ -62,7 +62,7 @@ onScopeDispose(() => {
 
 <template>
   <!-- 桌面常驻栏：贴视口左缘、悬浮 header 之下；面板自带独立滚动 -->
-  <aside class="absolute bottom-0 left-0 top-14 z-10 hidden w-60 lg:block">
+  <aside class="absolute bottom-0 left-0 top-[var(--docs-header-h)] z-10 hidden w-60 lg:block">
     <FluereScrollView class="h-full">
       <DocsNavPanel />
     </FluereScrollView>
@@ -84,9 +84,9 @@ onScopeDispose(() => {
         class="docs-nav-drawer__mask absolute inset-0 bg-colorNeutralBackground1/60 backdrop-blur-sm"
         @click="close"
       />
-      <!-- 面板从悬浮 header（h-14）之下开始：首条导航不被 header 遮住 -->
+      <!-- 面板从悬浮 header（--docs-header-h，见 assets/docs-shell.css）之下开始：首条导航不被 header 遮住 -->
       <aside
-        class="docs-nav-drawer__panel absolute bottom-0 left-0 top-14 flex w-72 max-w-[85vw] flex-col border-r border-colorNeutralStroke1 bg-colorNeutralBackground1"
+        class="docs-nav-drawer__panel absolute bottom-0 left-0 top-[var(--docs-header-h)] flex w-72 max-w-[85vw] flex-col border-r border-colorNeutralStroke1 bg-colorNeutralBackground1"
       >
         <FluereScrollView class="min-h-0 flex-1">
           <DocsNavPanel />

@@ -1,0 +1,22 @@
+/*
+ * 文档站 shell 的布局常量（全站唯一事实源）。
+ *
+ * `--docs-header-h` = 悬浮 header 的「保留高度」：
+ *  - header 自身高度锁到它（见 layouts/components.vue、pages/index.vue 的 `h-[var(--docs-header-h)]`）；
+ *  - 滚动内容首屏偏移（`pt-[var(--docs-header-h)]`）、路由骨架遮罩上缘、
+ *    移动端导航抽屉上缘同样读它 —— 三处必须与 header 同值，否则会钻到毛玻璃下面。
+ *
+ * 40rem 以下整体抬到 5rem：窄视口下版本 tag + 右侧控件会整体换到第二行
+ * （header 内层是 `flex-wrap content-center`），两行 = 32px 按钮 + 8px 行距 + 32px 控件
+ * = 72px，5rem(80px) 可容纳并留出居中余量。因此 40rem 以下即使某档宽度刚好没触发换行，
+ * header 也保持 5rem —— 宁可多留一点，也不让「换行与否」变成不可预测的高度。
+ */
+:root {
+  --docs-header-h: 3.5rem;
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --docs-header-h: 5rem;
+  }
+}

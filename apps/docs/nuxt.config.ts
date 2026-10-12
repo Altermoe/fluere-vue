@@ -75,6 +75,7 @@ export default defineNuxtConfig({
       },
     },
   },
+  // docs-shell.css：shell 布局常量（悬浮 header 的保留高度 --docs-header-h）；
   // content-code.css：Shiki 代码块明暗增强；theme-transition.css：主题切换的圆形揭示；
   // docs-prose.css：正文（MDC prose）排版——回补 presetWind4 preflight 抹平的
   // 标题层级 / 段落间距 / 列表标记 / 链接三态（作用域 .docs-prose）
@@ -82,7 +83,12 @@ export default defineNuxtConfig({
   // 这里不引 `@fluere-vue/ui/style.css`：工作区包入口指向源码（发布时才由各包
   // publishConfig 覆盖为 dist），组件 scoped 样式与 token 由 Vite 直接从 SFC /
   // generated/tokens.css 注入，dev 不依赖任何构建产物。
-  css: ['~/assets/content-code.css', '~/assets/theme-transition.css', '~/assets/docs-prose.css'],
+  css: [
+    '~/assets/docs-shell.css',
+    '~/assets/content-code.css',
+    '~/assets/theme-transition.css',
+    '~/assets/docs-prose.css',
+  ],
   vite: {
     plugins: [
       {

@@ -13,9 +13,6 @@ const routeLoading = useDocsRouteLoading()
 const { t, tm } = useDocsI18n()
 const localePath = useLocalePath()
 
-/** 版本号来自 runtimeConfig（事实源：仓库根 package.json，CI 由发布 tag 注入）；`v` 前缀由 composable 归一 */
-const docsVersion = useDocsVersion()
-
 /** 顶部导航链接：标题随语种解析，链接按 locale 前缀化 */
 const navLinks = computed(() => [
   { label: t('nav.docs'), to: localePath('/components') },
@@ -73,7 +70,8 @@ useSeoMeta({
     与 /components 同一套 app shell：整体锁定视口高度（dvh），文档级滚动由此关闭；
     整页滚动改由 FluereScrollView 接管（绝对定位占满视口，鼠标落在页面任何留白处
     滚轮都能滚动）。header 悬浮叠加在滚动视口上（毛玻璃），内容从其下方滚过。
-    滚动内容统一加 pt-14，为悬浮 header 让出初始可视区。
+    滚动内容按 --docs-header-h（悬浮 header 的保留高度，见 assets/docs-shell.css）
+    让出初始可视区。
   -->
   <div
     class="docs-shell-home relative overflow-hidden bg-colorNeutralBackground1 text-colorNeutralForeground1 font-base"
@@ -82,22 +80,22 @@ useSeoMeta({
          直接在组件上写定位工具类会被组件样式（同特异性、注入更晚）覆盖。 -->
     <div class="absolute inset-0">
       <FluereScrollView class="h-full">
-        <div class="pt-14">
+        <div class="pt-[var(--docs-header-h)]">
           <!-- Nav -->
           <header
             class="absolute inset-x-0 top-0 z-40 border-b border-colorNeutralStroke1 bg-colorNeutralBackground1/80 backdrop-blur-md"
           >
-            <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+            <!-- 高度锁到 --docs-header-h、并允许 flex 换行：窄视口下版本 tag + 控件整体
+                 落到第二行，而不是把 tag 里的版本号压断。 -->
+            <div
+              class="max-w-6xl mx-auto px-6 h-[var(--docs-header-h)] flex flex-wrap content-center items-center justify-between gap-y-2"
+            >
               <div class="flex items-center gap-8">
                 <NuxtLink
                   :to="localePath('/')"
                   class="flex items-center gap-2 font-semibold text-lg"
                 >
-                  <div
-                    class="w-6 h-6 rounded-fluent-md bg-colorBrandBackground text-colorBrandForegroundInverted flex items-center justify-center text-xs font-bold"
-                  >
-                    W
-                  </div>
+                  <BrandLogo :size="24" />
                   FluereVue
                 </NuxtLink>
                 <nav class="hidden md:flex items-center gap-6 text-sm text-colorNeutralForeground2">
@@ -111,8 +109,9 @@ useSeoMeta({
                   </NuxtLink>
                 </nav>
               </div>
-              <div class="flex items-center gap-3 text-sm">
-                <span class="text-colorNeutralForeground3">v{{ docsVersion }}</span>
+              <!-- ml-auto：换行到第二行后仍贴右对齐（同一行时与 justify-between 等效） -->
+              <div class="ml-auto flex items-center gap-3 text-sm">
+                <DocsVersionTag />
                 <!-- 与 /components 布局同款：主题切换用组件库 Button，GitHub 入口是图标链接 -->
                 <GithubLink />
                 <LocaleSwitch />
@@ -378,11 +377,7 @@ useSeoMeta({
               class="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-colorNeutralForeground3"
             >
               <div class="flex items-center gap-2">
-                <div
-                  class="w-5 h-5 rounded-fluent-md bg-colorBrandBackground text-colorNeutralForegroundOnBrand flex items-center justify-center text-xs font-bold"
-                >
-                  W
-                </div>
+                <BrandLogo :size="20" />
                 FluereVue
               </div>
               <div>{{ t('home.footer') }}</div>
@@ -399,7 +394,7 @@ useSeoMeta({
     -->
     <div
       v-if="routeLoading"
-      class="absolute bottom-0 left-0 right-0 top-14 z-20"
+      class="absolute bottom-0 left-0 right-0 top-[var(--docs-header-h)] z-20"
     >
       <DocsRouteSkeleton />
     </div>
