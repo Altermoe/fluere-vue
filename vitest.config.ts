@@ -4,9 +4,11 @@ import { defineConfig } from 'vitest/config'
 
 // Monorepo 统一测试配置（Vitest 5）。
 //
-// - 工作区包在 pnpm 的 .pnpm 虚拟 store 中，未提升到根 node_modules，普通解析找不到
-//   @fluere-vue/*；这里用 resolve.alias 直接指到各包源文件，与 tsconfig.base.json 的
-//   paths 保持一致（仅 @fluere-vue/ui 指到真实入口 packages/ui/index.ts）。
+// - 工作区各包的 `exports` 在仓库内已指向源码（发布才由 `publishConfig` 覆盖为 `dist`，
+//   见 docs/adr/0001 §4.1），普通解析本就能落到源码；这里仍显式列一份 alias：一是与
+//   tsconfig.base.json 的 paths 对齐、不依赖 pnpm 链接布局，二是子路径别名必须排在包名
+//   别名之前（rollup alias 的前缀匹配会把 `@fluere-vue/designs/tokens.css` 也当成包名）。
+//   仅 `@fluere-vue/ui` 指向真实入口 packages/ui/index.ts（该包的 src/index.ts 不存在）。
 // - 环境统一为 jsdom：组件测试用 @vue/test-utils 挂载 SFC，需要 DOM。
 // - include 限定 packages/** 与 apps/docs 的**纯工具函数**测试；apps/docs 是 Nuxt 应用，
 //   其页面 / 组件测试需要 @nuxt/test-utils 与 Nuxt 运行时（自动导入、`~` 别名），不在本范围。

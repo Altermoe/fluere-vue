@@ -28,26 +28,45 @@
   "sideEffects": [
     "**/*.css"
   ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./index.ts",
+  "module": "./index.ts",
+  "types": "./index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./index.ts",
+      "import": "./index.ts"
     },
     "./style.css": "./dist/style.css",
     "./locales/zh-Hans": {
-      "types": "./dist/locales/zh-Hans.d.ts",
-      "import": "./dist/locales/zh-Hans.js"
+      "types": "./locales/zh-Hans.ts",
+      "import": "./locales/zh-Hans.ts"
     },
     "./locales/en": {
-      "types": "./dist/locales/en.d.ts",
-      "import": "./dist/locales/en.js"
+      "types": "./locales/en.ts",
+      "import": "./locales/en.ts"
     },
     "./package.json": "./package.json"
   },
   "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./style.css": "./dist/style.css",
+      "./locales/zh-Hans": {
+        "types": "./dist/locales/zh-Hans.d.ts",
+        "import": "./dist/locales/zh-Hans.js"
+      },
+      "./locales/en": {
+        "types": "./dist/locales/en.d.ts",
+        "import": "./dist/locales/en.js"
+      },
+      "./package.json": "./package.json"
+    },
     "access": "public"
   },
   "scripts": {

@@ -42,14 +42,40 @@ tsdown / unbuild），**先做 spike 再以 ADR 定结论**。
 
 `pnpm -r --filter "./packages/*" build`。pnpm 按依赖图拓扑执行：
 `designs`（先生成 token）→ `hooks` / `themes` / `icons` / `utils` → `ui`。
-`ui` 的 dts 依赖各包 `exports` 指向的 `dist/*.d.ts`，工程级属性由拓扑顺序保证。
+`ui` 的 dts 经各包 `exports`（仓库内指向源码，见 §4.1）解析互包类型，工程级属性由拓扑顺序保证。
 
 ### 4. 工作区互包的构建期解析
 
 构建 tsconfig（`packages/*/tsconfig.build.json`）把 base `paths`（指向源码）**置空**：
-`@fluere-vue/*` 走 `node_modules` 链接 + 各包 `exports` → 指向已构建的 `dist`。
-这样产出的 `.d.ts` 里互包引用保留**包名说明符**（`@fluere-vue/utils`），
-而非物理相对路径 `../../utils/dist/...`（后者发布后即失效）。运行时同理外部化 `vue` / `reka-ui` / `@fluere-vue/*`。
+`@fluere-vue/*` 走 `node_modules` 链接 + 各包 `exports`。这样产出的 `.d.ts` 里互包引用保留**包名说明符**
+（`@fluere-vue/utils`），而非物理相对路径 `../../utils/dist/...`（后者发布后即失效）。
+运行时同理外部化 `vue` / `reka-ui` / `@fluere-vue/*`。
+
+### 4.1 仓库内解析源码、发布才用产物（publishConfig 覆盖）
+
+各包的 `main` / `module` / `types` / `exports` 在仓库内一律指向**源码**
+（`./src/index.ts`、`designs` 的 `./generated/*.ts`、`ui` 的 `./index.ts` 等），
+发布时再由 `publishConfig` 覆盖回 `dist`：
+
+```jsonc
+{
+  "main": "./src/index.ts",
+  "exports": { ".": { "types": "./src/index.ts", "import": "./src/index.ts" } },
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  },
+}
+```
+
+理由：`dist` 已 gitignore，而 `pnpm dev` / `pnpm docs:generate` / `pnpm tsc` 若走 `dist`，
+就会要求「先手工 build 一次」——全新检出直接报 `No "exports" main defined`（`nuxt.config.ts`
+由 jiti 加载，**不经过 Vite，因此无法用 alias / tsconfig paths 兜底**）。源码入口让开发链路
+零构建依赖，`publishConfig` 由 pnpm/npm 在打包时覆盖字段（官方支持 `main` / `module` / `types` /
+`exports` 等），因此**发布产物与消费方行为完全不变**（可用 `pnpm pack` 复核 tarball 内清单）。
+
+`ui` 的 `./style.css` 是例外：它只存在于构建产物，仓库内仍指向 `./dist/style.css`；
+开发态样式由 Vite 直接从各 SFC 注入（含 `designs/generated/tokens.css`），无需该入口。
 
 ### 5. 版本策略：所有 `@fluere-vue/*` 统一版本号
 
