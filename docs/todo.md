@@ -225,10 +225,10 @@
 #### 3.4 发布流水线（CI/CD）
 
 - [ ] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`——**文件已落地**（`.github/workflows/ci.yml`：check / test / docs / package-smoke 四个 job，后两个分别对应「预渲染校验」与「dist 产物冒烟」；pnpm 版本由 `pnpm/action-setup` 读 `packageManager`）。本机以 actionlint 1.7.7 校验通过、四个 job 的命令序列已在本地逐个跑通，**尚未在 GitHub 上实跑**，故不勾选。
-- [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按 `rc` / `next` tag 发布（**预发布不占 `latest`**），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）
-- [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）
+- [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按 `rc` / `next` tag 发布（**预发布不占 `latest`**），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，文件已落地**（`.github/workflows/release.yml`：按官方推荐拆成 `select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` job 内有 `pnpm build` + `pnpm smoke:dist` 质量闸，publish 只上传 pack 出来的 tarball）。本机以 actionlint 1.7.7 校验通过，**尚未在 GitHub 上实跑**，故不勾选。落地过程中发现两条硬约束（已写入 [docs/release.md](./release.md#发布流水线github-actions)）：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `npm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。
+- [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）——**前两项已在 CI 落地**：`ci.yml` 的 `package-smoke` job 与 `release.yml` 的 `pack` job 都跑 `pnpm smoke:dist`（`pnpm pack` 出六个 tarball → publint / attw → fixture 消费方安装与 SSR 渲染）；`npm pack --dry-run` 仍为发布时人工步骤，见 [docs/release.md](./release.md#发布前质量闸)。
 - [ ] 发布彩排：本地 verdaccio 或 `--dry-run` 走通全流程（含 dist 安装、SSR 渲染、CSS 引入）
-- [ ] 回滚与补救预案：`npm deprecate`、撤销 tag、`latest` 回指上一版的具体步骤写入 `docs/release.md`
+- [x] 回滚与补救预案：`npm deprecate`、撤销 tag、`latest` 回指上一版的具体步骤写入 `docs/release.md`——**已写入**（[回滚与补救](./release.md#回滚与补救)：deprecate / `dist-tag rm|add` / `gh release delete --cleanup-tag` 撤销 tag 与 Release / 同 commit 重跑的幂等说明）。
 
 #### 3.5 正式发布 0.3.0-rc.1（按序执行）
 
@@ -242,6 +242,15 @@
   - 三个独立消费场景验证通过：Vite SPA、Nuxt SSR、纯类型引用（`vue-tsc` 无错）
   - CI 在 PR 与 release 两条链路上全绿，同一 commit 重跑发布不产生脏状态
   - 发布手册与回滚步骤齐备，且经过一次彩排验证
+- **前置硬约束（2026-10-12 发现，需先决策才能开工）**：
+  1. **首次发布不能用 OIDC**：npm 的 trusted publisher 只能配置在已存在的包上（无 pending publisher），
+     六个包从未发布过 ⇒ 第一个版本必须先用粒度 token 或本机 `npm login` 人工 bootstrap，之后给六个包
+     各配一次 trusted publisher（Workflow = `release.yml`），从第二个版本起才由
+     [release.yml](./release.md#发布流水线github-actions) 自动发布。
+  2. **「`latest` 未被预发布污染」与「首个版本就是 rc」不可兼得**：changesets 对从未正式发布过的包会
+     明确警告其预发布版本仍会落到 `latest`（六个包都属此类），且事后 `dist-tag add` 回指需要目标版本
+     已存在。要么首个版本发**稳定版**（`0.3.0`），要么接受首次 `latest` = rc 并据此改写第一条验收口径
+     ——**这一条需要产品决策，未决策前不改验收标准**。
 - **非目标（一期）**：自动化视觉回归发布门、GitHub Packages 等多 registry 同步、CDN / unpkg 体积门、0.3.0 稳定正式版（rc 验证后再定）
 
 ### 依赖关系与建议顺序

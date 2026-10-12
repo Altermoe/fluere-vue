@@ -104,10 +104,57 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
   ```
 - **`latest` 被预发布污染**：走上面 `dist-tag add` 强制回指；正常发布用 `--tag rc` 本就不会占 `latest`。
 - **已发布版本不可变**：修正版必须发新版本号（`0.3.0-rc.2` 等），绝不覆盖已发布版本。
+- **撤销 git tag / GitHub Release**（`release.yml` 的 publish job 会同时建两者）：
+  ```bash
+  gh release delete v0.3.0-rc.1 --yes --cleanup-tag   # 删 Release 并连带删远端 tag
+  git push origin :refs/tags/v0.3.0-rc.1              # 兜底：tag 还在就单独删
+  git tag -d v0.3.0-rc.1                              # 本地
+  ```
+  撤销 tag 前先确认 npm 上的版本确实要废弃（版本本身撤不掉，只能 `deprecate`）。
+- **同一 commit 重跑发布**：`changeset publish` 会跳过 registry 上已存在的版本，因此重跑是幂等的；
+  若上次在「已发布、未打 tag」之间失败，重跑会补打 tag，不需要手工干预。
 
-## 未来（3.4/3.5，本文件提前占位）
+## 发布流水线（GitHub Actions）
 
-- CI：`release.yml`（Changesets action → release PR → 合并后按 tag 发布），PR 链跑
-  `ci.yml`（frozen lockfile + check + test + build + docs:generate）。
-- 正式 rc 发布：`changeset pre enter rc` → bump → 构建校验 → `publish --tag rc`，
-  发布后从干净目录 `pnpm add @fluere-vue/ui@0.3.0-rc.1` 实机验证（渲染 / SSR / peer 警告）。
+[.github/workflows/release.yml](../.github/workflows/release.yml)：`push main`（或手动 dispatch，仅限 main）触发，
+按 Changesets v3 + npm Trusted Publishing 的官方推荐拆成四个 job：
+
+| job           | 条件              | 权限                                      | 做什么                                                                |
+| ------------- | ----------------- | ----------------------------------------- | --------------------------------------------------------------------- |
+| `select-mode` | 总是              | `contents: read`                          | 判定 `version` / `publish` / `none`（有 changeset 就开 PR，没有就发） |
+| `version`     | `mode == version` | `contents: write`、`pull-requests: write` | `pnpm version:packages` → 开/更新 release PR                          |
+| `pack`        | `mode == publish` | `contents: read`                          | `pnpm build` → `pnpm smoke:dist`（质量闸）→ 按发布计划打 tarball      |
+| `publish`     | `needs: pack`     | `contents: write`、`id-token: write`      | 只上传 pack 出来的 tarball；打 tag + 建 GitHub Release                |
+
+`id-token: write` **只给 publish job**：npm 与 Changesets 都要求这样，否则任何在 version 步骤里
+跑起来的代码都能换到 OIDC 令牌去发包；顶层 `permissions: {}` 归零，逐 job 显式声明。
+
+### 一次性准备（人工，仓库里改不了）
+
+1. 仓库设置 `Settings → Actions → General` 勾选 **Allow GitHub Actions to create and approve pull requests**
+   （否则 release PR 建不出来）。
+2. **首次发布必须人工 bootstrap**：npm 的 trusted publisher 是挂在**已存在的包**上的设置项，
+   没有 pending publisher，六个包从未发布过 ⇒ 第一个版本发不出去。做法是先用粒度 token（或本机
+   `npm login`）发一次，再给六个包各配一次 trusted publisher，之后才轮到 workflow 自动发布。
+3. 六个包（`@fluere-vue/designs` / `hooks` / `icons` / `themes` / `ui` / `utils`）在 npmjs.com 的
+   `Settings → Trusted Publisher` 各配一条：Repository = `Altermoe/fluere-vue`，Workflow filename =
+   `release.yml`，**Environment 留空**（除非同时取消 workflow 里 `environment:` 的注释并填同名环境；
+   两边不一致会让 OIDC 校验失败，报的还是误导性的 404）。
+4. publish job 的 `setup-node` **必须**带 `registry-url: https://registry.npmjs.org`：pnpm v11 下
+   不写 registry 进 `.npmrc`，OIDC 换取会失败。**不要**配 `NODE_AUTH_TOKEN`——凭据来自 OIDC。
+   provenance 在 trusted publishing 下由 pnpm 自动附带，不需要 `--provenance`。
+
+### 两个已知陷阱（首次发布会踩）
+
+- **预发布会污染 `latest`**：changesets 自己会警告「packages that have not had normal releases
+  will be published to `latest`」——六个包首次发布时，即使处于 rc 预发布模式，`latest` 也会落在
+  `0.3.0-rc.1` 上。要满足 3.5 的「`latest` 未被预发布污染」，只能把**第一个版本发成稳定版**
+  （`0.3.0`）或接受首次 `latest` = rc 并在文档里说明；这是产品决策，见 `docs/todo.md` 3.5。
+- **dist-tag 事后回指需要目标版本已存在**：`npm dist-tag add <pkg>@<版本> latest` 里的版本必须
+  已经发布过，所以首次发布不能靠事后回指来「清掉」`latest`。
+
+### 尚未自动化
+
+- 本机无法执行 GitHub workflow：本文件的 `release.yml` 只过了 actionlint（1.7.7）静态校验，
+  首次真实运行前请先用一次真实 release 验证（`select-mode` 的判定、artifact 在 job 间的传递）。
+- `npm pack --dry-run` 复核仍是人工步骤（见上文「仅发布时人工」）。

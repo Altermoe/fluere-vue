@@ -156,7 +156,8 @@ GitHub Actions 上另有一条**验证**链路（[.github/workflows/ci.yml](./.g
 | `package-smoke` | `pnpm build` → `pnpm smoke:dist`（pack + publint / attw + fixture 消费）→ `REQUIRE_DIST=1` 单测 |
 
 - pnpm 版本**不写死**：Node 25 起发行版不再内置 corepack，workflow 由 `pnpm/action-setup` 读根 `package.json` 的 `packageManager`（与 OneDev 的 [scripts/ci-bootstrap.sh](./scripts/ci-bootstrap.sh) 同一口径）；版本不一致会让 `--frozen-lockfile` 直接失败。
-- npm 发布链路（Changesets action → release PR → `publish --tag rc` + provenance）尚未落地，见 [docs/todo.md](./docs/todo.md) 目标 3 的 3.4。
+
+npm 发布走 [.github/workflows/release.yml](./.github/workflows/release.yml)：`select-mode` 判定该开 release PR 还是该发布，`version` / `pack` / `publish` 三个 job 分工，`id-token: write` **只给 publish job**（npm Trusted Publishing / OIDC，无长期 token）。**注意：六个包从未发布过，而 npm 的 trusted publisher 只能挂在已存在的包上，所以第一个版本必须先用 token 或本机 `npm login` 人工 bootstrap**；准备清单、`registry-url` 这个 pnpm v11 的坑、以及「首次预发布会把 `latest` 一起占了」的已知问题都写在 [docs/release.md](./docs/release.md#发布流水线github-actions)。
 
 ### 持续部署（CD）
 

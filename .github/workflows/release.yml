@@ -1,0 +1,176 @@
+# GitHub Actions：npm 发布链路（Changesets + npm Trusted Publishing / OIDC）。
+#
+# 结构照官方「Trusted Publishing + Changesets v3」的推荐拆法（changesets.dev/guide/automating）：
+#
+#   select-mode ── mode == version ──> version（bump + 开/更新 release PR）
+#               └─ mode == publish ──> pack（build + 发布前质量闸 + 打 tarball）
+#                                       └─> publish（只读 tarball 上传，唯一持有 id-token 的 job）
+#
+# 为什么必须拆 job：npm 官方与 Changesets 都要求 `id-token: write` **只出现在真正发布的 job** 上
+# （否则任何在 version 步骤里跑起来的代码都能换到 OIDC 令牌去发包）。因此顶层 `permissions: {}`
+# 归零，每个 job 只声明自己要用的权限。
+#
+# 与自建 OneDev 的分工：OneDev 负责文档站构建与部署（deploy job 仅 tag）；npm 发布只走这里。
+#
+# ⚠️ 首次发布无法走 OIDC：npm 的 trusted publisher 是**挂在已存在的包**上的设置项，没有
+#    「pending publisher」，六个包从未发布过 => 0.3.0-rc.1 这一次必须先用粒度 token（或本机
+#    `npm login`）人工 bootstrap，之后在 npmjs.com 给六个包各配一次 trusted publisher，
+#    从第二个版本起才由本 workflow 自动发布。步骤见 docs/release.md。
+name: Release
+
+on:
+  push:
+    branches: [main]
+  # 手动重试入口（只允许在 main 上跑，见 select-mode 的 if）。
+  workflow_dispatch:
+
+# 顶层归零，权限在 job 级显式声明。
+permissions: {}
+
+# 发布链路**不取消**进行中的运行：取消可能留下「发了一半」的状态。
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # 与 ci.yml / OneDev 的 node:26-alpine 对齐（@nuxt/content 要求 Node >= 22.13）。
+  NODE_VERSION: '26'
+
+jobs:
+  # 判定本次运行该做什么：有 changeset => 开 release PR；没有 changeset 且有未发布的包 => 发布。
+  # 没有这一步，push 到 main 会直接进发布分支（首次会误发 package.json 里的当前版本）。
+  select-mode:
+    name: select-mode（判定 version / publish / none）
+    # 发布只允许从 main 触发：workflow_dispatch 可以从任意分支启动，这里挡掉。
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+      publish-plan-artifact-id: ${{ steps.select-mode.outputs.publish-plan-artifact-id }}
+    permissions:
+      contents: read # 仅用于 actions/checkout
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false # 不需要 git 凭据，别把它留在磁盘上
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4 # 版本读根 package.json 的 packageManager（唯一版本源）
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          # 发布链路刻意不开依赖缓存（官方建议，避免 cache poisoning 影响发布产物）。
+          node-version: ${{ env.NODE_VERSION }}
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: select mode
+        id: select-mode
+        uses: changesets/action/select-mode@v2
+
+  # 有 changeset：按 fixed 分组 bump 六个包 + 生成 CHANGELOG + 开/更新 release PR。
+  # 预发布走 `changeset pre enter rc` 落下的 .changeset/pre.json（提交在 main 上即生效）。
+  version:
+    name: version（bump + release PR）
+    if: needs.select-mode.outputs.mode == 'version'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # 提交版本变更 / 推 release 分支
+      pull-requests: write # 开或更新 release PR
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: version packages
+        uses: changesets/action/version@v2
+        with:
+          # 不能只用默认的 `changeset version`：根 package.json 的版本要由 version.mjs sync 拉平，
+          # 否则「根版本 == 子包版本」的 version:check 在 tag 构建时会失败。
+          script: pnpm version:packages
+          commit-message: 'chore(release): 🔥 发布版本'
+          pr-title: 'chore(release): 🔥 发布版本'
+
+  # 无 changeset 且有未发布的版本：构建产物、跑发布前质量闸、按发布计划打成 tarball。
+  # 本 job 不碰 npm，也就不需要任何写权限。
+  pack:
+    name: pack（build + 质量闸 + 打 tarball）
+    if: needs.select-mode.outputs.mode == 'publish'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: build packages
+        run: pnpm build
+      # 发布前质量闸：pack + publint / attw + 消费方 fixture 安装与 SSR 渲染。
+      # pack job 与 publish job 是两次独立 checkout，这里再验一遍，坏产物进不了 publish。
+      - name: publish gate（dist consumer smoke）
+        run: pnpm smoke:dist
+      - name: pack packages
+        id: pack
+        uses: changesets/action/pack@v2
+        with:
+          publish-plan-artifact-id: ${{ needs.select-mode.outputs.publish-plan-artifact-id }}
+
+  # 唯一持有 id-token 的 job：只把 pack 出来的 tarball 上传到 npm，不重新构建。
+  publish:
+    name: publish（npm Trusted Publishing）
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # 可选加固：在 GitHub 建一个带 required reviewers 的环境（如 npm-publish），取消注释下面一行，
+    # 并在 npm 的 trusted publisher 配置里填**同一个环境名**（两边不一致会让 OIDC 校验失败）。
+    # environment: npm-publish
+    permissions:
+      contents: write # 打 git tag + 建 GitHub Release
+      id-token: write # npm Trusted Publishing（OIDC），不带任何长期 token
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 建 tag / Release 需要完整历史
+          persist-credentials: false
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # pnpm v11 下 OIDC 发布**必须**显式给 registry：setup-node 没拿到 registry-url 就不会把
+          # registry 写进 .npmrc，pnpm 的 OIDC 换取会失败。这里不要配 NODE_AUTH_TOKEN —— 凭据来自 OIDC。
+          registry-url: https://registry.npmjs.org
+      - name: install
+        run: pnpm install --frozen-lockfile
+      # 从 pack 的 tarball 发布：pack job 构建过什么就发什么，避免两次构建产出不一致。
+      # dist-tag 由 changesets 按 .changeset/pre.json 决定（rc 预发布模式下自动 `--tag rc`），
+      # provenance 由 pnpm 在 trusted publishing 下自动附带（无需 --provenance）。
+      - name: publish packages
+        uses: changesets/action/publish@v2
+        with:
+          pack-dir-artifact-id: ${{ needs.pack.outputs.pack-dir-artifact-id }}
