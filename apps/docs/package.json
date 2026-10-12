@@ -1,6 +1,6 @@
 {
   "name": "@fluere-vue/docs",
-  "version": "0.0.1",
+  "version": "0.3.0-alpha.1",
   "private": true,
   "description": "FluereVue 文档站",
   "keywords": [],

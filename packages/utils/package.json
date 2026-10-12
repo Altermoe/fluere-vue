@@ -1,6 +1,6 @@
 {
   "name": "@fluere-vue/utils",
-  "version": "0.0.1",
+  "version": "0.3.0-alpha.1",
   "description": "FluereVue 共享工具函数",
   "keywords": [
     "fluere",
