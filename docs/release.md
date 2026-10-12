@@ -45,9 +45,13 @@ pnpm version:sync                    # 0.3.0-rc.0 -> 根与六个可发布包
 pnpm exec changeset pre enter rc
 pnpm version:packages                # = changeset version && node scripts/version.mjs sync -> 0.3.0-rc.1
 pnpm build && pnpm test              # 构建 + 测试
-pnpm exec changeset publish --tag rc # 发布到 npm（dist-tag=rc）
+pnpm exec changeset publish          # 发布到 npm；pre 模式下**不要**加 --tag（见下方说明）
 pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 stable 流程）
 ```
+
+> **pre 模式下不许显式 `--tag`**：`changeset publish --tag rc` 会直接报
+> `Releasing under custom tag is not allowed in pre mode!` 并退出 1（彩排实测）。
+> 裸跑 `changeset publish` 即可——changesets 读 `.changeset/pre.json` 自动用 `rc` 作为 dist-tag。
 
 `version:packages` 里的 `version.mjs sync` 会把根与六个可发布包拉平（以最大版本为准回写根），
 并在各发布包生成 `CHANGELOG.md`（changelog 提供方：`@changesets/cli/changelog`）。
@@ -97,6 +101,50 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 
 演练在 `git archive HEAD` 的一次性副本里执行，未改动工作区；`pnpm check` 里的
 `version:check` 已内置同样的静态校验。
+
+## 发布彩排记录（2026-10-12，本地 verdaccio）
+
+做法：`git archive HEAD` 出一次性副本 → 装依赖 → 起本地 verdaccio
+（`pnpm dlx verdaccio@6 --listen 127.0.0.1:4873`，把 `@fluere-vue:registry` 与本地 token 写进副本 `.npmrc`），
+然后把**真实发布流程**对着本地 registry 完整走一遍，再从干净目录以消费方身份验收：
+
+```bash
+node -e "…p.version='0.3.0-rc.0'"   # seed 基版本到根
+pnpm version:sync                    # 根 + 六包 -> 0.3.0-rc.0
+pnpm exec changeset pre enter rc
+pnpm version:packages                # -> 0.3.0-rc.1
+pnpm build
+pnpm exec changeset publish          # pre 模式：不加 --tag
+```
+
+| 检查项        | 实测结果                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| 六包发布      | `@fluere-vue/{designs,hooks,icons,themes,ui,utils}@0.3.0-rc.1` 全部成功                              |
+| dist-tags     | **`rc` 与 `latest` 同时指向 `0.3.0-rc.1`** —— 实测坐实了「首发会一并占 `latest`」（方案 1 已接受）   |
+| git tag       | 逐包生成 `@fluere-vue/<pkg>@0.3.0-rc.1`；**与部署用的 `v0.3.0-rc.1` 不是同一个 tag**，后者仍需手工打 |
+| 发布 manifest | `workspace:*` 已改写为 `0.3.0-rc.1`、`reka-ui` 固定为实际版本、`exports`/`types` 指向 `./dist/*`     |
+| 干净目录安装  | 新工程 `pnpm add @fluere-vue/ui@0.3.0-rc.1 vue` 成功，六个包从 registry 拉齐                         |
+| SSR           | `renderToString` 渲染 `<FluereButton>` 通过（输出含 `fui-button` 与文案）                            |
+| CSS 引入      | `import '@fluere-vue/ui/style.css'` 经 Vite 构建进产物（107.5 kB CSS，含 `fui-button`）              |
+| 纯类型引用    | 消费方 `vue-tsc --noEmit` **exit 0**（工具链对齐仓库：vue-tsc 3.3.8 + typescript 6.0.3）             |
+
+彩排抓到的三件事（前两条已改文档，第三条记为待办）：
+
+1. **pre 模式下不能传 `--tag`**：`changeset publish --tag rc` 报
+   `Releasing under custom tag is not allowed in pre mode!` 并退出 1。本手册原先的写法是错的，已改。
+2. **消费方 TS 需要 CSS 声明**：`import '@fluere-vue/ui/style.css'` 在 tsconfig 没有 `vite/client`
+   types 时报 `TS2882`；且发布出去的 `dist/index.d.ts` 首行是
+   `import '@fluere-vue/designs/tokens.css'`（来自 `packages/ui/index.ts` 的入口 import），
+   `skipLibCheck: false` 时同样报 `TS2882`。结论：消费方需要 `skipLibCheck: true`（多数模板默认如此）
+   或自行 `declare module '*.css'`。
+3. **tarball 仍带源码**：`ui` 的 `files` 含 `src/`，安装后 `src` 1.5 MB vs `dist` 2.1 MB；
+   `designs`(8 KB) / `icons`(12 KB) / `themes` 也带 `src`。与 3.4 质量闸「不含源码」不符，
+   但 `dist/src/**`（`.d.ts` 产物）是 `dist/index.d.ts` 的依赖，**不能删**。
+   另：`icons` 解包后 **29 MB**，是六个包里唯一的体积异类，发布前值得单独复核。
+
+**本次彩排没有覆盖**（所以 3.4 的「发布彩排」勾选不代表这些已验证）：OIDC trusted publishing 与
+provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish` job 建 GitHub Release 的部分、
+以及 `release.yml` 的 `pack` / `publish` 两个 job 本身（它们要等真实 release PR 合并后才会跑）。
 
 ## 回滚与补救
 
