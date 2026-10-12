@@ -13,8 +13,8 @@ const rootVersion = (
 
 /**
  * 判断某条 optimizeDeps.include 条目是否能被逐级解析为真实模块。
- * 形如 "@nuxt/content > @nuxtjs/mdc > remark-gfm" 的深层条目，
- * 在 pnpm 的隔离布局下无法解析（@nuxt/content 内部缺少对 @nuxtjs/mdc 的链接）。
+ * 形如 "@nuxtjs/mdc > remark-gfm" 的深层条目，
+ * 在 pnpm 的隔离布局下无法解析（@nuxtjs/mdc 未在 docs 项目里被直接链接）。
  * 若任一跳转失败则视为无法解析。
  */
 function resolveOptimizeDepsEntry(id: string, rootDir: string) {
@@ -30,6 +30,9 @@ function resolveOptimizeDepsEntry(id: string, rootDir: string) {
   }
   return true
 }
+
+/** 当前 docs 项目根目录（本配置文件所在目录），用作解析起点，避免依赖 cwd。 */
+const docsRootDir = dirname(new URL(import.meta.url).pathname)
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -81,18 +84,18 @@ export default defineNuxtConfig({
       {
         name: 'prune-unresolvable-optimize-deps',
         config(config) {
-          // 某些 Nuxt 模块（如 @nuxt/content）注入的 optimizeDeps.include 深层
-          // 条目（如 "@nuxt/content > @nuxtjs/mdc > remark-gfm"）在 pnpm 隔离
-          // 布局下无法解析，会触发 NUXT_B7002 启动警告。Vite 的 config 钩子在
-          // 所有模块合并到最终配置之后触发，这里把无法解析的条目过滤掉
-          // （仅影响 dev 预打包提示，不影响运行正确性）。
+          // 某些 Nuxt 模块（如 @nuxtjs/mdc）注入的 optimizeDeps.include 深层条目
+          // （如 "@nuxtjs/mdc > remark-gfm"）在 pnpm 隔离布局下无法解析，会触发
+          // NUXT_B7002 启动警告。这里把无法解析的条目就地过滤掉（仅影响 dev 预打包
+          // 提示，不影响运行正确性）。
+          //
+          // 必须「就地改写」而不能 return 过滤后的数组：Vite 会把 config 钩子的
+          // 返回值与既有配置做 mergeConfig，而数组是拼接语义（见
+          // vite/dist/node/chunks/node.js 里 runConfigHook 的 `conf = mergeConfig(conf, res)`），
+          // return 只会把原条目和新数组并集，一个也删不掉。就地改写才生效。
           const include = config.optimizeDeps?.include
           if (!Array.isArray(include)) return
-          return {
-            optimizeDeps: {
-              include: include.filter((id) => resolveOptimizeDepsEntry(id, process.cwd())),
-            },
-          }
+          config.optimizeDeps!.include = include.filter((id) => resolveOptimizeDepsEntry(id, docsRootDir))
         },
       },
     ],
