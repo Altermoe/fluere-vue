@@ -181,10 +181,13 @@ provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish
 `id-token: write` **只给 publish job**：npm 与 Changesets 都要求这样，否则任何在 version 步骤里
 跑起来的代码都能换到 OIDC 令牌去发包；顶层 `permissions: {}` 归零，逐 job 显式声明。
 
-**为什么 `pack` 里要自己跑一遍 `check` + `test`**：release PR 由 `github-actions[bot]` 用默认
-`GITHUB_TOKEN` 推送，而 GitHub 的防递归规则决定它**触发不了其它 workflow**（2026-10-12 实测：
-PR #2 的 check runs 为 0）。合并后的 push 到 `main` 虽然会触发 `ci.yml`，但与 `release.yml`
-**并行**跑、拦不住发布。所以发布链路必须自证，失败即不出包。
+**为什么 `pack` 里要自己跑一遍 `check` + `test`**：release PR 的分支由 `github-actions[bot]` 推送，
+它的 `pull_request` 触发的 CI run 会被 GitHub 挂成 **`action_required`**（需要维护者手动批准才跑），
+因此在没人点批准的情况下 release PR 上没有可用的检查结果（2026-10-12 实测：run 38215064332 的
+`conclusion = action_required`，`actor = github-actions[bot]`、分支 `changeset-release/main`）。
+合并后的 push 到 `main` 虽会触发 `ci.yml`，但与 `release.yml` **并行**跑、拦不住发布。
+所以发布链路必须自证，失败即不出包。想在 PR 上看 CI，可在 Actions 页面手动批准那个 run
+（或者给 action 配 PAT / GitHub App token 让分支推送不再是 bot 身份）。
 
 ### 一次性准备（人工，仓库里改不了）
 
@@ -215,10 +218,11 @@ PR #2 的 check runs 为 0）。合并后的 push 到 `main` 虽然会触发 `ci
 
 首次把两个 workflow 推上 `main`（`6b41042`）后的真实运行结果：
 
-| run                                                                            | workflow  | 结果                                                                                                                                                                                                                 |
-| ------------------------------------------------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) | `CI`      | `check` / `test` / `docs` / `package-smoke` **四个 job 全绿**                                                                                                                                                        |
-| [38214601257](https://github.com/Altermoe/fluere-vue/actions/runs/38214601257) | `Release` | `select-mode` 判定 `version` → `version` **成功**，开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件：根 + 六包版本与 CHANGELOG，`apps/*` 未被改动）；`pack` / `publish` 按预期 skipped |
+| run                                                                            | workflow                             | 结果                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------ | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) | `CI`                                 | `check` / `test` / `docs` / `package-smoke` **四个 job 全绿**                                                                                                                                                        |
+| [38214601257](https://github.com/Altermoe/fluere-vue/actions/runs/38214601257) | `Release`                            | `select-mode` 判定 `version` → `version` **成功**，开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件：根 + 六包版本与 CHANGELOG，`apps/*` 未被改动）；`pack` / `publish` 按预期 skipped |
+| [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332) | `CI`（PR #2 的 `pull_request` 事件） | **`action_required`**：分支由 `github-actions[bot]` 推送，run 被挂起等待维护者批准，因此 release PR 上默认没有跑完的检查（见上文「为什么 pack 里要自己跑一遍」）                                                     |
 
 同一轮里被线上抓出并修掉的问题（`38214181271` → 修复于 `6b41042`）：`version.mjs sync` 曾把
 private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判为变更包并去读
