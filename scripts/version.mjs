@@ -6,7 +6,7 @@
  * 分组约束，见 .changeset/config.json）。本脚本负责「把它们拉平」与「校验它们一致」：
  *
  *   node scripts/version.mjs sync                  # 取 根 package.json 与所有子包 里的最大版本，统一写入根与全部子包
- *   node scripts/version.mjs check                 # 校验所有子包版本彼此一致，且与根版本一致
+ *   node scripts/version.mjs check                 # 校验所有子包版本彼此一致，且与根版本一致；同时校验 .changeset/config.json
  *   node scripts/version.mjs check --tag v0.1.0    # 额外校验 git tag 与根版本一致（CI）
  *
  * 退出码：0 = 通过；1 = 不一致（打印每一处偏差）。
@@ -118,6 +118,79 @@ function cmdSync() {
   )
 }
 
+/**
+ * 发布基建一致性：`.changeset/config.json` 的两类错误只在真正发布时才炸
+ * （`changeset version` 会直接退出 1），所以在 `pnpm check` 里提前拦截：
+ *
+ *   1. `changelog` 必须是当前 Node 能解析的模块。写成 `@changesets/cli/changelog-git`
+ *      这类**不存在的子路径**时（cli 3.x 的 `exports` 只导出 `.` / `./changelog` /
+ *      `./commit` / `./package.json` / `./bin.js`），`changeset version` 在生成 CHANGELOG
+ *      阶段抛 ERR_PACKAGE_PATH_NOT_EXPORTED；等价写法是 `@changesets/cli/changelog`
+ *      （它本身就是 `@changesets/changelog-git` 的再导出）。
+ *   2. `fixed` / `linked` / `ignore` 里的名字必须是 workspace 内真实存在的包（或 glob）。
+ *      workspace 根包（private 的 `fluere-vue`）不属于任何包，写进去 changesets 会报
+ *      "Invalid path"——根版本由本脚本 `sync` 对齐，不需要也不应该进 `fixed`。
+ */
+function checkChangesetConfig(problems) {
+  const configPath = join(ROOT, '.changeset', 'config.json')
+  if (!existsSync(configPath)) {
+    problems.push('.changeset/config.json 缺失：Changesets 配置是发布链路的前提')
+    return
+  }
+
+  let config = null
+  try {
+    config = readJson(configPath)
+  } catch (error) {
+    problems.push(`.changeset/config.json 解析失败：${error.message}`)
+    return
+  }
+  if (config === null || typeof config !== 'object') {
+    problems.push('.changeset/config.json 内容不是对象')
+    return
+  }
+
+  const changelogModules = Array.isArray(config.changelog) ? config.changelog : [config.changelog]
+  for (const specifier of changelogModules) {
+    if (typeof specifier !== 'string') {
+      continue // false / 缺省 = 关闭 changelog，合法
+    }
+    try {
+      import.meta.resolve(specifier)
+    } catch {
+      problems.push(
+        `.changeset/config.json 的 changelog "${specifier}" 无法解析：changeset version 会在生成 CHANGELOG 时报错（可用 @changesets/cli/changelog）`,
+      )
+    }
+  }
+
+  const workspaceNames = new Set(
+    collectTargets()
+      .map((path) => readJson(path).name)
+      .filter(Boolean),
+  )
+  for (const key of ['fixed', 'linked', 'ignore']) {
+    const value = config[key]
+    if (!Array.isArray(value)) {
+      continue
+    }
+    // fixed / linked 是「分组数组的数组」，ignore 是扁平数组。
+    const groups = value.map((entry) => (Array.isArray(entry) ? entry : [entry]))
+    for (const group of groups) {
+      for (const name of group) {
+        if (typeof name !== 'string' || /[*?[\]{}!]/.test(name)) {
+          continue // glob 表达式不做静态校验，交给 changesets 自己解析
+        }
+        if (!workspaceNames.has(name)) {
+          problems.push(
+            `.changeset/config.json 的 ${key} 引用了不存在的包 "${name}"（workspace 包：${[...workspaceNames].join(' / ')}）`,
+          )
+        }
+      }
+    }
+  }
+}
+
 function cmdCheck(tag) {
   const problems = []
   const targets = collectTargets()
@@ -136,6 +209,8 @@ function cmdCheck(tag) {
       problems.push(`${rel(path)}: ${actual} != 根 package.json 的 ${rootVersion}`)
     }
   }
+
+  checkChangesetConfig(problems)
 
   if (tag) {
     const expected = String(tag).replace(/^v/, '')

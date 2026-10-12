@@ -200,7 +200,7 @@
 - 无库构建脚本、无 CI、无 Changesets / CHANGELOG，根目录无 `LICENSE` 文件
 - README「快速开始」仍标注「尚未发布」，文档站页脚硬编码 `v0.0.1`
 
-> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做：3.4（CI/CD）与 3.5（正式发布 rc），README「尚未发布」按 3.5 收口时移除。
+> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做：3.4（CI/CD）与 3.5（正式发布 rc），README「尚未发布」按 3.5 收口时移除。**补正（2026-10-12）**：3.3 的「CHANGELOG 自动生成」当时只有配置、从未真正跑通——`.changeset/config.json` 的 `changelog` 指向不存在的子路径（`@changesets/cli/changelog-git`）且 `fixed` 混入了 workspace 根包名，`changeset version` 直接退出 1，逐包 `CHANGELOG.md` 一个都没生成；现已修复并在一次性副本里演练通过，记录见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)。
 
 #### 3.1 包元数据与发布体检
 
@@ -219,7 +219,7 @@
 #### 3.3 版本与变更日志
 
 - [x] 接入 Changesets：包间依赖联动 + `rc` 预发布模式（`changeset pre enter rc` / `pre exit`）——**已接入**（`.changeset/config.json`：`fixed` 六包统一版本 + `privatePackages.version`；根脚本 `changeset` / `version:packages` / `release`；首个 changeset `.changeset/dry-pumas-build.md`）
-- [x] CHANGELOG 自动生成 + 逐包 `CHANGELOG.md`；沿用现有 emoji conventional commit 规范并固化到 `CONTRIBUTING`——**配置已在**（changelog 提供方 `@changesets/cli/changelog-git`，`changeset version` 生成逐包 CHANGELOG）；操作流程写进 `docs/release.md`
+- [x] CHANGELOG 自动生成 + 逐包 `CHANGELOG.md`；沿用现有 emoji conventional commit 规范并固化到 `CONTRIBUTING`——**已跑通**（changelog 提供方 `@changesets/cli/changelog`，`changeset version` 生成逐包 CHANGELOG）；起初误写成不存在的 `@changesets/cli/changelog-git` 子路径，导致 `changeset version` 退出 1、CHANGELOG 从未生成，2026-10-12 修复并实测通过；操作流程写进 `docs/release.md`
 - [x] 版本单一事实源：文档站页脚、README、`docs/todo.md` 标题一律从 `package.json` 读取或由发布流程注入，禁止硬编码——**已达成**：文档站经 `nuxt.config.ts` 读根 `package.json` 注入版本（`use-docs-version` 归一）；`scripts/version.mjs` 改为「统一到最大版本」以配合 Changesets
 
 #### 3.4 发布流水线（CI/CD）
@@ -233,7 +233,7 @@
 #### 3.5 正式发布 0.3.0-rc.1（按序执行）
 
 - [ ] 冻结范围：确认 0.3.0-rc.1 包含的组件与文档（与 0.1.0-rc.1 组件清单对齐），未完成项明确移出并记录
-- [ ] `changeset pre enter rc` → 全包 bump 到 `0.3.0-rc.1` → 构建 → 校验 → 发布 `--tag rc`
+- [ ] 先把基版本 seed 到 `0.3.0-rc.0`（`pnpm version:sync` 拉平根与全部子包）→ `changeset pre enter rc` → `pnpm version:packages` bump 到 `0.3.0-rc.1` → 构建 → 校验 → 发布 `--tag rc`（不 seed 只能得到 `0.0.2-rc.0`，seed 稳定版 `0.3.0` 得到的是 `0.3.1-rc.0`，实测见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)）
 - [ ] 发布后验证（干净目录、走公网 npm 安装）：组件可正常渲染、样式生效、`renderToString` 不抛错、peer 警告符合预期
 - [ ] 收口文档：README 去掉「尚未发布」、补安装与按需引入示例、更新组件进度表与版本号；文档站展示线上版本与更新日志
 - [ ] 打 git tag `v0.3.0-rc.1` + GitHub Release（附破坏性变更与已知问题清单）

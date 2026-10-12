@@ -23,20 +23,37 @@ pnpm changeset            # 交互式选择 bump 级别 + 填描述
 # 产物：.changeset/<随机名>.md
 ```
 
-- `fixed` 分组保证：任一 `@fluere-vue/*` 有 changeset，`changeset version` 会把六包 + 根
-  一并 bump 到同一新版本（`patch` / `minor` / `major` 按最大者）。
+- `fixed` 分组保证：任一 `@fluere-vue/*` 有 changeset，`changeset version` 会把六包一并
+  bump 到同一新版本（`patch` / `minor` / `major` 按最大者）；**workspace 根包不参与**
+  （changesets 不把根当包，写进 `fixed` 会被判 `Invalid path`），根版本由下面的
+  `version.mjs sync` 对齐。
 - 发布用 **rc 预发布模式**（`changeset pre enter rc`），避免污染 `latest`：
 
 ```bash
-pnpm exec changeset pre enter rc    # rc 预发布开始（生成 .changeset/pre.json）
-pnpm version:packages                # = changeset version && node scripts/version.mjs sync
+# ① 先把目标基版本写进根 package.json（版本单一事实源），再由 sync 拉平到全部子包。
+#    bump 只能从当前版本往上走：0.0.1 加 patch / minor 只会得到 0.0.2 / 0.1.0，到不了
+#    0.3.0；而稳定版 0.3.0 进 rc 后是 0.3.1-rc.0。要发 0.3.0-rc.1，基版本必须是
+#    0.3.0-rc.0（三种走法的实测见文末「版本流程演练记录」）。
+node -e "const fs=require('fs'),f='package.json',p=JSON.parse(fs.readFileSync(f,'utf8'));p.version='0.3.0-rc.0';fs.writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+pnpm version:sync                    # 0.3.0-rc.0 -> 根与全部子包
+
+# ② 进 rc 预发布模式（生成 .changeset/pre.json，需提交入库）
+pnpm exec changeset pre enter rc
+pnpm version:packages                # = changeset version && node scripts/version.mjs sync -> 0.3.0-rc.1
 pnpm build && pnpm test              # 构建 + 测试
 pnpm exec changeset publish --tag rc # 发布到 npm（dist-tag=rc）
 pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 stable 流程）
 ```
 
 `version:packages` 里的 `version.mjs sync` 会把根与所有子包拉平（以最大版本为准回写根），
-并在各发布包生成 `CHANGELOG.md`（changelog 提供方：`@changesets/cli/changelog-git`）。
+并在各发布包生成 `CHANGELOG.md`（changelog 提供方：`@changesets/cli/changelog`）。
+
+> **`changelog` 字段别写成 `@changesets/cli/changelog-git`**：cli 3.x 的 `exports` 只有
+> `.` / `./changelog` / `./commit` / `./package.json` / `./bin.js`，该子路径不存在，
+> `changeset version` 会在生成 CHANGELOG 时抛 `ERR_PACKAGE_PATH_NOT_EXPORTED` 并以 1 退出（实测）。
+> `@changesets/cli/changelog` 本身就是 `@changesets/changelog-git` 的再导出，语义一致。
+> `pnpm check` 的 `version:check`（[scripts/version.mjs](../scripts/version.mjs)）现已静态校验
+> 该字段能否解析、`fixed` / `linked` / `ignore` 里的包名是否真实存在，防止同类回归。
 
 ## 发布前质量闸
 
@@ -59,6 +76,23 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 
 - `pnpm build && pnpm smoke:dist` 本地复现产物链路（`smoke:dist` 需先 `build`）。
 - `npm pack --dry-run` 复核 tarball 内容与体积（不含源码测试、含 `dist/*.css` 与 `.d.ts`）。
+
+## 版本流程演练记录（2026-10-12）
+
+`.changeset/config.json` 曾有两处错误：`changelog` 写成不存在的 `@changesets/cli/changelog-git`，
+`fixed` 里放了 workspace 根包名 `fluere-vue`。后果是 `changeset version` 直接退出 1、
+六个包永远停在 `0.0.1`、逐包 `CHANGELOG.md` 从未生成（`changeset status` 会打印
+`Found issues in your config`）。修复后在同一提交上实测（`@changesets/cli@3.0.3`）：
+
+| 场景      | 命令                                                                                  | 实测结果                                                                      |
+| --------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 常规 bump | `changeset pre enter rc` → `changeset version`                                        | 六包 → `0.0.2-rc.0`，逐包 `CHANGELOG.md` 生成                                 |
+| 目标版本  | 根 seed `0.3.0-rc.0` → `pnpm version:sync` → `pre enter rc` → `pnpm version:packages` | 根 + 全部子包 → `0.3.0-rc.1`，`packages/ui/CHANGELOG.md` 首节 `## 0.3.0-rc.1` |
+| 反例      | 根 seed 稳定版 `0.3.0` → 同上                                                         | `0.3.1-rc.0`（**不是** `0.3.0-rc.1`）                                         |
+| 负向回归  | 还原两处坏写法 → `pnpm version:check`                                                 | 两条都被拦截，退出码 1                                                        |
+
+演练在 `git archive HEAD` 的一次性副本里执行，未改动工作区；`pnpm check` 里的
+`version:check` 已内置同样的静态校验。
 
 ## 回滚与补救
 
