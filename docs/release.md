@@ -146,10 +146,11 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 
 ### 两个已知陷阱（首次发布会踩）
 
-- **预发布会污染 `latest`**：changesets 自己会警告「packages that have not had normal releases
-  will be published to `latest`」——六个包首次发布时，即使处于 rc 预发布模式，`latest` 也会落在
-  `0.3.0-rc.1` 上。要满足 3.5 的「`latest` 未被预发布污染」，只能把**第一个版本发成稳定版**
-  （`0.3.0`）或接受首次 `latest` = rc 并在文档里说明；这是产品决策，见 `docs/todo.md` 3.5。
+- **首次发布会把 `latest` 一并占上（已决策：接受）**：changesets 自己会警告「packages that have not had
+  normal releases will be published to `latest`」——六个包首次发布时，即使处于 rc 预发布模式，`latest` 也会
+  落在 `0.3.0-rc.1` 上。**按原计划执行、不做特殊处理**：新包无存量用户，`0.3.0` 稳定版发布后 `latest` 自动
+  回指，届时恢复正常语义；发布说明与 GitHub Release 正文里要写明这条已知行为，避免被当成事故。
+  决策记录见 `docs/todo.md` 3.5 的「前置硬约束与已确认决策」。
 - **dist-tag 事后回指需要目标版本已存在**：`npm dist-tag add <pkg>@<版本> latest` 里的版本必须
   已经发布过，所以首次发布不能靠事后回指来「清掉」`latest`。
 
