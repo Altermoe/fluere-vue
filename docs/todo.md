@@ -224,7 +224,7 @@
 
 #### 3.4 发布流水线（CI/CD）
 
-- [ ] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`
+- [ ] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`——**文件已落地**（`.github/workflows/ci.yml`：check / test / docs / package-smoke 四个 job，后两个分别对应「预渲染校验」与「dist 产物冒烟」；pnpm 版本由 `pnpm/action-setup` 读 `packageManager`）。本机以 actionlint 1.7.7 校验通过、四个 job 的命令序列已在本地逐个跑通，**尚未在 GitHub 上实跑**，故不勾选。
 - [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按 `rc` / `next` tag 发布（**预发布不占 `latest`**），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）
 - [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）
 - [ ] 发布彩排：本地 verdaccio 或 `--dry-run` 走通全流程（含 dist 安装、SSR 渲染、CSS 引入）

@@ -1,0 +1,132 @@
+# GitHub Actions：PR 与 main 推送上的**验证**链路（不发布、不部署）。
+#
+# 与自建 OneDev（.onedev-buildspec.yml）保持同名同语义的 job，差别只在平台能力：
+# OneDev 用 node:26-alpine 容器 + scripts/ci-bootstrap.sh 装 pnpm，这里用
+# pnpm/action-setup —— Node 25 起发行版不再内置 corepack，不能靠 corepack 兑现
+# package.json 的 packageManager 字段。
+#
+# 为什么必须装「精确的 pnpm 版本」：pnpm 11 会把包管理器自身版本写进 pnpm-lock.yaml 的
+# packageManagerDependencies，运行期版本与 lockfile 记录不一致时
+# `pnpm install --frozen-lockfile` 会直接报 “lockfile is not up to date” 失败。
+# 因此这里**不写死版本号**，由 pnpm/action-setup 读根 package.json 的 packageManager
+# 字段（唯一版本源，与 scripts/ci-bootstrap.sh 同一口径）。
+#
+# job 划分（与 OneDev 一一对应）：
+#   check         —— lint / format / tsc / i18n / 版本一致性（含 .changeset/config.json 校验）
+#   test          —— vitest 全量
+#   docs          —— pnpm docs:generate：MDC 内容与双语路由可预渲染（产物不上传，部署在 OneDev）
+#   package-smoke —— dist 发布产物链路：build → pack → publint / attw → fixture 消费
+#
+# 发布链路（Changesets action → release PR → npm publish + provenance）走 release.yml，
+# 见 docs/todo.md 目标 3 的 3.4。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一 ref 上的旧运行被新提交取代后自动取消，省 runner 配额。
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# 验证链路只读仓库：不推提交、不发包、不读 OIDC token。
+permissions:
+  contents: read
+
+env:
+  # 与 OneDev 的 node:26-alpine 对齐；@nuxt/content 的原生 sqlite 连接器要求 Node >= 22.13。
+  # 版本只在 setup-node 的 .nvmrc / node-version 里出现一次，避免多处漂移。
+  NODE_VERSION: '26'
+
+jobs:
+  check:
+    name: check（lint / format / tsc / i18n / version）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      # 顺序不能反：setup-node 的 `cache: pnpm` 需要先有 pnpm 可执行文件。
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: lint / format / types / i18n / version
+        run: pnpm check
+
+  test:
+    name: test（vitest 全量）
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      - name: unit tests
+        run: pnpm test
+
+  docs:
+    name: docs（预渲染校验）
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      # 生成失败即内容/路由有问题；这里的产物的用途只是「证明能预渲染」，部署仍走 OneDev 的 deploy job。
+      - name: generate docs site
+        run: pnpm docs:generate
+
+  # 发布产物（dist）冒烟：仓库内各包 exports 指向源码（见 ADR-0001 §4.1），
+  # check / test / docs 全程只走源码，dist 无人解析，因此单独一条 job 兜住发布形态。
+  package-smoke:
+    name: package-smoke（dist 产物消费方冒烟）
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - name: install
+        run: pnpm install --frozen-lockfile
+      # 拓扑由 pnpm 保证：designs → hooks/themes/icons/utils → ui。
+      - name: build packages
+        run: pnpm build
+      # pack 出六个 tarball → publint / attw 校验入口声明 → 装进临时 fixture 以消费方身份
+      # 按包名/子路径导入并 SSR 渲染（scripts/smoke-dist.mjs，工作目录 temp/ 已 gitignore）。
+      - name: dist consumer smoke
+        run: pnpm smoke:dist
+      # 缺 dist 即硬失败：REQUIRE_DIST=1 让 dist-smoke 单测从「跳过」变「失败」。
+      - name: dist smoke unit test
+        run: REQUIRE_DIST=1 pnpm exec vitest run packages/ui/src/__tests__/dist-smoke.test.ts

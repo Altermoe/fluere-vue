@@ -146,6 +146,18 @@ CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）
 - 远端：`github` 为公开仓库，`onedev` = `${ONEDEV_REMOTE}`（生产 CI），`onedev-local` = `http://localhost:6610/fluere-vue.git`（本地 OneDev 演练）。
 - 本地复现 CI：`pnpm check`、`pnpm test`、`pnpm docs:generate`、`pnpm lint:buildspec`。
 
+GitHub Actions 上另有一条**验证**链路（[.github/workflows/ci.yml](./.github/workflows/ci.yml)），在 PR 与 `main` 推送时跑，不发布也不部署（部署仍只在 OneDev 的 tag 链路）：
+
+| job             | 内容                                                                                            |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| `check`         | `pnpm install --frozen-lockfile` → `pnpm check`（lint / format / tsc / i18n / version）         |
+| `test`          | `pnpm test`（vitest 全量）                                                                      |
+| `docs`          | `pnpm docs:generate`：内容与双语路由可预渲染（产物不上传，部署走 OneDev）                       |
+| `package-smoke` | `pnpm build` → `pnpm smoke:dist`（pack + publint / attw + fixture 消费）→ `REQUIRE_DIST=1` 单测 |
+
+- pnpm 版本**不写死**：Node 25 起发行版不再内置 corepack，workflow 由 `pnpm/action-setup` 读根 `package.json` 的 `packageManager`（与 OneDev 的 [scripts/ci-bootstrap.sh](./scripts/ci-bootstrap.sh) 同一口径）；版本不一致会让 `--frozen-lockfile` 直接失败。
+- npm 发布链路（Changesets action → release PR → `publish --tag rc` + provenance）尚未落地，见 [docs/todo.md](./docs/todo.md) 目标 3 的 3.4。
+
 ### 持续部署（CD）
 
 只有推 `v*` tag 才会部署，`main` 上的提交只做验证。deploy job 里跑 [scripts/deploy.sh](./scripts/deploy.sh)，它通过 job 容器挂进来的**宿主 docker socket** 操作宿主 docker（job executor 是 `ServerDockerExecutor` + `mountDockerSock`），因此 `docker run -v` 的路径按宿主解析。
