@@ -1,5 +1,10 @@
 {
   "extends": "../../tsconfig.web.json",
-  "include": ["index.ts", "src", "locales"],
-  "exclude": ["src/__tests__/dist-smoke.test.ts"]
+  "compilerOptions": {
+    // 本包含 Node 侧测试：src/__tests__/dist-smoke.test.ts 用 node:fs / node:path / node:url
+    // 与 process.env 探测 dist 产物，需显式引入 Node 环境类型（tsconfig.web.json 里是 types: []）。
+    // 仅补类型：组件源码仍不得依赖 Node 全局，SSR 约束由 pnpm lint:ssr 把关。
+    "types": ["node"]
+  },
+  "include": ["index.ts", "src", "locales"]
 }

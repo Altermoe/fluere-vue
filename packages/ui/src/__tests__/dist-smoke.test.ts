@@ -62,7 +62,8 @@ describe('dist 构建产物冒烟', () => {
 
       const app = createSSRApp({
         render: () =>
-          // @ts-expect-error -- 简化冒烟：组件来自动态 dist 产物，Props 类型在运行期才成立。
+          // 简化冒烟：组件来自动态 dist 产物（`unknown`），用 `as never` 绕过 Props 静态校验；
+          // 运行期正确性由下面的 SSR 渲染断言覆盖。
           h('div', [
             h(FluereButton as unknown as never, { appearance: 'primary' }, () => 'Go'),
             h(FluereCheckbox as unknown as never, { label: 'Sync' }),

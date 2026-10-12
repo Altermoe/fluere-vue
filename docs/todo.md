@@ -214,7 +214,7 @@
 - [x] 构建顺序按拓扑：`designs`（先跑令牌生成）→ `themes` / `icons` / `hooks` / `utils` → `ui`；`pnpm -r build` 保证依赖顺序——**已落地**（`pnpm -r --filter "./packages/*" build`）
 - [x] 产物形态：ESM 为主、CJS 兼容策略明确、`.d.ts` 完整、`tokens.css` 与图标按需导入可用；`vue` / `reka-ui` / `unocss` **外部化**——**纯 ESM**（用户已确认），`.d.ts` 完整（`ui` 用 `vue-tsc` 保精确 SFC Props），`tokens.css` / 图标按需可用，`vue`/`reka-ui`/`@fluere-vue/*` 外部化
 - [x] tree-shaking 验证：`sideEffects` 正确，按需引入单组件后的体积符合预期并记录基线——`// temp/treeshake` 实测：仅引 `FluereButton + useDisclosure + 1 图标` 消费产物体积 **62.13 kB（gzip 19.13 kB）**（对比全量 ui 297 kB / icons 12 MB）
-- [x] 扩展 `pnpm check` / `pnpm test`：至少新增一条「从 `dist` 引入并渲染」的冒烟用例——**`packages/ui/src/__tests__/dist-smoke.test.ts`**（从 dist 按 SSR 渲染多组件 + 纯 TS 包 dist 导入；未构建时自动跳过，已排除出 vue-tsc 纯类型检查）
+- [x] 扩展 `pnpm check` / `pnpm test`：至少新增一条「从 `dist` 引入并渲染」的冒烟用例——**`packages/ui/src/__tests__/dist-smoke.test.ts`**（从 dist 按 SSR 渲染多组件 + 纯 TS 包 dist 导入；未构建时自动跳过；已纳入 `vue-tsc` 类型检查——该文件用 `node:fs` / `node:path` / `node:url` 与 `process.env`，故 `packages/ui/tsconfig.json` 显式引入 Node 环境类型）
 
 #### 3.3 版本与变更日志
 
