@@ -174,6 +174,7 @@ ${DEPLOY_ROOT}/
 
 - 私有值：`DEPLOY_ROOT` 与 `DEPLOY_BIND` 属于「部署位置」，**不写进仓库**——每个 OneDev 实例各建同名构建密钥（授权 `on branch "**"`，分支与 tag 都放行），deploy job 以 `@secret:` 注入；缺密钥会让构建直接失败。本机演练从被 gitignore 的 `.env.local` 读（格式见 [.env.example](./.env.example)）。
 - 容器：镜像 `${NGINX_IMAGE}`，名字 `${DEPLOY_CONTAINER}`，**只发布到宿主回环地址（`${DEPLOY_BIND}`）**；容器内 nginx 只 `listen 80` 并直出 `current`。TLS 证书、域名、HSTS 一律交给上级运维系统（反向代理）处理，仓库里不出现证书配置。
+- 线上地址：`${DOCS_PUBLIC_URL}`（宿主反代终止 TLS 后对外提供）。它同时是 **AI / 自动化访问部署后产物的入口**——链路探活与视觉回归都从这里取页面，不要拿它当构建期依赖（构建只认 `current` 里的静态文件）。真实值在 `.env.local`，示例见 [.env.example](./.env.example)。
 - 配置：[deploy/nginx/fluere-vue.conf](./deploy/nginx/fluere-vue.conf)（缓存策略：`/_nuxt/` 一年 immutable、HTML 与 `_payload.json` 不缓存、`__nuxt_content/*/sql_dump.txt` 不缓存）+ [security-headers.inc](./deploy/nginx/security-headers.inc)。配置里的 `__DEPLOY_ROOT__` 由脚本替换，所以改根目录不用改两份。
 - 健康检查（不过就回滚 `current` 并以非零码退出）：首页字节与 release 的 `index.html` 一致 + 首页出现本次 tag 版本号 + 未知路径返回 404。
 - 本地演练（不需要 CI）：先 `pnpm docs:generate`，再 `. ./.env.local && SITE_DIR=apps/docs/.output/public sh scripts/deploy.sh v0.0.1`（脚本读 `SITE_DIR`，默认是 CI 里 artifact 落地的 `site/`）。
