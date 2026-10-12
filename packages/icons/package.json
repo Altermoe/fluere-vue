@@ -21,7 +21,6 @@
   "files": [
     "dist",
     "generated",
-    "src",
     "README.md"
   ],
   "type": "module",

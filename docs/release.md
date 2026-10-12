@@ -128,7 +128,7 @@ pnpm exec changeset publish          # pre 模式：不加 --tag
 | CSS 引入      | `import '@fluere-vue/ui/style.css'` 经 Vite 构建进产物（107.5 kB CSS，含 `fui-button`）              |
 | 纯类型引用    | 消费方 `vue-tsc --noEmit` **exit 0**（工具链对齐仓库：vue-tsc 3.3.8 + typescript 6.0.3）             |
 
-彩排抓到的三件事（前两条已改文档，第三条记为待办）：
+彩排抓到的三件事（前两条已改文档，第三条已修复）：
 
 1. **pre 模式下不能传 `--tag`**：`changeset publish --tag rc` 报
    `Releasing under custom tag is not allowed in pre mode!` 并退出 1。本手册原先的写法是错的，已改。
@@ -137,10 +137,15 @@ pnpm exec changeset publish          # pre 模式：不加 --tag
    `import '@fluere-vue/designs/tokens.css'`（来自 `packages/ui/index.ts` 的入口 import），
    `skipLibCheck: false` 时同样报 `TS2882`。结论：消费方需要 `skipLibCheck: true`（多数模板默认如此）
    或自行 `declare module '*.css'`。
-3. **tarball 仍带源码**：`ui` 的 `files` 含 `src/`，安装后 `src` 1.5 MB vs `dist` 2.1 MB；
-   `designs`(8 KB) / `icons`(12 KB) / `themes` 也带 `src`。与 3.4 质量闸「不含源码」不符，
-   但 `dist/src/**`（`.d.ts` 产物）是 `dist/index.d.ts` 的依赖，**不能删**。
-   另：`icons` 解包后 **29 MB**，是六个包里唯一的体积异类，发布前值得单独复核。
+3. **tarball 曾带源码（已修复）**：`ui` / `designs` / `icons` / `themes` 的 `files` 曾含顶层
+   `src/`，安装后 `ui` 的 `src` 1.5 MB（约 `dist` 的 70%），与 3.4 质量闸「不含源码」不符。
+   修法：从这四包的 `files` 移除顶层 `src`——消费方入口全部由 `publishConfig` 指向 `dist`；
+   而 `dist/src/**`（`.d.ts` 产物）是 `dist/index.d.ts` 的类型图依赖（`.d.ts` 内相对导入
+   形如 `./src/<component>/*.vue`），**不能删**，它随 `dist` 保留。
+   实测修复后：`ui` tarball 250→102 文件、790→471 kB（unpacked 3.1→1.9 MB）；
+   `pnpm smoke:dist` 复验消费方链路（六包安装 + publint/attw + SSR 渲染 + CSS 子路径）通过。
+   另：`icons` 解包后仍 **~43 MB**（主要是 `generated/` 图标数据，非源码），六个包里唯一的
+   体积异类，发布前值得单独复核。
 
 **本次彩排没有覆盖**（所以 3.4 的「发布彩排」勾选不代表这些已验证）：OIDC trusted publishing 与
 provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish` job 建 GitHub Release 的部分、
