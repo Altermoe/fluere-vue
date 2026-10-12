@@ -101,14 +101,19 @@ jobs:
           commit-message: 'chore(release): 🔥 发布版本'
           pr-title: 'chore(release): 🔥 发布版本'
 
-  # 无 changeset 且有未发布的版本：构建产物、跑发布前质量闸、按发布计划打成 tarball。
+  # 无 changeset 且有未发布的版本：自证 check / test、构建产物、跑发布前质量闸、按发布计划打成 tarball。
   # 本 job 不碰 npm，也就不需要任何写权限。
+  #
+  # 为什么在这里再跑一遍 check + test（而不是只依赖 ci.yml）：release PR 由 github-actions[bot]
+  # 用默认 GITHUB_TOKEN 推送，触发不了其它 workflow（GitHub 的防递归规则，实测 PR #2 的
+  # check runs 为 0），所以「发布 PR 上的 CI」实际上不存在；合并后的 push 虽会触发 ci.yml，
+  # 但与 release.yml 并行、拦不住发布。发布链路必须自己把关，故在此自证，失败即不出包。
   pack:
-    name: pack（build + 质量闸 + 打 tarball）
+    name: pack（check / test + build + 质量闸 + 打 tarball）
     if: needs.select-mode.outputs.mode == 'publish'
     needs: select-mode
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     outputs:
       pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
     permissions:
@@ -126,6 +131,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - name: install
         run: pnpm install --frozen-lockfile
+      # 发布自证：lint / format / tsc / i18n / 版本一致性 + 全量单测。
+      - name: verify release commit
+        run: pnpm check && pnpm test
       - name: build packages
         run: pnpm build
       # 发布前质量闸：pack + publint / attw + 消费方 fixture 安装与 SSR 渲染。

@@ -123,15 +123,20 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 [.github/workflows/release.yml](../.github/workflows/release.yml)：`push main`（或手动 dispatch，仅限 main）触发，
 按 Changesets v3 + npm Trusted Publishing 的官方推荐拆成四个 job：
 
-| job           | 条件              | 权限                                      | 做什么                                                                |
-| ------------- | ----------------- | ----------------------------------------- | --------------------------------------------------------------------- |
-| `select-mode` | 总是              | `contents: read`                          | 判定 `version` / `publish` / `none`（有 changeset 就开 PR，没有就发） |
-| `version`     | `mode == version` | `contents: write`、`pull-requests: write` | `pnpm version:packages` → 开/更新 release PR                          |
-| `pack`        | `mode == publish` | `contents: read`                          | `pnpm build` → `pnpm smoke:dist`（质量闸）→ 按发布计划打 tarball      |
-| `publish`     | `needs: pack`     | `contents: write`、`id-token: write`      | 只上传 pack 出来的 tarball；打 tag + 建 GitHub Release                |
+| job           | 条件              | 权限                                      | 做什么                                                                           |
+| ------------- | ----------------- | ----------------------------------------- | -------------------------------------------------------------------------------- |
+| `select-mode` | 总是              | `contents: read`                          | 判定 `version` / `publish` / `none`（有 changeset 就开 PR，没有就发）            |
+| `version`     | `mode == version` | `contents: write`、`pull-requests: write` | `pnpm version:packages` → 开/更新 release PR                                     |
+| `pack`        | `mode == publish` | `contents: read`                          | `pnpm check && pnpm test`（自证）→ `pnpm build` → `pnpm smoke:dist` → 打 tarball |
+| `publish`     | `needs: pack`     | `contents: write`、`id-token: write`      | 只上传 pack 出来的 tarball；打 tag + 建 GitHub Release                           |
 
 `id-token: write` **只给 publish job**：npm 与 Changesets 都要求这样，否则任何在 version 步骤里
 跑起来的代码都能换到 OIDC 令牌去发包；顶层 `permissions: {}` 归零，逐 job 显式声明。
+
+**为什么 `pack` 里要自己跑一遍 `check` + `test`**：release PR 由 `github-actions[bot]` 用默认
+`GITHUB_TOKEN` 推送，而 GitHub 的防递归规则决定它**触发不了其它 workflow**（2026-10-12 实测：
+PR #2 的 check runs 为 0）。合并后的 push 到 `main` 虽然会触发 `ci.yml`，但与 `release.yml`
+**并行**跑、拦不住发布。所以发布链路必须自证，失败即不出包。
 
 ### 一次性准备（人工，仓库里改不了）
 
@@ -158,8 +163,27 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 - **dist-tag 事后回指需要目标版本已存在**：`npm dist-tag add <pkg>@<版本> latest` 里的版本必须
   已经发布过，所以首次发布不能靠事后回指来「清掉」`latest`。
 
-### 尚未自动化
+### 线上实测记录（2026-10-12，GitHub Actions）
 
-- 本机无法执行 GitHub workflow：本文件的 `release.yml` 只过了 actionlint（1.7.7）静态校验，
-  首次真实运行前请先用一次真实 release 验证（`select-mode` 的判定、artifact 在 job 间的传递）。
+首次把两个 workflow 推上 `main`（`6b41042`）后的真实运行结果：
+
+| run                                                                            | workflow  | 结果                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) | `CI`      | `check` / `test` / `docs` / `package-smoke` **四个 job 全绿**                                                                                                                                                        |
+| [38214601257](https://github.com/Altermoe/fluere-vue/actions/runs/38214601257) | `Release` | `select-mode` 判定 `version` → `version` **成功**，开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件：根 + 六包版本与 CHANGELOG，`apps/*` 未被改动）；`pack` / `publish` 按预期 skipped |
+
+同一轮里被线上抓出并修掉的问题（`38214181271` → 修复于 `6b41042`）：`version.mjs sync` 曾把
+private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判为变更包并去读
+`apps/docs/CHANGELOG.md`，version job 以 `ENOENT` 失败。修复后 `sync` / `check` 只覆盖六个
+可发布包（见上文「版本策略」）。
+
+### 尚未自动化 / 尚未线上验证
+
+- **`pack` 与 `publish` 两个 job 还没在线上跑过**：它们只在 `mode == publish`（即 release PR 合并、
+  main 上不再有 changeset）时执行，需要一次真实发布才能验证。首次 bootstrap 发布前请留出时间观察。
+- **release PR 拿不到 CI 检查**（`GITHUB_TOKEN` 防递归，见上文），已用 `pack` 里的自证步骤兜住；
+  若希望 PR 上也有绿勾，需要给 action 配 PAT / GitHub App token，属于后续可选项。
+- `actions/checkout@v4` / `setup-node@v4` / `pnpm/action-setup@v4` 在 runner 上已被提示
+  「targets Node.js 20 but is being forced to run on Node.js 24」，暂不阻塞；升级 action 大版本前
+  需先确认新版输入名（如 setup-node 的缓存开关已改名）。
 - `npm pack --dry-run` 复核仍是人工步骤（见上文「仅发布时人工」）。
