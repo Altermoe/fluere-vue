@@ -172,7 +172,7 @@ ${DEPLOY_ROOT}/
 └── current -> releases/<tag> # 原子切换的符号链接，回滚就是切回上一个
 ```
 
-- 私有值：`DEPLOY_ROOT` 与 `DEPLOY_BIND` 属于「部署位置」，**不写进仓库**——每个 OneDev 实例各建同名构建密钥（授权 `on branch "**"`，分支与 tag 都放行），deploy job 以 `@secret:` 注入；缺密钥会让构建直接失败。本机演练从被 gitignore 的 `.env.local` 读（格式见 [.env.example](./.env.example)）。
+- 私有值：`DEPLOY_ROOT` 与 `DEPLOY_BIND` 属于「部署位置」，**不写进仓库**——每个 OneDev 实例各建同名构建密钥（授权 `on branch "**"`），deploy job 以 `@secret:` 注入；缺密钥会让构建直接失败。**密钥授权按「提交可达性」判定**：构建提交必须能从某个匹配分支到达，所以**部署 tag 必须打在 `main` 已包含的提交上**——把 tag 打在只有 tag 能到的提交上，会在调度前直接失败（`No authorized job secret found`），一步都不会跑。本机演练从被 gitignore 的 `.env.local` 读（格式见 [.env.example](./.env.example)）。
 - 容器：镜像 `${NGINX_IMAGE}`，名字 `${DEPLOY_CONTAINER}`，**只发布到宿主回环地址（`${DEPLOY_BIND}`）**；容器内 nginx 只 `listen 80` 并直出 `current`。TLS 证书、域名、HSTS 一律交给上级运维系统（反向代理）处理，仓库里不出现证书配置。
 - 线上地址：`${DOCS_PUBLIC_URL}`（宿主反代终止 TLS 后对外提供）。它同时是 **AI / 自动化访问部署后产物的入口**——链路探活与视觉回归都从这里取页面，不要拿它当构建期依赖（构建只认 `current` 里的静态文件）。真实值在 `.env.local`，示例见 [.env.example](./.env.example)。
 - 配置：[deploy/nginx/fluere-vue.conf](./deploy/nginx/fluere-vue.conf)（缓存策略：`/_nuxt/` 一年 immutable、HTML 与 `_payload.json` 不缓存、`__nuxt_content/*/sql_dump.txt` 不缓存）+ [security-headers.inc](./deploy/nginx/security-headers.inc)。配置里的 `__DEPLOY_ROOT__` 由脚本替换，所以改根目录不用改两份。
