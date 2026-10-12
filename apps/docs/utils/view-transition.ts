@@ -54,11 +54,17 @@ const MIDPOINT_FACTOR = 0.5
 /** 覆盖最远角时预留的半径余量，避免边界像素漏出旧快照 */
 const RADIUS_SAFETY = 1.02
 
-/** 兜底的动效参数（token 不可用时）：对齐 --durationSlower / --curveDecelerateMid */
-const FALLBACK_DURATION_MS = 400
-const FALLBACK_EASING = 'cubic-bezier(0,0,0,1)'
+/** 兜底的动效参数（token 不可用时）：与下方两个 token 的取值对齐 */
+const FALLBACK_DURATION_MS = 500
+const FALLBACK_EASING = 'cubic-bezier(0.33,0,0.67,1)'
 const DURATION_TOKEN = '--durationUltraSlow'
 const EASING_TOKEN = '--curveEasyEase'
+
+/** CSS `<time>`：数字 + 可选单位（大小写不敏感）；无单位按毫秒（WAAPI 的惯用写法） */
+const CSS_TIME_PATTERN = /^(?<amount>\d+(?:\.\d+)?|\.\d+)(?<unit>ms|s)?$/i
+
+/** 一秒的毫秒数：`s` 单位换算用 */
+const MS_PER_SECOND = 1000
 
 /**
  * `clip-path: circle()` 半径百分比的参考长度：√(width² + height²) / √2。
@@ -101,10 +107,27 @@ const readToken = (name: string, fallback: string) => {
   return value || fallback
 }
 
-const readDuration = () => {
-  const parsed = Number.parseFloat(readToken(DURATION_TOKEN, String(FALLBACK_DURATION_MS)))
-  return Number.isFinite(parsed) ? parsed : FALLBACK_DURATION_MS
+/**
+ * 把 CSS 时间值解析成毫秒，按 `ms` / `s` 单位区分。
+ *
+ * 为什么不直接 `Number.parseFloat`：自定义属性的值会被 CSS 压缩器改写单位 ——
+ * 生产构建把 `--durationUltraSlow: 500ms` 压成 `.5s`（dev 下是未压缩的 `500ms`），
+ * 而 `parseFloat('.5s')` = `0.5`，会被 WAAPI 当成 **0.5 毫秒**：圆形揭示退化成瞬时，
+ * 只剩阻断交互的快照覆盖层。这是线上 0.3.0-alpha.1「看不到圆扩散」的真实根因，
+ * 只在生产构建下复现（修复前实测 `Element.prototype.animate` 收到的 `duration` 就是
+ * `0.5`，修复后是 `500`；契约测试与测量方法见 utils/__tests__/view-transition.test.ts）。
+ */
+const parseCssTimeMs = (value: string | null | undefined, fallback: number): number => {
+  const match = CSS_TIME_PATTERN.exec(String(value ?? '').trim())
+  const amount = Number.parseFloat(match?.groups?.amount ?? '')
+  if (!Number.isFinite(amount) || amount < 0) {
+    return fallback
+  }
+  return match?.groups?.unit?.toLowerCase() === 's' ? amount * MS_PER_SECOND : amount
 }
+
+const readDuration = () =>
+  parseCssTimeMs(readToken(DURATION_TOKEN, String(FALLBACK_DURATION_MS)), FALLBACK_DURATION_MS)
 
 /** 键盘激活（Enter/Space）的 MouseEvent 坐标恒为 0，此时回退到按钮中心 */
 const resolveCenter = (
@@ -195,5 +218,5 @@ const runCircularReveal = async ({
   }
 }
 
-export { circleRadiusReference, resolveCircularReveal, runCircularReveal }
+export { circleRadiusReference, parseCssTimeMs, resolveCircularReveal, runCircularReveal }
 export type { CircularReveal, CircularRevealOptions, ViewportPoint }
