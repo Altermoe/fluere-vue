@@ -5,8 +5,8 @@
  * 全仓 `@fluere-vue/*`（含根 workspace）统一使用同一个版本号（Changesets `fixed`
  * 分组约束，见 .changeset/config.json）。本脚本负责「把它们拉平」与「校验它们一致」：
  *
- *   node scripts/version.mjs sync                  # 取 根 package.json 与所有子包 里的最大版本，统一写入根与全部子包
- *   node scripts/version.mjs check                 # 校验所有子包版本彼此一致，且与根版本一致；同时校验 .changeset/config.json
+ *   node scripts/version.mjs sync                  # 取 根 package.json 与所有可发布包 里的最大版本，统一写入根与这些包
+ *   node scripts/version.mjs check                 # 校验可发布包版本彼此一致，且与根版本一致；同时校验 .changeset/config.json
  *   node scripts/version.mjs check --tag v0.1.0    # 额外校验 git tag 与根版本一致（CI）
  *
  * 退出码：0 = 通过；1 = 不一致（打印每一处偏差）。
@@ -20,8 +20,21 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
-/** 与 pnpm-workspace.yaml 的 `packages:` 保持一致（子包只在这两个目录下）。 */
-const WORKSPACE_DIRS = ['apps', 'packages']
+/**
+ * 参与版本同步的目录：**只有 `packages/`**（六个可发布库包）。
+ *
+ * 为什么刻意排除 `apps/*`（`@fluere-vue/docs` / `playground`）：它们是 private、从不发布，
+ * changesets 的 `ignore` 也跳过它们；而 changesets/action 的 version 步骤用「版本号是否变化」
+ * 判定变更包，并对每个变更包读 `<pkg.dir>/CHANGELOG.md`（action v2 的 src/run.ts）。
+ * 一旦把 apps 的版本也改掉，action 就会去找并不存在的 `apps/docs/CHANGELOG.md` 并抛
+ * ENOENT，release job 直接失败（2026-10-12 在 GitHub 上实测到该失败）。
+ *
+ * 文档站展示的版本号读的是**根** `package.json`（apps/docs/nuxt.config.ts），与 apps 自身版本无关。
+ */
+const WORKSPACE_DIRS = ['packages']
+
+/** workspace 的全部包目录（含 private 的 `apps/*`）：仅用于校验 config 里的包名是否存在。 */
+const ALL_WORKSPACE_DIRS = ['apps', 'packages']
 
 const rootPkgPath = join(ROOT, 'package.json')
 
@@ -30,10 +43,10 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'))
 }
 
-/** 收集所有需要同步版本的子包 package.json 路径。 */
-function collectTargets() {
+/** 收集指定目录下的 package.json 路径（workspace 包 = 这些目录下的一级子目录）。 */
+function collectPackageJsons(dirs) {
   const targets = []
-  for (const dir of WORKSPACE_DIRS) {
+  for (const dir of dirs) {
     const abs = join(ROOT, dir)
     if (!existsSync(abs)) {
       continue
@@ -49,6 +62,16 @@ function collectTargets() {
     }
   }
   return targets
+}
+
+/** 需要同步版本的包：只有可发布包（见 WORKSPACE_DIRS 注释）。 */
+function collectTargets() {
+  return collectPackageJsons(WORKSPACE_DIRS)
+}
+
+/** 全部 workspace 包（含 private 的 apps/*）：供 `.changeset/config.json` 的包名校验使用。 */
+function collectAllWorkspacePackages() {
+  return collectPackageJsons(ALL_WORKSPACE_DIRS)
 }
 
 function rel(path) {
@@ -96,8 +119,8 @@ function writeVersion(path, version) {
 }
 
 function cmdSync() {
-  // 目标版本 = 根与所有子包的「最大版本」；changeset 固定分组 bump 后，根会偏旧，
-  // 以最大者（子包）为准回写根并把全部子包拉平。
+  // 目标版本 = 根与所有可发布包的「最大版本」；changeset 固定分组 bump 后，根会偏旧，
+  // 以最大者（可发布包）为准回写根并把它们拉平。apps/* 不参与（见 WORKSPACE_DIRS 注释）。
   const targets = collectTargets()
   const versions = [readJson(rootPkgPath).version, ...targets.map((p) => readJson(p).version)]
   const target = versions.filter(Boolean).reduce(maxVersion)
@@ -113,7 +136,7 @@ function cmdSync() {
   }
   console.log(
     changed === 0
-      ? `已同步：根与全部 ${targets.length} 个子包均为 ${target}`
+      ? `已同步：根与全部 ${targets.length} 个可发布包均为 ${target}`
       : `已更新 ${changed} 处 -> ${target}`,
   )
 }
@@ -165,7 +188,9 @@ function checkChangesetConfig(problems) {
   }
 
   const workspaceNames = new Set(
-    collectTargets()
+    // 必须是「全部 workspace 包」：`ignore` 里合法地引用 private 的 apps/*（docs / playground），
+    // 它们不在版本同步范围内，但确实是存在的包。
+    collectAllWorkspacePackages()
       .map((path) => readJson(path).name)
       .filter(Boolean),
   )
@@ -196,12 +221,14 @@ function cmdCheck(tag) {
   const targets = collectTargets()
   const rootVersion = readJson(rootPkgPath).version
   if (targets.length === 0) {
-    problems.push('未找到任何子包 package.json（检查 pnpm-workspace.yaml 的 packages 目录）')
+    problems.push('未找到任何可发布包 package.json（检查 pnpm-workspace.yaml 的 packages 目录）')
   }
 
   const subVersions = new Set(targets.map((p) => readJson(p).version))
   if (subVersions.size > 1) {
-    problems.push(`子包版本不统一：${[...subVersions].join(' / ')}（请先执行 pnpm version:sync）`)
+    problems.push(
+      `可发布包版本不统一：${[...subVersions].join(' / ')}（请先执行 pnpm version:sync）`,
+    )
   }
   for (const path of targets) {
     const actual = readJson(path).version
@@ -231,7 +258,7 @@ function cmdCheck(tag) {
     process.exit(1)
   }
   console.log(
-    `版本一致性检查通过：根版本 ${rootVersion}，子包 ${targets.length} 个${tag ? `，tag ${tag}` : ''}`,
+    `版本一致性检查通过：根版本 ${rootVersion}，可发布包 ${targets.length} 个${tag ? `，tag ${tag}` : ''}`,
   )
 }
 

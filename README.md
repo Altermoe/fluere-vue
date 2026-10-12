@@ -140,7 +140,7 @@ CI 跑在自建 OneDev 上（[.onedev-buildspec.yml](./.onedev-buildspec.yml)）
 
 约定：
 
-- **版本号唯一事实源是仓库根** **`package.json`**：`pnpm version:sync` 把版本写进全部子包，`pnpm version:check` 校验一致性；推 tag 时 CI 额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。文档站页面版本号读 `runtimeConfig.public.docsVersion`（CI 由 tag 注入 `NUXT_PUBLIC_DOCS_VERSION`，本地回退根版本），不要在页面里硬编码。
+- **版本号唯一事实源是仓库根** **`package.json`**：`pnpm version:sync` 把版本写进**六个可发布包**（`packages/*`）并回写根，`pnpm version:check` 校验一致性；推 tag 时 CI 额外校验「tag 去掉 v 前缀 == 根版本」，不一致直接失败。**`apps/*` 刻意不参与同步**（private、changesets 已 `ignore`）——否则 changesets action 会把它们判为「变更包」并去读不存在的 `apps/docs/CHANGELOG.md`，release job 直接失败。文档站页面版本号读 `runtimeConfig.public.docsVersion`（CI 由 tag 注入 `NUXT_PUBLIC_DOCS_VERSION`，本地回退根版本），不要在页面里硬编码。
 - `pnpm-lock.yaml` **必须入库**：CI 用 `--frozen-lockfile` 复现依赖树，缓存键也取自它 + `pnpm-workspace.yaml` + `.npmrc`。
 - 出网代理放在 OneDev 构建密钥 `CI_HTTP_PROXY`（见 [scripts/ci-env.sh](./scripts/ci-env.sh)）：任务容器里的 `localhost` 指向容器自身，宿主代理必须写成宿主可达地址（生产实测为 `${CI_HTTP_PROXY}`），`none` / 空值表示直连。
 - 远端：`github` 为公开仓库，`onedev` = `${ONEDEV_REMOTE}`（生产 CI），`onedev-local` = `http://localhost:6610/fluere-vue.git`（本地 OneDev 演练）。

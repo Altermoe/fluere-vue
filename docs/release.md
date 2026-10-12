@@ -11,6 +11,10 @@
 - **统一版本号**：`@fluere-vue/designs` / `hooks` / `icons` / `themes` / `ui` / `utils`
   六个包**始终同版本**（Changesets `fixed` 分组 + `scripts/version.mjs` 双重约束）。
   根 workspace `package.json` 的 `version` 是该统一版本的镜像（文档站页脚等读取它）。
+- **`apps/*` 不参与版本同步**：`@fluere-vue/docs` / `playground` 是 private、从不发布，
+  changesets 的 `ignore` 已跳过它们。`version.mjs sync` 只写根 + 六个可发布包——一旦连
+  `apps/*` 的版本也改掉，changesets/action 的 version 步骤会把它们判为「变更包」并去读
+  `apps/docs/CHANGELOG.md`（该文件不存在），release job 直接 ENOENT 失败（2026-10-12 实测）。
 - 版本号单一事实源 = **根 `package.json`**；文档站由 `nuxt.config.ts` 读取它注入
   `runtimeConfig`（`use-docs-version` 归一 `v` 前缀）。禁止在 README / 页脚手写版本。
 
@@ -30,12 +34,12 @@ pnpm changeset            # 交互式选择 bump 级别 + 填描述
 - 发布用 **rc 预发布模式**（`changeset pre enter rc`），避免污染 `latest`：
 
 ```bash
-# ① 先把目标基版本写进根 package.json（版本单一事实源），再由 sync 拉平到全部子包。
+# ① 先把目标基版本写进根 package.json（版本单一事实源），再由 sync 拉平到六个可发布包。
 #    bump 只能从当前版本往上走：0.0.1 加 patch / minor 只会得到 0.0.2 / 0.1.0，到不了
 #    0.3.0；而稳定版 0.3.0 进 rc 后是 0.3.1-rc.0。要发 0.3.0-rc.1，基版本必须是
 #    0.3.0-rc.0（三种走法的实测见文末「版本流程演练记录」）。
 node -e "const fs=require('fs'),f='package.json',p=JSON.parse(fs.readFileSync(f,'utf8'));p.version='0.3.0-rc.0';fs.writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
-pnpm version:sync                    # 0.3.0-rc.0 -> 根与全部子包
+pnpm version:sync                    # 0.3.0-rc.0 -> 根与六个可发布包
 
 # ② 进 rc 预发布模式（生成 .changeset/pre.json，需提交入库）
 pnpm exec changeset pre enter rc
@@ -45,7 +49,7 @@ pnpm exec changeset publish --tag rc # 发布到 npm（dist-tag=rc）
 pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 stable 流程）
 ```
 
-`version:packages` 里的 `version.mjs sync` 会把根与所有子包拉平（以最大版本为准回写根），
+`version:packages` 里的 `version.mjs sync` 会把根与六个可发布包拉平（以最大版本为准回写根），
 并在各发布包生成 `CHANGELOG.md`（changelog 提供方：`@changesets/cli/changelog`）。
 
 > **`changelog` 字段别写成 `@changesets/cli/changelog-git`**：cli 3.x 的 `exports` 只有

@@ -233,7 +233,7 @@
 #### 3.5 正式发布 0.3.0-rc.1（按序执行）
 
 - [ ] 冻结范围：确认 0.3.0-rc.1 包含的组件与文档（与 0.1.0-rc.1 组件清单对齐），未完成项明确移出并记录
-- [ ] 先把基版本 seed 到 `0.3.0-rc.0`（`pnpm version:sync` 拉平根与全部子包）→ `changeset pre enter rc` → `pnpm version:packages` bump 到 `0.3.0-rc.1` → 构建 → 校验 → 发布 `--tag rc`（不 seed 只能得到 `0.0.2-rc.0`，seed 稳定版 `0.3.0` 得到的是 `0.3.1-rc.0`，实测见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)）
+- [ ] 先把基版本 seed 到 `0.3.0-rc.0`（`pnpm version:sync` 拉平根与六个可发布包，`apps/*` 不参与）→ `changeset pre enter rc` → `pnpm version:packages` bump 到 `0.3.0-rc.1` → 构建 → 校验 → 发布 `--tag rc`（不 seed 只能得到 `0.0.2-rc.0`，seed 稳定版 `0.3.0` 得到的是 `0.3.1-rc.0`，实测见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)）
 - [ ] 发布后验证（干净目录、走公网 npm 安装）：组件可正常渲染、样式生效、`renderToString` 不抛错、peer 警告符合预期
 - [ ] 收口文档：README 去掉「尚未发布」、补安装与按需引入示例、更新组件进度表与版本号；文档站展示线上版本与更新日志
 - [ ] 打 git tag `v0.3.0-rc.1` + GitHub Release（附破坏性变更与已知问题清单）
