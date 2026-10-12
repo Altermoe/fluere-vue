@@ -3,7 +3,7 @@ version: 53
 # CI/CD。
 #
 # 结构：check / test / build / package-smoke 四个**并行** job，共享同一份 pnpm store 缓存
-# （key=pnpm-store），任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
+# （key=pnpm-store-v2），任一环节失败都能在 OneDev 里单独定位；build 额外把文档站静态产物
 # （apps/docs/.output/public）发布成 artifact。
 # package-smoke 专门验证**发布产物链路**（dist）：仓库内各包 exports 指向源码
 # （ADR-0001 §4.1），其余 job 全程走源码，dist 无人解析——本 job 先 pnpm build 出 dist，
@@ -28,7 +28,11 @@ version: 53
 # - 缓存只收 pnpm store（下载缓存），**不收 node_modules**：pnpm 的 workspace 链接
 #   （node_modules/@fluere-vue/*、.pnpm/node_modules/*）是指向缓存目录之外的符号链接，
 #   OneDev 解包时的符号链接逃逸防护会直接判缓存恢复失败（Tar entry symbol link escape
-#   detected），导致整个 job 挂掉。
+#   detected），导致整个 job 挂掉。同一类逃逸还有第二个来源：pnpm v11 会把用过该 store 的
+#   工程记成 `<store>/v11/projects/<hash> -> <工程目录>`，smoke-dist 的 fixture 在仓库内，
+#   于是 package-smoke 会把带逃逸链接的 store 传成共用缓存，之后**所有** job 恢复缓存都失败。
+#   现在 fixture 改用独立 store（scripts/smoke-dist.mjs），key 升到 pnpm-store-v2 以丢弃
+#   已污染的 v1 条目（2026-10-12 在 nahida 线上实测）。
 jobs:
   - name: check
     jobExecutor: docker
@@ -64,7 +68,7 @@ jobs:
         optional: false
       - type: SetupCacheStep
         name: restore pnpm store
-        key: pnpm-store
+        key: pnpm-store-v2
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
@@ -123,7 +127,7 @@ jobs:
         optional: false
       - type: SetupCacheStep
         name: restore pnpm store
-        key: pnpm-store
+        key: pnpm-store-v2
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
@@ -174,7 +178,7 @@ jobs:
         optional: false
       - type: SetupCacheStep
         name: restore pnpm store
-        key: pnpm-store
+        key: pnpm-store-v2
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
@@ -253,7 +257,7 @@ jobs:
         optional: false
       - type: SetupCacheStep
         name: restore pnpm store
-        key: pnpm-store
+        key: pnpm-store-v2
         checksumFiles: pnpm-lock.yaml pnpm-workspace.yaml .npmrc
         entries:
           - path: .pnpm-store
@@ -333,7 +337,10 @@ jobs:
           - name: DEPLOY_TAG
             value: '@tag@'
           # 部署位置类私有值不进仓库（仓库公开）：真实值放 OneDev 构建密钥，两个实例各一份，
-          # 授权写 `on branch "**"`（分支与 tag 都匹配）。缺密钥会在此处直接失败。
+          # 授权写 `on branch "**"`。注意 OneDev 的密钥授权是**按提交可达性**判定的：只有构建
+          # 提交能从某个匹配分支到达时密钥才可用（见 docs 的 job-secrets / branch-job-secret）。
+          # 因此 **部署 tag 必须打在 main 已包含的提交上**；tag 独享的提交会在这里直接失败
+          # （No authorized job secret found），所有 job 一步都跑不了。缺密钥同样直接失败。
           - name: DEPLOY_ROOT
             value: '@secret:DEPLOY_ROOT@'
           - name: DEPLOY_BIND

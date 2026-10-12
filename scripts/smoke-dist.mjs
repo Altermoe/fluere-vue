@@ -146,13 +146,13 @@ function writeFixture() {
 
 function installAndRender() {
   section('安装 tarball 并以消费方身份 SSR 渲染')
-  // 复用 CI 的 pnpm store（root 跑过 `pnpm install --store-dir .pnpm-store`）避免重复下载。
-  const storeDir = join(ROOT, '.pnpm-store')
-  const installArgs = ['install', '--no-frozen-lockfile']
-  if (existsSync(storeDir)) {
-    installArgs.push('--store-dir', storeDir)
-  }
-  run('pnpm', installArgs, FIXTURE)
+  // 刻意**不复用** CI 的 `.pnpm-store`（曾经复用，是错的）：pnpm v11 会把每个用过该 store
+  // 的工程记成 `<store>/v11/projects/<hash> -> <工程目录>` 符号链接，而 fixture 在仓库内、
+  // 链接目标落在 store 之外，于是 OneDev 解包缓存时的「符号链接逃逸」防护直接判
+  // `.pnpm-store` 恢复失败（Tar entry symbol link escape detected）。package-smoke 一旦把
+  // 这份 store 传成共用缓存（key=pnpm-store），之后**所有** job 都卡在恢复缓存、一步都跑不了。
+  // 因此 fixture 用 pnpm 默认 store（在仓库外，不进缓存），代价是不复用已下载的包。
+  run('pnpm', ['install', '--no-frozen-lockfile'], FIXTURE)
   run(process.execPath, ['smoke.mjs'], FIXTURE)
 }
 
