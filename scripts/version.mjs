@@ -8,6 +8,7 @@
  *   node scripts/version.mjs sync                  # 取 根 package.json 与所有可发布包 里的最大版本，统一写入根与这些包
  *   node scripts/version.mjs check                 # 校验可发布包版本彼此一致，且与根版本一致；同时校验 .changeset/config.json
  *   node scripts/version.mjs check --tag v0.1.0    # 额外校验 git tag 与根版本一致（CI）
+ *   node scripts/version.mjs compare <a> <b>       # 打印 a 相对 b 的序（-1 / 0 / 1），供发布脚本用
  *
  * 退出码：0 = 通过；1 = 不一致（打印每一处偏差）。
  *
@@ -83,6 +84,46 @@ function versionParts(v) {
   const [core = '', pre = ''] = String(v).split('-', 2)
   return [core.split('.').map((n) => Number(n) || 0), pre]
 }
+/**
+ * 预发布段比较（semver 2.0.0 §11）：按 `.` 切分，逐段比较——
+ * 纯数字段按**数值**比（否则 `alpha.10 < alpha.2` 会因字符串比较判错），
+ * 数字段 < 非数字段，非数字段按字典序；前缀全相等时字段少者更小。
+ */
+function comparePrerelease(a, b) {
+  const ai = a.split('.')
+  const bi = b.split('.')
+  const len = Math.max(ai.length, bi.length)
+  for (let i = 0; i < len; i += 1) {
+    const x = ai[i]
+    const y = bi[i]
+    if (x === undefined) {
+      return -1 // a 字段更少，a 更小
+    }
+    if (y === undefined) {
+      return 1
+    }
+    const xn = /^\d+$/.test(x)
+    const yn = /^\d+$/.test(y)
+    if (xn && yn) {
+      const nx = Number(x)
+      const ny = Number(y)
+      if (nx !== ny) {
+        return nx > ny ? 1 : -1
+      }
+      continue
+    }
+    if (xn) {
+      return -1 // 纯数字段 < 字母数字段
+    }
+    if (yn) {
+      return 1
+    }
+    if (x !== y) {
+      return x > y ? 1 : -1
+    }
+  }
+  return 0
+}
 function compareVersions(a, b) {
   const [ca, pa] = versionParts(a)
   const [cb, pb] = versionParts(b)
@@ -100,7 +141,7 @@ function compareVersions(a, b) {
   if (!pb) {
     return -1
   }
-  return pa > pb ? 1 : -1
+  return comparePrerelease(pa, pb)
 }
 function maxVersion(a, b) {
   return compareVersions(a, b) >= 0 ? a : b
@@ -266,6 +307,15 @@ const [command, ...rest] = process.argv.slice(2)
 const tagIndex = rest.indexOf('--tag')
 const tag = tagIndex !== -1 ? rest[tagIndex + 1] : undefined
 
+/** compare：打印 a 相对 b 的序（-1 = a<b，0 = 相等，1 = a>b），供发布脚本判定目标是否低于当前。 */
+function cmdCompare(a, b) {
+  if (!a || !b) {
+    console.error('用法：node scripts/version.mjs compare <a> <b>')
+    process.exit(2)
+  }
+  console.log(String(compareVersions(a, b)))
+}
+
 switch (command) {
   case 'sync': {
     cmdSync()
@@ -275,8 +325,12 @@ switch (command) {
     cmdCheck(tag)
     break
   }
+  case 'compare': {
+    cmdCompare(rest[0], rest[1])
+    break
+  }
   default: {
-    console.error('用法：node scripts/version.mjs <sync|check> [--tag vX.Y.Z]')
+    console.error('用法：node scripts/version.mjs <sync|check|compare> [--tag vX.Y.Z] [<a> <b>]')
     process.exit(2)
   }
 }

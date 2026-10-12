@@ -85,6 +85,46 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 - `pnpm build && pnpm smoke:dist` 本地复现产物链路（`smoke:dist` 需先 `build`）。
 - `npm pack --dry-run` 复核 tarball 内容与体积（不含源码测试、含 `dist/*.css` 与 `.d.ts`）。
 
+## 本地手动发布（首发 bootstrap）
+
+首发**不能**走 OIDC（trusted publisher 只能挂在已存在的包上），第一个版本必须本机登录 / 粒度 token 人工发布。
+这条流程用 [`scripts/release-manual.sh`](../scripts/release-manual.sh) 收敛成一条命令（阶段横幅 + 逐步确认 + 合法性校验）：
+
+```bash
+pnpm release:manual                      # 发布根 package.json 的当前版本（原样，不 bump）
+pnpm release:manual 0.3.0-rc.1           # 目标更高：先把根 seed 到该版本再发布
+pnpm release:manual --yes                # 全程免确认（CI / 熟练用户）
+pnpm release:manual --dry-run            # 只跑到发布预览（零副作用）
+pnpm release:manual --check              # 只跑前置检查（零副作用）
+```
+
+> `--` 分隔符可加可不加：pnpm 会把它原样透传给脚本，脚本已当分隔符忽略；`pnpm release:manual --yes`
+> 与 `pnpm release:manual -- --yes` 等价。
+
+脚本阶段：`0) 前置检查`（仓库根 / 工具 / 干净树 / 分支可达性 / npm 登录 / 强制 registry / version:check）→
+`1) 目标版本解析` → `2) 版本落定` → `3) 质量闸`（check + build + test + smoke:dist）→ `4) 提交版本产物` →
+`5) 发布预览` → `6) 正式发布` → `7) 打 tag 并推送` → `8) CHANGELOG 校验 / pre 收尾` → `9) 完成`。
+
+必须知道的行为（都踩过坑）：
+
+- **版本合法性**：目标版本必须 **≥ 当前版本**，低于当前直接报错（`不能使用低于当前版本的 tag`）；格式非法 /
+  未知参数退出码 `2`。相等 = 原样发布当前版本（不 bump、不生成 CHANGELOG 条目）。
+- **强制官方 registry**：本机 `~/.npmrc` 可能是镜像（如腾讯云）。脚本同时导出 `npm_config_registry` 与
+  `PNPM_CONFIG_REGISTRY=https://registry.npmjs.org`（changesets 在 pnpm workspace 下调的是 pnpm，只设前者不稳）。
+- **npm 从子包目录运行**：根 `package.json` 的 `devEngines` 要求 pnpm，npm 在**仓库根**会被拦下
+  （`EBADDEVENGINES`）。脚本的 npm 命令（`whoami` / `login` / `view`）都从 `packages/ui` 运行绕开。
+- **pre 模式不传 `--tag`**：`.changeset/pre.json` 存在且 `mode=pre` 时，changesets 自动用 pre 的 tag；
+  传 `--tag` 会报 `Releasing under custom tag is not allowed in pre mode!` 退出 1。
+- **非 pre 的 dist-tag**：预发布版本取标识（`0.3.0-alpha.2` → `alpha`、`0.3.0-rc.1` → `rc`）作 dist-tag，
+  **绝不用 `latest`**；稳定版不传（即 `latest`）。首发仍会把 `latest` 一并占上（已接受，见 [docs/todo.md](./todo.md) 3.5）。
+- **预览用 `changeset publish-plan`，不是 `publish --dry-run`**：`@changesets/cli` 的 `publish` **没有**
+  `--dry-run` 选项（传了会 `Unknown option` 报错），预览走只读的 `publish-plan` / `status --verbose`；
+  tarball 内容复核仍由 `pnpm smoke:dist` 覆盖。
+- **部署 tag 必须是注解 tag**：`git push --follow-tags` 只推**注解** tag，所以 `v<version>` 用 `git tag -a` 建
+  （changesets 生成的逐包 tag 本就是注解的）。OneDev deploy 只认 `v*`，且要求 tag 落在 main 可达提交上。
+- **首发 / 部分失败幂等**：`changeset publish` 会跳过 registry 上已存在的版本，同一 commit 重跑安全；
+  已发布版本不可撤销，更正只能发新版本或 `npm deprecate`（见下文「回滚与补救」）。
+
 ## 版本流程演练记录（2026-10-12）
 
 `.changeset/config.json` 曾有两处错误：`changelog` 写成不存在的 `@changesets/cli/changelog-git`，

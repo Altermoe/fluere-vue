@@ -45,7 +45,8 @@
     "check:fix": "pnpm lint:fix && pnpm format:fix && pnpm tsc",
     "changeset": "changeset",
     "version:packages": "changeset version && node scripts/version.mjs sync",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "release:manual": "bash scripts/release-manual.sh"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",

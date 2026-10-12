@@ -43,6 +43,7 @@ pnpm dev            # 文档站 http://localhost:60727
 pnpm test           # vitest run（全仓）
 pnpm check          # lint + format + tsc（交付前必跑）
 pnpm lint:ssr       # SSR 兼容性扫描
+pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI 自动发布走 .github/workflows/release.yml）
 ```
 
 ## 标准开发流程（新增 / 修改组件）
