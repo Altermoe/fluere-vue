@@ -275,13 +275,13 @@ useSeoMeta({
                 <pre
                   class="bg-colorNeutralBackground2 p-6 text-sm font-mono leading-relaxed overflow-x-auto"
                 ><code><span class="text-colorNeutralForeground3">&lt;script setup lang="ts"&gt;</span>
-<span class="text-colorBrandForeground1">import</span> { Button } <span class="text-colorBrandForeground1">from</span> <span class="text-colorStatusSuccessForeground1">'@winui-vue/ui'</span>
+<span class="text-colorBrandForeground1">import</span> { FluereButton } <span class="text-colorBrandForeground1">from</span> <span class="text-colorStatusSuccessForeground1">'@fluere-vue/ui'</span>
 <span class="text-colorNeutralForeground3">&lt;/script&gt;</span>
 
 <span class="text-colorNeutralForeground3">&lt;template&gt;</span>
-  <span class="text-colorStatusSuccessForeground1">&lt;Button</span> <span class="text-colorBrandForeground1">appearance</span>=<span class="text-colorStatusDangerForeground1">"primary"</span><span class="text-colorStatusSuccessForeground1">&gt;</span>
+  <span class="text-colorStatusSuccessForeground1">&lt;FluereButton</span> <span class="text-colorBrandForeground1">appearance</span>=<span class="text-colorStatusDangerForeground1">"primary"</span><span class="text-colorStatusSuccessForeground1">&gt;</span>
     Click me
-  <span class="text-colorStatusSuccessForeground1">&lt;/Button&gt;</span>
+  <span class="text-colorStatusSuccessForeground1">&lt;/FluereButton&gt;</span>
 <span class="text-colorNeutralForeground3">&lt;/template&gt;</span></code></pre>
               </div>
             </section>
