@@ -9,17 +9,17 @@
 
 ## 版本地图
 
-| 版本        | 状态   | 主题                                                  |
-| ----------- | ------ | ----------------------------------------------------- |
-| 0.1.0-rc.1  | 已收口 | 通用 WinUI 控件清单                                   |
-| 0.3.0-rc.1  | 进行中 | 能被用起来：i18n / 文档站 WindowsOS 仿真化 / npm 发布 |
-| 0.4.0       | 待开工 | Explorer 基建 + 通用件收尾                            |
-| 0.5.0       | 待开工 | Explorer 骨架（首页 hook 首次上线）                   |
-| 0.6.0       | 待开工 | 地址栏 + 命令层                                       |
-| 0.7.0       | 待开工 | 数据层 ①：项基座 + 列表                               |
-| 0.8.0       | 待开工 | 数据层 ② + 布局收尾                                   |
-| 0.9.0-rc.1  | 待开工 | 质感分支（独立 minor）                                |
-| 0.9 → 1.0.0 | 待开工 | 收尾窗口（4–8 周）                                    |
+| 版本        | 状态   | 主题                                                                                                               |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| 0.1.0-rc.1  | 已收口 | 通用 WinUI 控件清单                                                                                                |
+| 0.3.0-rc.1  | 进行中 | 能被用起来：i18n / 文档站 WindowsOS 仿真化 / **自动发版流程**（npm 首发 `0.3.0-alpha.2` 已于 2026-10-13 手动发布） |
+| 0.4.0       | 待开工 | Explorer 基建 + 通用件收尾                                                                                         |
+| 0.5.0       | 待开工 | Explorer 骨架（首页 hook 首次上线）                                                                                |
+| 0.6.0       | 待开工 | 地址栏 + 命令层                                                                                                    |
+| 0.7.0       | 待开工 | 数据层 ①：项基座 + 列表                                                                                            |
+| 0.8.0       | 待开工 | 数据层 ② + 布局收尾                                                                                                |
+| 0.9.0-rc.1  | 待开工 | 质感分支（独立 minor）                                                                                             |
+| 0.9 → 1.0.0 | 待开工 | 收尾窗口（4–8 周）                                                                                                 |
 
 ---
 
@@ -83,11 +83,12 @@
 
 ---
 
-## 0.3.0-rc.1 · i18n / 文档站仿真化 / npm 发布（进行中）
+## 0.3.0-rc.1 · i18n / 文档站仿真化 / 自动发版流程（进行中）
 
 > **分工**：0.1.0-rc.1 回答「组件够不够用」，本版回答「能不能被用起来」——多语言可读、文档站能体现 WinUI 质感，并且真正发到 npm 线上。
+> **发版口径（2026-10-13 收敛）**：**人工首发已完成**（六个包 `0.3.0-alpha.2` 已上 npm），0.3 余下的发版目标改为**把自动发版流程跑通**（Trusted Publisher + `release.yml` 的 `pack` / `publish`），不再重复人工发版。
 > 三条主线可并行，但发布前必须一次性收口：版本号、README / 文档站版本展示、CHANGELOG、本文件勾选状态。
-> **交付基准**：在 npm 上 `pnpm add @fluere-vue/ui@0.3.0-rc.1` 可用；文档站中英双语可读且呈现 WinUI 质感；三个消费场景（Vite SPA / Nuxt SSR / 纯类型引用）全部验证通过。
+> **交付基准**：`pnpm add @fluere-vue/ui@0.3.0-alpha.2` 在 npm 上可用（**已达成**）；文档站中英双语可读且呈现 WinUI 质感；自动发版流程由 `release.yml` 在线发布一次（OIDC + provenance）；三个消费场景（Vite SPA / Nuxt SSR / 纯类型引用）全部验证通过。
 
 ### 目标 1 · 集成 i18n（一期：简体中文 + 英语）
 
@@ -190,17 +191,25 @@
   - 视觉自检清单（rest / hover / pressed / focus / disabled × 明暗）写入站点 README 或 `docs/`，作为回归依据
 - **非目标（一期）**：真实多窗口与拖拽吸附、动态壁纸、系统级动画复刻、移动端仿桌面。
 
-### 目标 3 · 集成 npm 发布基建并正式发布线上 0.3.0-rc.1
+### 目标 3 · 集成 npm 发布基建并完成自动发版流程
 
-**现状（阻塞发布的硬事实）**：
+**首发前的阻塞项（2026-10-10 记录，现已全部解除；保留以说明后续版本不再受制于这些前提）**：
 
-- 6 个包版本均为 `0.0.1`；`apps/*` 为 `private`，库包均未 `private`，但从未发布过
-- **包入口指向源码**（无 `dist`、无 `.d.ts`），直接发布会发现消费方无法使用
-- 无 `files` / `publishConfig` / `peerDependencies` / `engines`；`packages/themes` 连 `exports` 字段都没有
-- 无库构建脚本、无 CI、无 Changesets / CHANGELOG，根目录无 `LICENSE` 文件
-- README「快速开始」仍标注「尚未发布」，文档站页脚硬编码 `v0.0.1`
+- 6 个包版本均为 `0.0.1`、从未发布过 → **2026-10-13 六包首发 `0.3.0-alpha.2` 上 npm**
+- 包入口指向源码（无 `dist` / `.d.ts`）、`packages/themes` 连 `exports` 都没有 → 3.1 / 3.2 落地 `dist` 产物 + `publishConfig` 覆盖
+- 无 `files` / `publishConfig` / `peerDependencies` / `engines`、无库构建脚本 / CI / Changesets / 根 `LICENSE` → 3.1 – 3.4 逐条补齐
+- README「快速开始」标注「尚未发布」、文档站页脚硬编码 `v0.0.1` → 页脚已改为读根 `package.json`（版本单一事实源）；**README 文案尚未收口**（属 3.5）
 
-> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做：3.4（CI/CD）与 3.5（正式发布 rc），README「尚未发布」按 3.5 收口时移除。**补正（2026-10-12）**：3.3 的「CHANGELOG 自动生成」当时只有配置、从未真正跑通——`.changeset/config.json` 的 `changelog` 指向不存在的子路径（`@changesets/cli/changelog-git`）且 `fixed` 混入了 workspace 根包名，`changeset version` 直接退出 1，逐包 `CHANGELOG.md` 一个都没生成；现已修复并在一次性副本里演练通过，记录见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)。
+> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做（截至该日）：3.4（CI/CD）与 3.5（首发），README「尚未发布」按 3.5 收口时移除。**补正（2026-10-12）**：3.3 的「CHANGELOG 自动生成」当时只有配置、从未真正跑通——`.changeset/config.json` 的 `changelog` 指向不存在的子路径（`@changesets/cli/changelog-git`）且 `fixed` 混入了 workspace 根包名，`changeset version` 直接退出 1，逐包 `CHANGELOG.md` 一个都没生成；现已修复并在一次性副本里演练通过，记录见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)。
+
+> **首发记录（2026-10-13，全程实测）**：六个 `@fluere-vue/*` 首次上 npm，版本 **`0.3.0-alpha.2`**（发布提交 `8dfa64f`）。
+> 首发走**人工 bootstrap**：先用 `0.0.0-stage` 占位包预定六个包名（registry 上无入口、解包仅数百字节，description 为 “Temporary package placeholder for staged publishing”），再用粒度 token / 本机登录发布真实版本。
+>
+> - `dist-tags`：`alpha` 与 `latest` **同时指向 `0.3.0-alpha.2`**——首发占 `latest` 的已接受例外（见下方 3.5）。
+> - 公网消费验证（本机干净目录实测）：`npm add @fluere-vue/ui@0.3.0-alpha.2 vue` 成功；`renderToString` 渲染 `FluereButton` / `FluereProgressRing` 通过；`dist/style.css` 存在（194 kB）；无 peer 警告。
+> - tarball 体积（registry 元数据实测）：`ui` 104 文件 / 1.90 MB、`designs` 0.49 MB、`themes` 0.14 MB、`hooks` 0.04 MB、`utils` 0.02 MB、**`icons` 42.96 MB**（体积异类未处理）；`ui` tarball 顶层只有 `dist` + `package.json` + README / LICENSE，源码未随包发布。
+> - `dist.attestations` **不存在**：首发是 token 人工发布、无 provenance，与「首次不能走 OIDC」的判断一致。
+> - 版本产物**不是 changeset 消费出来的**：本次是 `pnpm release:manual` 不带参数、对已 seed 的 `0.3.0-alpha.2` **原样发布**（`.changeset/` 里 3 条 changeset 当时未消费，故 `0.3.0-alpha.2` 没有 CHANGELOG 条目）。踩坑与纠正——部署 tag `v0.3.0-alpha.2` 先指 seed 提交 `6345d74`、后移到发布提交 `8dfa64f`——见 [docs/release.md](./release.md) 的「踩坑记录：seed 版本被原样发布」。
 
 #### 3.1 包元数据与发布体检
 
@@ -225,64 +234,73 @@
 #### 3.4 发布流水线（CI/CD）
 
 - [x] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`——**已线上验证**（`.github/workflows/ci.yml`：check / test / docs / package-smoke 四个 job；pnpm 版本由 `pnpm/action-setup` 读 `packageManager`）。2026-10-12 推 `main` 后两次运行 [38214181292](https://github.com/Altermoe/fluere-vue/actions/runs/38214181292) / [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) **四个 job 全绿**。
-- [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按 `rc` / `next` tag 发布（**预发布不占 `latest`**），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，`version` 路径已线上验证，`pack` / `publish` 路径尚未跑过**（`.github/workflows/release.yml`：`select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` 内有 `pnpm check && pnpm test` 自证 + `pnpm build` + `pnpm smoke:dist`，publish 只上传 pack 出来的 tarball）。2026-10-12 实测：`select-mode` 判定 `version`、`version` job 成功开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件、无 `apps/*`），`pack` / `publish` 按预期 skipped；首轮 [38214181271](https://github.com/Altermoe/fluere-vue/actions/runs/38214181271) 曾因 `version.mjs sync` 改动 `apps/*` 而让 action 去找不存在的 `apps/docs/CHANGELOG.md`（ENOENT），已修复。另发现 release PR 分支由 `github-actions[bot]` 推送，其 `pull_request` 触发的 CI run 会被挂成 `action_required`（需维护者手动批准，实测 run [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332)），因此 PR 上默认没有跑完的检查，已在 `pack` 里加自证步骤兜底，详见 [docs/release.md](./release.md#发布流水线github-actions)。落地过程中确认的两条硬约束：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `pnpm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。
-- [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）——**前两项已在 CI 落地**：`ci.yml` 的 `package-smoke` job 与 `release.yml` 的 `pack` job 都跑 `pnpm smoke:dist`（`pnpm pack` 出六个 tarball → publint / attw → fixture 消费方安装与 SSR 渲染）。**彩排实测暴露两处 tarball 卫生问题（见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)）**：① `ui` / `designs` / `icons` / `themes` 的 `files` 曾带顶层 `src/`（`ui` 安装后 1.5 MB，约 `dist` 的 70%），与「不含源码」不符——**已修复**：从这四包 `files` 移除顶层 `src`，消费方入口全部由 `publishConfig` 指向 `dist`；`dist/src/**`（`.d.ts`）是 `dist/index.d.ts` 的类型图依赖，随 `dist` 保留（`ui` tarball 250→102 文件、790→471 kB，`pnpm smoke:dist` 复验通过）；② `icons` 解包后 ~43 MB（主要是 `generated/` 图标数据），是唯一体积异类。体积异类待复核。
+- [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按预发布 tag（`.changeset/pre.json`，现为 `alpha`）发布（**首发期间 `latest` 仍会被一并占住，见 3.5**），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，`version` 路径已线上验证，`pack` / `publish` 路径尚未跑过**（`.github/workflows/release.yml`：`select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` 内有 `pnpm check && pnpm test` 自证 + `pnpm build` + `pnpm smoke:dist`，publish 只上传 pack 出来的 tarball）。2026-10-12 实测：`select-mode` 判定 `version`、`version` job 成功开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件、无 `apps/*`），`pack` / `publish` 按预期 skipped；首轮 [38214181271](https://github.com/Altermoe/fluere-vue/actions/runs/38214181271) 曾因 `version.mjs sync` 改动 `apps/*` 而让 action 去找不存在的 `apps/docs/CHANGELOG.md`（ENOENT），已修复。另发现 release PR 分支由 `github-actions[bot]` 推送，其 `pull_request` 触发的 CI run 会被挂成 `action_required`（需维护者手动批准，实测 run [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332)），因此 PR 上默认没有跑完的检查，已在 `pack` 里加自证步骤兜底，详见 [docs/release.md](./release.md#发布流水线github-actions)。落地过程中确认的两条硬约束：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `pnpm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。**更新（2026-10-13）**：`version` 路径随首发再次线上验证——run [38335726761](https://github.com/Altermoe/fluere-vue/actions/runs/38335726761) 的 `select-mode` / `version` 成功、`pack` / `publish` 仍 skipped，release PR #2 被更新为 `0.3.0-alpha.3` + 逐包 CHANGELOG；首发已由 `pnpm release:manual` 人工完成、六包在 registry 上存在 ⇒ **硬约束 ① 已解除**，给六包配好 Trusted Publisher 后 `pack` / `publish` 即可自动发布下一版（这是 3.5 的剩余目标）。
+- [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）——**前两项已在 CI 落地**：`ci.yml` 的 `package-smoke` job 与 `release.yml` 的 `pack` job 都跑 `pnpm smoke:dist`（`pnpm pack` 出六个 tarball → publint / attw → fixture 消费方安装与 SSR 渲染）。**彩排实测暴露两处 tarball 卫生问题（见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)）**：① `ui` / `designs` / `icons` / `themes` 的 `files` 曾带顶层 `src/`（`ui` 安装后 1.5 MB，约 `dist` 的 70%），与「不含源码」不符——**已修复**：从这四包 `files` 移除顶层 `src`，消费方入口全部由 `publishConfig` 指向 `dist`；`dist/src/**`（`.d.ts`）是 `dist/index.d.ts` 的类型图依赖，随 `dist` 保留（`ui` tarball 250→102 文件、790→471 kB，`pnpm smoke:dist` 复验通过）；② `icons` 解包后 ~43 MB（主要是 `generated/` 图标数据），是唯一体积异类——**上线版本实测确认**（registry 元数据：`icons` 解包 **42.96 MB**，`ui` 1.90 MB、`designs` 0.49 MB、`themes` 0.14 MB、`hooks` 0.04 MB、`utils` 0.02 MB；`ui` tarball 104 项、顶层仅 `dist` + `package.json` + README / LICENSE，无源码）。体积异类已复核但**未做处理**，作为已知项跟踪。
 - [x] 发布彩排：本地 verdaccio 或 `--dry-run` 走通全流程（含 dist 安装、SSR 渲染、CSS 引入）——**已完成**：本地 verdaccio 上完整发布 `0.3.0-rc.1` 六个包，逐项验收「干净目录安装 / SSR `renderToString` / Vite 构建带 CSS / `vue-tsc` 类型引用」全通过，并实测确认首发 `dist-tags` 的 `rc` 与 `latest` 同时被占；抓出并修正了「pre 模式下不许显式 `--tag`」的文档错误，tarball 卫生与 `icons` 体积问题记入上一条。全过程与数据见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)。
 - [x] 回滚与补救预案：`npm deprecate`、撤销 tag、`latest` 回指上一版的具体步骤写入 `docs/release.md`——**已写入**（[回滚与补救](./release.md#回滚与补救)：deprecate / `dist-tag rm|add` / `gh release delete --cleanup-tag` 撤销 tag 与 Release / 同 commit 重跑的幂等说明）。
 
-#### 3.5 正式发布 0.3.0-rc.1（按序执行）
+#### 3.5 首发（已完成）与自动发版流程（进行中）
 
-- [ ] 冻结范围：确认 0.3.0-rc.1 包含的组件与文档（与 0.1.0-rc.1 组件清单对齐），未完成项明确移出并记录
-- [ ] 先把基版本 seed 到 `0.3.0-rc.0`（`pnpm version:sync` 拉平根与六个可发布包，`apps/*` 不参与）→ `changeset pre enter rc` → `pnpm version:packages` bump 到 `0.3.0-rc.1` → 构建 → 校验 → 发布（**pre 模式下裸跑 `changeset publish`，不要加 `--tag rc`**，changesets 会拒绝并退出 1、自动用 `rc` 作 dist-tag；彩排已实测）→ 手工打部署 tag `v0.3.0-rc.1`（`changeset publish` 生成的是逐包 `@fluere-vue/<pkg>@0.3.0-rc.1`，OneDev 的 deploy job 只认 `v*`）（不 seed 只能得到 `0.0.2-rc.0`，seed 稳定版 `0.3.0` 得到的是 `0.3.1-rc.0`，实测见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)）
-- [ ] 发布后验证（干净目录、走公网 npm 安装）：组件可正常渲染、样式生效、`renderToString` 不抛错、peer 警告符合预期
+> **目标已收敛（2026-10-13）**：原目标「正式发布线上 `0.3.0-rc.1`」中的**人工首发已完成**——六个 `@fluere-vue/*` 已于 2026-10-13 以 `0.3.0-alpha.2` 上 npm（见上方「首发记录」）。0.3 余下的发版目标改为**把自动发版流程跑通**：配好 npm Trusted Publisher，让 `release.yml` 的 `pack` / `publish` 在线真实发布一次（OIDC + provenance），此后不再人工发版。版本号推进的操作手册见 [docs/release.md](./release.md)。
+
+**已完成 · 人工首发（bootstrap）**
+
+- [x] 用 `0.0.0-stage` 占位包预定六个包名——trusted publisher 只能挂在已存在的包上，这是绕开「首次不能走 OIDC」的前置动作
+- [x] 人工发布首发版本：`pnpm release:manual`（不带版本参数，对已 seed 的 `0.3.0-alpha.2` 原样发布）→ 六包全部成功，发布提交 `8dfa64f`
+- [x] 发布后验证（干净目录、走公网 npm 安装，2026-10-13 实测）：安装成功、组件正常渲染、样式已随包发布（`dist/style.css`）、`renderToString` 不抛错、无 peer 警告
+- [x] 部署 tag 与逐包 tag：`v0.3.0-alpha.2`（由 seed 提交 `6345d74` 移到发布提交 `8dfa64f`）+ 六个 `@fluere-vue/<pkg>@0.3.0-alpha.2`，GitHub 与 onedev 均已推送
+
+**未完成 · 自动发版流程（0.3 的剩余发版目标）**
+
+- [ ] 在 npmjs.com 给六个包各配一次 Trusted Publisher（Repository `Altermoe/fluere-vue`、Workflow `release.yml`、Environment 留空）——包已存在，原「硬约束 ①」已解除
+- [ ] 合并 release PR（分支 `changeset-release/main`，内容为 `0.3.0-alpha.3` + 逐包 CHANGELOG），触发 `release.yml` 的 `pack` / `publish`
+- [ ] 线上确认自动发布产物：tarball 与首发一致（不含源码 / 测试）、`dist.attestations` 出现 provenance、全程无 `NPM_TOKEN`
+- [ ] 自动发布后核对 `dist-tags`：本版仍属预发布，`latest` 仍会被占（首发例外的延续），待 `0.3.0` 稳定版发布后回指
+
+**未完成 · 其它 0.3 收口项**
+
+- [ ] 冻结范围：确认本次发版包含的组件与文档（与 0.1.0-rc.1 组件清单对齐），未完成项明确移出并记录
 - [ ] 收口文档：README 去掉「尚未发布」、补安装与按需引入示例、更新组件进度表与版本号；文档站展示线上版本与更新日志
-- [ ] 打 git tag `v0.3.0-rc.1` + GitHub Release（附破坏性变更与已知问题清单）
-- **验收**：
-  - `@fluere-vue/*@0.3.0-rc.1` 在 npm 全部可见，`dist-tags` 里有 `rc` 档（**首次发布例外见下方前置约束 2**：六个包首次发布时 `latest` 会一并指向 rc，本项不再要求首发时 `latest` 不被占用；`0.3.0` 稳定版发布后 `latest` 自动回指）
+- [ ] GitHub Release：首发只推了 tag、**未建 Release**（API 实测 releases 为空）；改由自动发版链路的 `publish` job 建，附破坏性变更与已知问题清单
+- **验收（按「自动发版流程」口径）**：
+  - `release.yml` 的 `pack` / `publish` 在线上真实跑通一次，发布产物带 provenance，无需人工 token
+  - 自动发布的版本号由 changeset 从当前版本 bump 得出（不再原样发布 seed 版本，避免 `v*` 部署 tag 与发布版本同号）
   - 三个独立消费场景验证通过：Vite SPA、Nuxt SSR、纯类型引用（`vue-tsc` 无错）
-  - CI 在 PR 与 release 两条链路上全绿，同一 commit 重跑发布不产生脏状态
-  - 发布手册与回滚步骤齐备，且经过一次彩排验证
-- **前置硬约束与已确认决策（2026-10-12）**：
-  1. **首次发布不能用 OIDC**（硬约束，未变）：npm 的 trusted publisher 只能配置在已存在的包上（无 pending
-     publisher），六个包从未发布过 ⇒ 第一个版本必须先用粒度 token 或本机 `pnpm login` 人工 bootstrap，之后给
-     六个包各配一次 trusted publisher（Workflow = `release.yml`），从第二个版本起才由
-     [release.yml](./release.md#发布流水线github-actions) 自动发布。
-  2. **首次 `latest` = rc（已决策：接受）**：changesets 对从未正式发布过的包会明确警告其预发布版本仍会落到
-     `latest`（六个包都属此类），且事后 `dist-tag add` 回指需要目标版本已存在。**决策：按原计划首发
-     `0.3.0-rc.1`，接受 `latest` 一并指向它**——新包无存量用户，且 `0.3.0` 稳定版发布后 `latest` 自动回指，
-     届时「`latest` 不指向预发布」恢复成立。发布说明与 GitHub Release 正文需写明该已知行为；验收第一条已按
-     此更新。
-- **非目标（一期）**：自动化视觉回归发布门、GitHub Packages 等多 registry 同步、CDN / unpkg 体积门、0.3.0 稳定正式版（rc 验证后再定）
+  - 同一 commit 重跑发布不产生脏状态；发布手册与回滚步骤齐备
+- **前置约束的当前状态（2026-10-12 提出 → 2026-10-13 更新）**：
+  1. ~~**首次发布不能用 OIDC**~~ —— **已解除**：六个包已由人工 bootstrap 上 npm（连同 `0.0.0-stage` 占位版本），现在可以给每个包配 Trusted Publisher，「从第二个版本起自动发布」的条件已具备。配好后 pnpm v11 下 publish job 的 `setup-node` 仍必须显式给 `registry-url`。
+  2. **`latest` 被预发布占住（已决策：接受，且已实际发生）**：实测首发后 `alpha` 与 `latest` 同时指向 `0.3.0-alpha.2`；`0.3.0` 稳定版发布后 `latest` 自动回指，届时「`latest` 不指向预发布」恢复成立。发布说明与 GitHub Release 正文需写明该已知行为。
+- **非目标（一期）**：自动化视觉回归发布门、GitHub Packages 等多 registry 同步、CDN / unpkg 体积门、0.3.0 稳定正式版（0.3 收口后再定）
 
 ### 依赖关系与建议顺序
 
-1. **先做两个 spike**：i18n 选型（影响文档站结构）与构建器选型（影响所有包入口），各控制在 1 天内出结论。**i18n spike 已完成并落地**，构建器 spike 仍未做。
+1. **先做两个 spike**：i18n 选型（影响文档站结构）与构建器选型（影响所有包入口），各控制在 1 天内出结论。**两个 spike 均已完成并落地**：i18n 见 1.1，构建器见 3.2（结论写入 [ADR-0001](./adr/0001-library-build-tooling.md)）。
 2. **目标 2 依赖目标 1 的 key 约定**：顺序为 i18n 基建 → 外壳（2.1 / 2.2）→ 页面（2.3 / 2.4）→ 打磨（2.5）。
-3. **目标 3 的 3.1 / 3.2 可与目标 2 并行**（只改包元数据与构建，不碰文档站页面）；3.4 流水线等 CI 能跑通 `docs:generate` 之后再接入。
+3. **目标 3 的 3.1 / 3.2 可与目标 2 并行**（只改包元数据与构建，不碰文档站页面）；3.4 流水线已随 CI 跑通接入，剩余的是 3.5 的自动发版流程。
 4. **发布前统一冻结**：版本号、README / 文档站版本展示、CHANGELOG、本文件勾选状态一次性收口。
 
 ### 与 0.4.0+ 排期的衔接
 
 - **目标 1 的 key 约定是 0.5.0 起的硬约束**：文档站侧已落地；**组件库侧（1.4）尚未建立**，0.5.0 前需先补齐，否则新增文案要返工两遍。
 - **目标 2 是 Explorer 骨架的布局基建**：0.5.0 的 `DesktopShell` / `Taskbar` / `StartMenu` 直接复用 2.1 / 2.2 的产出。
-- **目标 3 是 0.9.0-rc.1 对外可用的前提**：包入口现仍指向源码，不解决则 Explorer 首页只是仓库内的演示。
+- **目标 3 是 0.9.0-rc.1 对外可用的前提**：包已首次上线（`0.3.0-alpha.2`），消费方入口指向 `dist`；把自动发版流程跑通后，0.4–0.8 的每个 minor 才能稳定对外发版。
 
 ### 风险与对策
 
-| 风险                                   | 影响                     | 对策                                                                                                       |
-| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| 文档站「仿真」过度                     | 首屏慢、移动端卡顿       | 令牌化动效 + 性能预算 + 移动端降级全屏，仿真范围写入 README                                                |
-| i18n 与 `@nuxt/content` + SSG 组合踩坑 | 双语路由与内容查询返工   | **文档站侧已消除**（spike 收口并落地，demo 抽 key 亦已收口）；残余风险仅剩 1.4 组件库通道                  |
-| 纯 TS 源码入口被发布                   | 消费方无法使用、口碑受损 | 3.2 强制 `dist` + `types`，发布闸用 `publint` / `attw` 拦截                                                |
-| 预发布污染 `latest`                    | 用户误装 rc 版           | `changeset pre enter rc` + `--tag rc`，发布后核对 `dist-tags`；**首发为已接受的例外**（见 3.5 前置约束 2） |
-| 双语文案长期不同步                     | 英文页无人维护           | 缺失回退 + CI key 完整性校验 + 页面标注英文状态                                                            |
-| 组件清单与发布范围脱节                 | 发布内容与 README 不一致 | 发布前冻结范围，同步 README 与 `docs/todo.md`                                                              |
+| 风险                                   | 影响                     | 对策                                                                                                                                                         |
+| -------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 文档站「仿真」过度                     | 首屏慢、移动端卡顿       | 令牌化动效 + 性能预算 + 移动端降级全屏，仿真范围写入 README                                                                                                  |
+| i18n 与 `@nuxt/content` + SSG 组合踩坑 | 双语路由与内容查询返工   | **文档站侧已消除**（spike 收口并落地，demo 抽 key 亦已收口）；残余风险仅剩 1.4 组件库通道                                                                    |
+| 纯 TS 源码入口被发布                   | 消费方无法使用、口碑受损 | **已消除**：3.2 强制 `dist` + `types`，发布闸用 `publint` / `attw` 拦截；首发 tarball 实测顶层仅 `dist` + 包元数据                                           |
+| 预发布污染 `latest`                    | 用户误装预发布版         | 预发布模式用 changeset pre tag（现为 `alpha`）而非 `latest`，发布后核对 `dist-tags`；**首发已实际占住 `latest`**（见 3.5 前置约束 2），待 `0.3.0` 稳定版回指 |
+| 双语文案长期不同步                     | 英文页无人维护           | 缺失回退 + CI key 完整性校验 + 页面标注英文状态                                                                                                              |
+| 组件清单与发布范围脱节                 | 发布内容与 README 不一致 | 发布前冻结范围，同步 README 与 `docs/todo.md`                                                                                                                |
 
 ---
 
 ## 0.4.0 – 0.9.0-rc.1 排期（Explorer 仿真为北极星）
 
-> 本节是**当前生效的排期**；0.3.0-rc.1 的「文档站 WindowsOS 仿真化」即本节的布局基建前置。
+> 本节是**当前生效的排期**；0.3 版本的「文档站 WindowsOS 仿真化」即本节的布局基建前置。
 >
 > **北极星与终点**：**Explorer 仿真是 0.9.0-rc.1 的最终目标，也是生产版发布前的最后一块拼图**。它承担两个职责：① 文档站首页的第一眼呈现；② 跨组件组合的唯一验收场景——焦点管理、浮层层级、嵌套弹出、键盘可达、明暗与材质，这些只有把组件拼成一个真实窗口才能验证。
 >
@@ -428,7 +446,7 @@
 ### 0.4.0 开工前置（必做，否则整条排期不成立）
 
 - [ ] **重新拉起 WinUI 源码快照**：按 `docs/style-spec.md` §2/§3 对版本（目标 WinUI3 Gallery 发行版 → `WindowsAppSDKPackageVersion` → tag `winui3/release/<N>`），本地快照放 `temp/winui-src`（已 gitignore）并记录 commit
-- [ ] **确认 0.3.0-rc.1 的三条主线是否已完成**；未完成项与 0.4.0 的先后关系需明确（i18n 的 key 约定影响 0.5.0 起全部新增文案，构建器选型影响所有包入口）
+- [ ] **确认 0.3 版本的三条主线是否已完成**（i18n / 文档站仿真化 / 自动发版流程）；未完成项与 0.4.0 的先后关系需明确（i18n 的 key 约定影响 0.5.0 起全部新增文案，构建器选型影响所有包入口）
 - [ ] **确定文档站仿真的范围边界文案**（与 README「不夸大承诺」一致），并写入站点 README
 - [ ] **明确构件归属**：窗口外壳 / 任务栏 / 开始菜单 / 系统托盘属**应用级组合**，放 `apps/*`，不进 `@fluere-vue/ui`；通用 WinUI 控件才进组件库
 - [ ] **文档站工作量单独统计**：文档站外壳（0.5.0）与组件库分列，避免 0.9.0 被双重低估
