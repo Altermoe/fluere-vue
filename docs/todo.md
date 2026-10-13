@@ -391,6 +391,8 @@
 | 0.5.6 | 文档站 `Taskbar` + `SystemTray`（`Intl` 时钟 + 主题 / 语言切换） | L 4  | hover / active 指示条；点击弹出或还原窗口；版本号改为读 `package.json`（去掉硬编码 v0.0.1） |
 | 0.5.7 | 文档站 `StartMenu`（Acrylic 面板 + 键盘导航 + Esc 关闭）         | M 3  | 承载站点信息架构；浮层焦点管理下沉到 `packages/hooks`                                       |
 
+> **0.5.1 / 0.5.2 已落地（组件侧，2026-10-13）**：`FluereAppWindow`（窗口外框：圆角 / 描边 / 阴影 / 标题栏 / 内容可视区）与 `FluereCaptionButtons`（最小化 / 最大化 / 还原 / 关闭，纯逻辑代理）已进 `packages/ui`，四件套齐（SFC + 契约测试 + 中英文档页 + 5 个示例）。规格逐条对齐 `Microsoft.UI.Xaml.Controls.TitleBar`：**行为 / API 读 `winui3/release/2.0.1`**（Gallery v2.9.3 所用 WASDK），模板与画刷读本地快照 `2.5.1`（该控件目录两 tag 有漂移，已记入组件注释）；标题栏 32/48 高度判据、`Compact` 折叠的「后声明组胜出」、失活态的两个分支、拖拽打洞清单均照抄 `TitleBar.cpp`。caption 按钮**无 A 级 XAML 源码**（系统 DWM 绘制），几何 46×32 / 字形 10 / 描边 1 与关闭键红 `#C42B1C` 记为系统度量 + 证据缺口，全部落成可覆盖的组件局部变量；窗口**位置 / 尺寸 / 层级由外部控制**，拖拽只抛 `dragStart` / `dragMove` / `dragEnd`。文档站 `DesktopShell` / `Taskbar` / `SystemTray` / `StartMenu`（0.5.5–0.5.7）与 0.5.3 `TabView`、0.5.4 `NavigationView` 仍待做。
+
 **里程碑**：能打开一个空 Explorer 窗口，导航可折叠、视图可切换，文档站首页可挂载。
 
 ### 0.6.0 · 地址栏 + 命令层（≈ 17 点）

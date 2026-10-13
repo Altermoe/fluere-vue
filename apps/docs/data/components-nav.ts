@@ -33,6 +33,7 @@ import {
   FluentIconTextbox24Regular,
   FluentIconToggleRight24Regular,
   FluentIconTooltipQuote24Regular,
+  FluentIconWindow24Regular,
 } from '@fluere-vue/icons'
 import type { Component } from 'vue'
 import type { MessageSchema } from '~/i18n/schema'
@@ -212,6 +213,13 @@ const componentNavGroups: ComponentNavGroup[] = [
     items: [
       { slug: 'accordion', name: 'Accordion', implemented: false },
       { slug: 'alert-dialog', name: 'Alert Dialog', implemented: false },
+      {
+        slug: 'app-window',
+        name: 'App Window',
+        implemented: true,
+        summaryKey: 'app-window',
+        icon: FluentIconWindow24Regular,
+      },
       { slug: 'aspect-ratio', name: 'Aspect Ratio', implemented: false },
       { slug: 'avatar', name: 'Avatar', implemented: false },
       { slug: 'collapsible', name: 'Collapsible', implemented: false },

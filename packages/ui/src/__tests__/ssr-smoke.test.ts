@@ -14,6 +14,8 @@ import { describe, expect, it } from 'vitest'
 import { createSSRApp, h } from 'vue'
 import type { Component } from 'vue'
 import { renderToString } from 'vue/server-renderer'
+import FluereAppWindow from '../app-window/app-window.vue'
+import FluereCaptionButtons from '../app-window/caption-buttons.vue'
 import FluereButton from '../button/button.vue'
 import FluereCheckbox from '../checkbox/checkbox.vue'
 import FluereCombobox from '../combobox/combobox.vue'
@@ -337,6 +339,29 @@ describe('SSR 兼容性冒烟测试', () => {
     const html = await renderToString(app)
     expect(html).not.toContain('fui-smoke')
   })
+
+  it('FluereAppWindow / FluereCaptionButtons 可服务端渲染（标题栏槽位 + caption 字形）', async () => {
+    const app = createSSRApp({
+      render: () =>
+        h(
+          FluereAppWindow,
+          { title: '设置', subtitle: '21RU0000CD' },
+          {
+            'content': () => h('div', {}, '内容'),
+            'right-header': () => h('div', {}, '右头'),
+          },
+        ),
+    })
+    const html = await renderToString(app)
+    expect(html).toContain('fui-app-window')
+    expect(html).toContain('fui-caption-buttons')
+    expect(html).toContain('设置')
+    expect(html).toContain('右头')
+    // 有 RightHeader ⇒ 高度档位 expanded（对齐 UpdateHeight 的判据）
+    expect(html).toContain('data-titlebar-size="expanded"')
+    // 拖拽相关逻辑只在 pointer 事件里，服务端不得出现任何浏览器 API 崩溃
+    expect(html).toContain('fui-app-window__titlebar')
+  })
 })
 
 describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', () => {
@@ -369,6 +394,28 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     expect(ring).toContain('aria-label="Loading"')
     const bar = await renderUnder('en', () => h(FluereProgressBar, { indeterminate: true }))
     expect(bar).toContain('aria-label="Loading"')
+  })
+
+  it('AppWindow 返回 / 导航按钮与 caption 按钮在 locale 下 SSR 直出对应可访问名', async () => {
+    const en = await renderUnder('en', () =>
+      h(FluereAppWindow, { isBackButtonVisible: true, isPaneToggleButtonVisible: true }),
+    )
+    expect(en).toContain('aria-label="Back"')
+    expect(en).toContain('aria-label="Toggle Navigation"')
+    expect(en).toContain('aria-label="Minimize"')
+    expect(en).toContain('aria-label="Close"')
+
+    const zh = await renderUnder('zh-Hans', () =>
+      h(FluereAppWindow, { isBackButtonVisible: true, isPaneToggleButtonVisible: true }),
+    )
+    expect(zh).toContain('aria-label="返回"')
+    expect(zh).toContain('aria-label="切换导航"')
+    expect(zh).toContain('aria-label="最小化"')
+    expect(zh).toContain('aria-label="关闭"')
+
+    // 独立使用时同样取内建文案（scope=caption-buttons，无 Provider 时缺省 zh-Hans）
+    const standalone = await renderUnder('en', () => h(FluereCaptionButtons, { maximized: true }))
+    expect(standalone).toContain('aria-label="Restore Down"')
   })
 
   it('两个并发 SSR 请求在不同 locale 下渲染，互不串语言（实例级 context）', async () => {

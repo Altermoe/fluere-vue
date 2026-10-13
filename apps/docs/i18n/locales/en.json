@@ -31,7 +31,8 @@
       "infobar": "An app-level status banner with four severities and a closable mode.",
       "progress": "Linear progress indicator: indeterminate slider and determinate fill.",
       "progress-ring": "Circular progress indicator: indeterminate spinner and determinate arc.",
-      "tooltip": "A supplementary info overlay shown on hover or focus."
+      "tooltip": "A supplementary info overlay shown on hover or focus.",
+      "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside."
     }
   },
   "theme": {
@@ -122,6 +123,49 @@
     "hideCode": "Hide code"
   },
   "demos": {
+    "app-window": {
+      "basic": {
+        "title": "Settings",
+        "subtitle": "21RU0000CD",
+        "body": "The content area only owns the visible region: what goes inside is up to the consumer. Put a FluereScrollView in the slot when scrolling is needed."
+      },
+      "header": {
+        "title": "Header slots",
+        "back": "Back",
+        "paneToggle": "Navigation",
+        "searchPlaceholder": "Find a setting",
+        "account": "Account",
+        "eventLog": "Event log: {entries}",
+        "notTriggered": "(nothing yet)"
+      },
+      "caption": {
+        "minimize": "Minimize",
+        "maximize": "Maximize",
+        "restore": "Restore Down",
+        "close": "Close",
+        "minimizable": "Minimizable",
+        "maximizable": "Maximizable",
+        "closable": "Closable",
+        "eventLog": "Event log: {entries}",
+        "notTriggered": "(nothing yet)"
+      },
+      "drag": {
+        "title": "Draggable window",
+        "position": "Position: ({x}, {y})",
+        "distance": "Drag distance: {distance}px",
+        "hint": "Press and drag the title bar; double-click the title bar to toggle maximize (the shell reacts to the events)."
+      },
+      "states": {
+        "active": "Active (clear to deactivate)",
+        "maximized": "Maximized",
+        "leftTitle": "Active / inactive",
+        "leftSubtitle": "Driven by active",
+        "leftBody": "When inactive the title and subtitle switch foreground, and the icon / left header / content / right header drop to 50% opacity.",
+        "rightTitle": "Zero-duration states + focus",
+        "rightHeader": "Right header",
+        "rightBody": "motion=\"none\" turns off the component-owned transitions; press Tab to see the WinUI double-layer focus rectangle."
+      }
+    },
     "common": {
       "close": "Close"
     },

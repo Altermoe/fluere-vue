@@ -1,4 +1,5 @@
 import type { LocaleOverrideMessages } from '@fluere-vue/hooks'
+import { appWindowLocale, captionButtonsLocale } from '../src/app-window/locale'
 import { infoBarLocale } from '../src/infobar/locale'
 import { inputLocale } from '../src/input/locale'
 import { numberBoxLocale } from '../src/number-box/locale'
@@ -11,6 +12,8 @@ import { scrollViewLocale } from '../src/scrollview/locale'
  * 结构与 role 同 zh-Hans.ts，见其注释。
  */
 export const en: LocaleOverrideMessages = {
+  'app-window': appWindowLocale.en,
+  'caption-buttons': captionButtonsLocale.en,
   'input': inputLocale.en,
   'infobar': infoBarLocale.en,
   'number-box': numberBoxLocale.en,

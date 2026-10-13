@@ -31,7 +31,8 @@
       "infobar": "应用级状态提示横幅，四档 Severity、可关闭。",
       "progress": "线性进度指示：不确定滑块与确定填充。",
       "progress-ring": "环形进度指示：不确定转圈与确定弧长。",
-      "tooltip": "悬停或聚焦时显示的补充信息浮层。"
+      "tooltip": "悬停或聚焦时显示的补充信息浮层。",
+      "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。"
     }
   },
   "theme": {
@@ -117,6 +118,49 @@
     "hideCode": "收起代码"
   },
   "demos": {
+    "app-window": {
+      "basic": {
+        "title": "设置",
+        "subtitle": "21RU0000CD",
+        "body": "内容区只负责「可视区域」：这里放什么完全由消费方决定，需要滚动时在插槽里放 FluereScrollView。"
+      },
+      "header": {
+        "title": "标题栏四件套",
+        "back": "返回",
+        "paneToggle": "导航",
+        "searchPlaceholder": "查找设置",
+        "account": "账户",
+        "eventLog": "事件日志：{entries}",
+        "notTriggered": "（未触发）"
+      },
+      "caption": {
+        "minimize": "最小化",
+        "maximize": "最大化",
+        "restore": "向下还原",
+        "close": "关闭",
+        "minimizable": "可最小化",
+        "maximizable": "可最大化",
+        "closable": "可关闭",
+        "eventLog": "事件日志：{entries}",
+        "notTriggered": "（未触发）"
+      },
+      "drag": {
+        "title": "可拖拽窗口",
+        "position": "位置：({x}, {y})",
+        "distance": "本次拖拽距离：{distance}px",
+        "hint": "按住标题栏拖动；双击标题栏切换最大化（由外壳响应事件实现）。"
+      },
+      "states": {
+        "active": "前台（取消勾选即失活）",
+        "maximized": "最大化",
+        "leftTitle": "前台 / 失活",
+        "leftSubtitle": "由 active 驱动",
+        "leftBody": "失活时标题与副标题换前景，图标 / 左头 / 中段 / 右头降到 50% 不透明度。",
+        "rightTitle": "零时长动效 + 焦点",
+        "rightHeader": "右头区域",
+        "rightBody": "motion=\"none\" 关闭组件自有过渡；按 Tab 可看到按钮上的 WinUI 双层焦点矩形。"
+      }
+    },
     "common": {
       "close": "关闭"
     },

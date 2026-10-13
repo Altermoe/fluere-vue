@@ -1,6 +1,7 @@
 // 文件名 `zh-Hans` 是 BCP-47 locale 标识（对应子路径导出 ./locales/zh-Hans），非 kebab-case 违规。
 /* oxlint-disable unicorn/filename-case */
 import type { LocaleOverrideMessages } from '@fluere-vue/hooks'
+import { appWindowLocale, captionButtonsLocale } from '../src/app-window/locale'
 import { infoBarLocale } from '../src/infobar/locale'
 import { inputLocale } from '../src/input/locale'
 import { numberBoxLocale } from '../src/number-box/locale'
@@ -16,10 +17,12 @@ import { scrollViewLocale } from '../src/scrollview/locale'
  * import zhHans from '@fluere-vue/ui/locales/zh-Hans'
  * <FluereConfigProvider :messages="{ 'zh-Hans': zhHans }">…</FluereConfigProvider>
  * ```
- * scope 名与组件内 `useScopeMessages(scope, …)` 一致（`input` / `infobar` /
- * `number-box` / `progress-bar` / `progress-ring` / `scroll-view`）。
+ * scope 名与组件内 `useScopeMessages(scope, …)` 一致（`app-window` / `caption-buttons` /
+ * `input` / `infobar` / `number-box` / `progress-bar` / `progress-ring` / `scroll-view`）。
  */
 export const zhHans: LocaleOverrideMessages = {
+  'app-window': appWindowLocale.zhHans,
+  'caption-buttons': captionButtonsLocale.zhHans,
   'input': inputLocale.zhHans,
   'infobar': infoBarLocale.zhHans,
   'number-box': numberBoxLocale.zhHans,

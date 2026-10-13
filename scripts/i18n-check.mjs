@@ -307,32 +307,55 @@ function collectLocaleSlices(dir) {
 }
 const objectKeySet = (block) =>
   new Set([...block.matchAll(/^\s*(?<key>[A-Za-z_$][\w$]*)\s*:/gm)].map((m) => m[1]))
+
+/**
+ * 取出源码里**全部** `zhHans` / `en` 对象字面量（按出现顺序）。
+ *
+ * 一个 `locale.ts` 默认只放一个 scope 的切片，但同一目录下的多个公开组件可以共用
+ * 一个 `locale.ts`（如 `app-window/locale.ts` 同时承载 `app-window` 与 `caption-buttons`
+ * 两个 scope）——那一刻起「只取第一处」的旧写法会漏检后续切片，故这里逐处比对。
+ * 切片均为一层扁平对象，故 `\{(?<body>[\s\S]*?)\}` 的第一个 `}` 就是切片右括号。
+ */
+const localeBlocks = (src, name) =>
+  [...src.matchAll(new RegExp(`${name}\\s*:\\s*\\{(?<body>[\\s\\S]*?)\\}`, 'g'))].map((m) =>
+    objectKeySet(m[1]),
+  )
 for (const file of collectLocaleSlices(UI_LOCALES_ROOT)) {
   const src = stripComments(readFileSync(file, 'utf8'), false)
-  const zh = /zhHans\s*:\s*\{(?<body>[\s\S]*?)\}/.exec(src)
-  const en = /en\s*:\s*\{(?<body>[\s\S]*?)\}/.exec(src)
-  if (!zh || !en) {
+  const zhBlocks = localeBlocks(src, 'zhHans')
+  const enBlocks = localeBlocks(src, 'en')
+  if (zhBlocks.length === 0 || zhBlocks.length !== enBlocks.length) {
     failed = true
     console.error(
       `✗ ${relative(ROOT, file)}：无法解析 zhHans / en 对象字面量（切片结构有变？请同步该检查）`,
     )
     continue
   }
-  const zhKeys = objectKeySet(zh[1])
-  const enKeys = objectKeySet(en[1])
-  const missingEn = [...zhKeys].filter((k) => !enKeys.has(k))
-  const extraEn = [...enKeys].filter((k) => !zhKeys.has(k))
-  if (missingEn.length || extraEn.length) {
-    failed = true
-    console.error(`✗ ${relative(ROOT, file)} 组件 locale 切片 zh-Hans / en key 不一致：`)
-    if (missingEn.length) {
-      console.error(`   zh-Hans 有、en 缺: ${missingEn.join(', ')}`)
+  let fileFailed = false
+  let totalKeys = 0
+  for (const [index, zhKeys] of zhBlocks.entries()) {
+    const enKeys = enBlocks[index]
+    totalKeys += zhKeys.size
+    const missingEn = [...zhKeys].filter((k) => !enKeys.has(k))
+    const extraEn = [...enKeys].filter((k) => !zhKeys.has(k))
+    if (missingEn.length || extraEn.length) {
+      fileFailed = true
+      failed = true
+      console.error(
+        `✗ ${relative(ROOT, file)} 第 ${index + 1} 个组件 locale 切片 zh-Hans / en key 不一致：`,
+      )
+      if (missingEn.length) {
+        console.error(`   zh-Hans 有、en 缺: ${missingEn.join(', ')}`)
+      }
+      if (extraEn.length) {
+        console.error(`   en 有、zh-Hans 缺: ${extraEn.join(', ')}`)
+      }
     }
-    if (extraEn.length) {
-      console.error(`   en 有、zh-Hans 缺: ${extraEn.join(', ')}`)
-    }
-  } else {
-    console.log(`✓ ${relative(ROOT, file)}: ${zhKeys.size} 个 key 两侧一致`)
+  }
+  if (!fileFailed) {
+    console.log(
+      `✓ ${relative(ROOT, file)}: ${totalKeys} 个 key 两侧一致（${zhBlocks.length} 个切片）`,
+    )
   }
 }
 

@@ -1,6 +1,8 @@
 // 引入全局 Fluent token CSS 变量（组件 scoped style 依赖 var(--TokenName)）
 // oxlint-disable-next-line import/no-unassigned-import
 import '@fluere-vue/designs/tokens.css'
+import FluereAppWindow from './src/app-window/app-window.vue'
+import FluereCaptionButtons from './src/app-window/caption-buttons.vue'
 import FluereButton from './src/button/button.vue'
 import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
@@ -23,7 +25,9 @@ import FluereTooltipProvider from './src/tooltip/tooltip-provider.vue'
 import FluereTooltip from './src/tooltip/tooltip.vue'
 
 export {
+  FluereAppWindow,
   FluereButton,
+  FluereCaptionButtons,
   FluereCheckbox,
   FluereCombobox,
   FluereConfigProvider,
@@ -45,6 +49,18 @@ export {
   SCROLL_VIEW_AGENT_EVENTS,
 }
 export type { FluereButtonProps } from './src/button/button.vue'
+export type {
+  FluereAppWindowDisplayMode,
+  FluereAppWindowDragEndEventArgs,
+  FluereAppWindowDragMoveEventArgs,
+  FluereAppWindowDragStartEventArgs,
+  FluereAppWindowLeftHeaderSpacing,
+  FluereAppWindowProps,
+  FluereAppWindowTitleBarDoubleClickEventArgs,
+  FluereAppWindowTitleBarSize,
+  FluereCaptionButtonsLabels,
+  FluereCaptionButtonsProps,
+} from './src/app-window/types'
 export type { FluereCheckboxProps } from './src/checkbox/checkbox.vue'
 export type { FluereConfigProviderProps } from './src/config-provider/config-provider.vue'
 export type {
