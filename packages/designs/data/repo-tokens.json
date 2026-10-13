@@ -1,0 +1,183 @@
+{
+  "note": "仓库自有令牌（Fluent token 表没有对应档位的部分）。由 scripts/generate.mjs 与 data/fluent-tokens.json 合并后生成 generated/*；extract-tokens.mjs 只重写 data/fluent-tokens.json，不会覆盖本文件，所以这里的手写值不会被上游重新抽取冲掉。每个 token 的 `note` 记录取值依据 / 消费方，`kind` 决定它进不进 UnoCSS 的颜色刻度。",
+  "sources": {
+    "zIndex": "本仓库自定的分层刻度（0.4.2）。对齐既有实现值（下拉 1000 / ToolTip 1100），并显式覆盖：窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 开始菜单 / 任务栏；ToolTip 永远最上层。刻度内留 10 的间隔，供 0.4.1 的层级栈做嵌套提升（zIndexStep）。",
+    "materials": "0.4.4 的 WinUI 材质画刷桥接值。取值来源：① src/controls/dev/CommonStyles/Common_themeresources_any.xaml（Layer*/Card*/Smoke*/Subtle* 与 Mica 纯色基准）；② src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml（Acrylic 的 TintColor / TintOpacity / TintLuminosityOpacity / FallbackColor）——均取自 microsoft-ui-xaml tag winui3/release/2.5.1。WinUI 里这些值是 AARRGGBB，这里的 light/dark 是等价的 CSS 写法（alpha 用 3 位小数），原值写在各自 note 里。WinUI 的 Mica **本体由系统 DWM 绘制**，公开源码树没有 Mica 的 Color 资源，故 mica* 取「Mica 不可用时的纯色基准」SolidBackgroundFillColor*；真正的 Mica Web 近似（渐变 + 半透明层）属 0.9.1。"
+  },
+  "tokens": {
+    "zIndexWindow": {
+      "light": "0",
+      "dark": "0",
+      "kind": "number",
+      "note": "桌面窗口层（0.5.x DesktopShell 消费）。窗口自身不叠在别的东西之上"
+    },
+    "zIndexContent": {
+      "light": "100",
+      "dark": "100",
+      "kind": "number",
+      "note": "窗口内容区里需要浮起的表面（非浮层档位）"
+    },
+    "zIndexNavFlyout": {
+      "light": "1000",
+      "dark": "1000",
+      "kind": "number",
+      "note": "导航溢出面板 / 下拉浮层（Combobox、Select 弹层）。沿用历史硬编码值 1000"
+    },
+    "zIndexMenu": {
+      "light": "1100",
+      "dark": "1100",
+      "kind": "number",
+      "note": "MenuFlyout 菜单层（0.6.0 消费）"
+    },
+    "zIndexSubmenu": {
+      "light": "1200",
+      "dark": "1200",
+      "kind": "number",
+      "note": "子菜单层，必须高于父菜单（0.6.0 验收要点）"
+    },
+    "zIndexModal": {
+      "light": "1300",
+      "dark": "1300",
+      "kind": "number",
+      "note": "模态遮罩（SmokeLayer）与 ContentDialog 内容层。两者同档、靠 Teleport 挂载顺序决定绘制次序"
+    },
+    "zIndexTooltip": {
+      "light": "1400",
+      "dark": "1400",
+      "kind": "number",
+      "note": "ToolTip：永远最上层。历史值 1100 高于当时的弹窗 1000，这里保持同样的相对关系"
+    },
+    "zIndexShell": {
+      "light": "1500",
+      "dark": "1500",
+      "kind": "number",
+      "note": "开始菜单 / 任务栏等应用级外壳（0.5.x，落在 apps/*）"
+    },
+    "zIndexStep": {
+      "light": "10",
+      "dark": "10",
+      "kind": "number",
+      "note": "层级栈深度步进：嵌套浮层 z = 宿主层 z + n × step（0.4.1 useFlyout 消费）。用于解决「模态里的下拉必须盖过模态」——纯平面刻度做不到"
+    },
+    "layerFillColorDefault": {
+      "light": "rgba(255, 255, 255, 0.502)",
+      "dark": "rgba(58, 58, 58, 0.298)",
+      "kind": "color",
+      "note": "WinUI LayerFillColorDefault（亮 #80FFFFFF / 暗 #4C3A3A3A）。窗口内容层上的浮起表面底色"
+    },
+    "layerFillColorAlt": {
+      "light": "#ffffff",
+      "dark": "rgba(255, 255, 255, 0.051)",
+      "kind": "color",
+      "note": "WinUI LayerFillColorAlt（亮 #FFFFFF / 暗 #0DFFFFFF）"
+    },
+    "layerOnAcrylicFillColorDefault": {
+      "light": "rgba(255, 255, 255, 0.251)",
+      "dark": "rgba(255, 255, 255, 0.035)",
+      "kind": "color",
+      "note": "WinUI LayerOnAcrylicFillColorDefault（亮 #40FFFFFF / 暗 #09FFFFFF）。Acrylic 面板内的第一层覆盖"
+    },
+    "layerOnMicaBaseAltFillColorDefault": {
+      "light": "rgba(255, 255, 255, 0.702)",
+      "dark": "rgba(58, 58, 58, 0.451)",
+      "kind": "color",
+      "note": "WinUI LayerOnMicaBaseAltFillColorDefault（亮 #B3FFFFFF / 暗 #733A3A3A）。Mica BaseAlt 上的第一层覆盖"
+    },
+    "layerOnMicaBaseAltFillColorTertiary": {
+      "light": "#f9f9f9",
+      "dark": "#2c2c2c",
+      "kind": "color",
+      "note": "WinUI LayerOnMicaBaseAltFillColorTertiary（亮 #F9F9F9 / 暗 #2C2C2C）"
+    },
+    "cardBackgroundFillColorDefault": {
+      "light": "rgba(255, 255, 255, 0.702)",
+      "dark": "rgba(255, 255, 255, 0.051)",
+      "kind": "color",
+      "note": "WinUI CardBackgroundFillColorDefault（亮 #B3FFFFFF / 暗 #0DFFFFFF）。与 Fluent 的 colorNeutralCardBackground 不同值：这里保留 WinUI 的半透明语义（可叠在任意材质上）"
+    },
+    "smokeFillColorDefault": {
+      "light": "rgba(0, 0, 0, 0.302)",
+      "dark": "rgba(0, 0, 0, 0.302)",
+      "kind": "color",
+      "note": "WinUI SmokeFillColorDefault（#4D000000，两态同值）。模态遮罩的**精确**底色；现 ContentDialog / SmokeLayer 走的是 Fluent 近似 colorBackgroundOverlay（alpha 0.4 / 0.5），需要精确对齐时可一行覆写 --fui-smoke-fill"
+    },
+    "subtleFillColorTransparent": {
+      "light": "rgba(255, 255, 255, 0)",
+      "dark": "rgba(255, 255, 255, 0)",
+      "kind": "color",
+      "note": "WinUI SubtleFillColorTransparent（#00FFFFFF）。注意它不等于 Fluent colorSubtleBackground（后者是语义色，值会随主题变）"
+    },
+    "subtleFillColorSecondary": {
+      "light": "rgba(0, 0, 0, 0.035)",
+      "dark": "rgba(255, 255, 255, 0.059)",
+      "kind": "color",
+      "note": "WinUI SubtleFillColorSecondary（亮 #09000000 / 暗 #0FFFFFFF）。半透明覆盖层，可叠在任意材质上"
+    },
+    "subtleFillColorTertiary": {
+      "light": "rgba(0, 0, 0, 0.024)",
+      "dark": "rgba(255, 255, 255, 0.039)",
+      "kind": "color",
+      "note": "WinUI SubtleFillColorTertiary（亮 #06000000 / 暗 #0AFFFFFF）"
+    },
+    "acrylicBackgroundFillColorDefault": {
+      "light": "#f9f9f9",
+      "dark": "#2c2c2c",
+      "kind": "color",
+      "note": "WinUI AcrylicBackgroundFillColorDefaultBrush 的 FallbackColor（亮 #F9F9F9 / 暗 #2C2C2C）：Acrylic 不可用时的纯色回落（0.9.2 的材质合成以此兜底）"
+    },
+    "acrylicInAppFillColorDefault": {
+      "light": "#f9f9f9",
+      "dark": "#2c2c2c",
+      "kind": "color",
+      "note": "WinUI AcrylicInAppFillColorDefaultBrush 的 FallbackColor（与 Background 档同值）"
+    },
+    "acrylicBackgroundFillColorBase": {
+      "light": "#eeeeee",
+      "dark": "#1c1c1c",
+      "kind": "color",
+      "note": "WinUI AcrylicBackgroundFillColorBaseBrush 的 FallbackColor（亮 #EEEEEE / 暗 #1C1C1C）"
+    },
+    "acrylicInAppFillColorBase": {
+      "light": "#eeeeee",
+      "dark": "#1c1c1c",
+      "kind": "color",
+      "note": "WinUI AcrylicInAppFillColorBaseBrush 的 FallbackColor（与 Background Base 档同值）"
+    },
+    "acrylicTintColorDefault": {
+      "light": "rgba(252, 252, 252, 0)",
+      "dark": "rgba(44, 44, 44, 0.15)",
+      "kind": "color",
+      "note": "WinUI AcrylicInAppFillColorDefaultBrush 的 TintColor × TintOpacity（亮 #FCFCFC × 0.0 / 暗 #2C2C2C × 0.15），合成成一条可直接用于 background-color 的色值"
+    },
+    "acrylicTintLuminosityColorDefault": {
+      "light": "rgba(252, 252, 252, 0.85)",
+      "dark": "rgba(44, 44, 44, 0.96)",
+      "kind": "color",
+      "note": "WinUI 默认档的 TintColor × TintLuminosityOpacity（亮 #FCFCFC × 0.85 / 暗 #2C2C2C × 0.96），供亮度层近似使用"
+    },
+    "acrylicTintColorBase": {
+      "light": "rgba(243, 243, 243, 0)",
+      "dark": "rgba(32, 32, 32, 0.5)",
+      "kind": "color",
+      "note": "WinUI Acrylic...FillColorBaseBrush 的 TintColor × TintOpacity（亮 #F3F3F3 × 0.0 / 暗 #202020 × 0.5）"
+    },
+    "acrylicTintLuminosityColorBase": {
+      "light": "rgba(243, 243, 243, 0.9)",
+      "dark": "rgba(32, 32, 32, 0.96)",
+      "kind": "color",
+      "note": "WinUI Base 档的 TintColor × TintLuminosityOpacity（亮 #F3F3F3 × 0.9 / 暗 #202020 × 0.96）"
+    },
+    "micaBackgroundFillColorBase": {
+      "light": "#f3f3f3",
+      "dark": "#202020",
+      "kind": "color",
+      "note": "Mica 纯色基准 ← WinUI SolidBackgroundFillColorBase（亮 #F3F3F3 / 暗 #202020）。Mica 本体由 DWM 绘制、公开源码树无 Color 资源，0.9.1 的 Web 近似以此为底"
+    },
+    "micaBackgroundFillColorBaseAlt": {
+      "light": "#dadada",
+      "dark": "#0a0a0a",
+      "kind": "color",
+      "note": "Mica BaseAlt 纯色基准 ← WinUI SolidBackgroundFillColorBaseAlt（亮 #DADADA / 暗 #0A0A0A）"
+    }
+  }
+}

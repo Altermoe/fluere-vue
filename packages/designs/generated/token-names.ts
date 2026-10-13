@@ -1,4 +1,4 @@
-// Generated from data/fluent-tokens.json — do not edit by hand.
+// Generated from data/fluent-tokens.json + data/repo-tokens.json — do not edit by hand.
 // Token 名常量与类型：TS 侧引用 token 名用，杜绝拼写漂移。
 export const tokenNames = {
   "borderRadiusNone": true,
@@ -459,7 +459,36 @@ export const tokenNames = {
   "shadow8Brand": true,
   "shadow16Brand": true,
   "shadow28Brand": true,
-  "shadow64Brand": true
+  "shadow64Brand": true,
+  "zIndexWindow": true,
+  "zIndexContent": true,
+  "zIndexNavFlyout": true,
+  "zIndexMenu": true,
+  "zIndexSubmenu": true,
+  "zIndexModal": true,
+  "zIndexTooltip": true,
+  "zIndexShell": true,
+  "zIndexStep": true,
+  "layerFillColorDefault": true,
+  "layerFillColorAlt": true,
+  "layerOnAcrylicFillColorDefault": true,
+  "layerOnMicaBaseAltFillColorDefault": true,
+  "layerOnMicaBaseAltFillColorTertiary": true,
+  "cardBackgroundFillColorDefault": true,
+  "smokeFillColorDefault": true,
+  "subtleFillColorTransparent": true,
+  "subtleFillColorSecondary": true,
+  "subtleFillColorTertiary": true,
+  "acrylicBackgroundFillColorDefault": true,
+  "acrylicInAppFillColorDefault": true,
+  "acrylicBackgroundFillColorBase": true,
+  "acrylicInAppFillColorBase": true,
+  "acrylicTintColorDefault": true,
+  "acrylicTintLuminosityColorDefault": true,
+  "acrylicTintColorBase": true,
+  "acrylicTintLuminosityColorBase": true,
+  "micaBackgroundFillColorBase": true,
+  "micaBackgroundFillColorBaseAlt": true
 } as const
 
 export type FluereTokenName = keyof typeof tokenNames

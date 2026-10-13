@@ -1,9 +1,9 @@
-// Generated from data/fluent-tokens.json — do not edit by hand.
+// Generated from data/fluent-tokens.json + data/repo-tokens.json — do not edit by hand.
 // Rebuild: node scripts/extract-tokens.mjs && node scripts/generate.mjs
 import type { Preset } from 'unocss'
 
 /** tokens.css 文本，可由 preset preflight 注入或单独引入。 */
-export const tokensCssText = `/* Generated from data/fluent-tokens.json — do not edit by hand. */
+export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/repo-tokens.json — do not edit by hand. */
 /* Rebuild: node scripts/extract-tokens.mjs && node scripts/generate.mjs */
 :root {
   --borderRadiusNone: 0;
@@ -150,6 +150,17 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json — do n
   --shadow16Brand: 0 0 2px rgba(0,0,0,0.30), 0 8px 16px rgba(0,0,0,0.25);
   --shadow28Brand: 0 0 8px rgba(0,0,0,0.30), 0 14px 28px rgba(0,0,0,0.25);
   --shadow64Brand: 0 0 8px rgba(0,0,0,0.30), 0 32px 64px rgba(0,0,0,0.25);
+  --zIndexWindow: 0;
+  --zIndexContent: 100;
+  --zIndexNavFlyout: 1000;
+  --zIndexMenu: 1100;
+  --zIndexSubmenu: 1200;
+  --zIndexModal: 1300;
+  --zIndexTooltip: 1400;
+  --zIndexShell: 1500;
+  --zIndexStep: 10;
+  --smokeFillColorDefault: rgba(0, 0, 0, 0.302);
+  --subtleFillColorTransparent: rgba(255, 255, 255, 0);
 }
 
 :root {
@@ -469,6 +480,24 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json — do n
   --shadow16: 0 0 2px light-dark(rgba(0,0,0,0.12), rgba(0,0,0,0.24)), 0 8px 16px light-dark(rgba(0,0,0,0.14), rgba(0,0,0,0.28));
   --shadow28: 0 0 8px light-dark(rgba(0,0,0,0.12), rgba(0,0,0,0.24)), 0 14px 28px light-dark(rgba(0,0,0,0.14), rgba(0,0,0,0.28));
   --shadow64: 0 0 8px light-dark(rgba(0,0,0,0.12), rgba(0,0,0,0.24)), 0 32px 64px light-dark(rgba(0,0,0,0.14), rgba(0,0,0,0.28));
+  --layerFillColorDefault: light-dark(rgba(255, 255, 255, 0.502), rgba(58, 58, 58, 0.298));
+  --layerFillColorAlt: light-dark(#ffffff, rgba(255, 255, 255, 0.051));
+  --layerOnAcrylicFillColorDefault: light-dark(rgba(255, 255, 255, 0.251), rgba(255, 255, 255, 0.035));
+  --layerOnMicaBaseAltFillColorDefault: light-dark(rgba(255, 255, 255, 0.702), rgba(58, 58, 58, 0.451));
+  --layerOnMicaBaseAltFillColorTertiary: light-dark(#f9f9f9, #2c2c2c);
+  --cardBackgroundFillColorDefault: light-dark(rgba(255, 255, 255, 0.702), rgba(255, 255, 255, 0.051));
+  --subtleFillColorSecondary: light-dark(rgba(0, 0, 0, 0.035), rgba(255, 255, 255, 0.059));
+  --subtleFillColorTertiary: light-dark(rgba(0, 0, 0, 0.024), rgba(255, 255, 255, 0.039));
+  --acrylicBackgroundFillColorDefault: light-dark(#f9f9f9, #2c2c2c);
+  --acrylicInAppFillColorDefault: light-dark(#f9f9f9, #2c2c2c);
+  --acrylicBackgroundFillColorBase: light-dark(#eeeeee, #1c1c1c);
+  --acrylicInAppFillColorBase: light-dark(#eeeeee, #1c1c1c);
+  --acrylicTintColorDefault: light-dark(rgba(252, 252, 252, 0), rgba(44, 44, 44, 0.15));
+  --acrylicTintLuminosityColorDefault: light-dark(rgba(252, 252, 252, 0.85), rgba(44, 44, 44, 0.96));
+  --acrylicTintColorBase: light-dark(rgba(243, 243, 243, 0), rgba(32, 32, 32, 0.5));
+  --acrylicTintLuminosityColorBase: light-dark(rgba(243, 243, 243, 0.9), rgba(32, 32, 32, 0.96));
+  --micaBackgroundFillColorBase: light-dark(#f3f3f3, #202020);
+  --micaBackgroundFillColorBaseAlt: light-dark(#dadada, #0a0a0a);
 }
 `
 
@@ -839,6 +868,26 @@ const themeColors = {
     'colorStatusDangerBorder2': 'var(--colorStatusDangerBorder2)',
     'colorStatusDangerBackground3Hover': 'var(--colorStatusDangerBackground3Hover)',
     'colorStatusDangerBackground3Pressed': 'var(--colorStatusDangerBackground3Pressed)',
+    'layerFillColorDefault': 'var(--layerFillColorDefault)',
+    'layerFillColorAlt': 'var(--layerFillColorAlt)',
+    'layerOnAcrylicFillColorDefault': 'var(--layerOnAcrylicFillColorDefault)',
+    'layerOnMicaBaseAltFillColorDefault': 'var(--layerOnMicaBaseAltFillColorDefault)',
+    'layerOnMicaBaseAltFillColorTertiary': 'var(--layerOnMicaBaseAltFillColorTertiary)',
+    'cardBackgroundFillColorDefault': 'var(--cardBackgroundFillColorDefault)',
+    'smokeFillColorDefault': 'var(--smokeFillColorDefault)',
+    'subtleFillColorTransparent': 'var(--subtleFillColorTransparent)',
+    'subtleFillColorSecondary': 'var(--subtleFillColorSecondary)',
+    'subtleFillColorTertiary': 'var(--subtleFillColorTertiary)',
+    'acrylicBackgroundFillColorDefault': 'var(--acrylicBackgroundFillColorDefault)',
+    'acrylicInAppFillColorDefault': 'var(--acrylicInAppFillColorDefault)',
+    'acrylicBackgroundFillColorBase': 'var(--acrylicBackgroundFillColorBase)',
+    'acrylicInAppFillColorBase': 'var(--acrylicInAppFillColorBase)',
+    'acrylicTintColorDefault': 'var(--acrylicTintColorDefault)',
+    'acrylicTintLuminosityColorDefault': 'var(--acrylicTintLuminosityColorDefault)',
+    'acrylicTintColorBase': 'var(--acrylicTintColorBase)',
+    'acrylicTintLuminosityColorBase': 'var(--acrylicTintLuminosityColorBase)',
+    'micaBackgroundFillColorBase': 'var(--micaBackgroundFillColorBase)',
+    'micaBackgroundFillColorBaseAlt': 'var(--micaBackgroundFillColorBaseAlt)',
 }
 
 const themeFontFamily = {
@@ -967,7 +1016,15 @@ const themeEasing = {
 }
 
 const themeZIndex = {
-
+    'window': 'var(--zIndexWindow)',
+    'content': 'var(--zIndexContent)',
+    'nav-flyout': 'var(--zIndexNavFlyout)',
+    'menu': 'var(--zIndexMenu)',
+    'submenu': 'var(--zIndexSubmenu)',
+    'modal': 'var(--zIndexModal)',
+    'tooltip': 'var(--zIndexTooltip)',
+    'shell': 'var(--zIndexShell)',
+    'step': 'var(--zIndexStep)',
 }
 
 const themeTypography = {
