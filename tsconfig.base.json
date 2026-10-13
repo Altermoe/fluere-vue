@@ -1,4 +1,15 @@
 {
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/.nuxt",
+    "**/.output",
+    "**/.data",
+    "**/coverage",
+    ".pnpm-store",
+    "temp"
+  ],
   "compilerOptions": {
     "target": "ESNext",
     "module": "preserve",
