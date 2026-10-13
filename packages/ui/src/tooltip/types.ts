@@ -75,7 +75,8 @@
  *
  * 与 WinUI 的差异（有意为之，逐条记录）：
  *  - **层级**：WinUI 用 Popup（XamlRoot 顶层）+ `Canvas.ZIndex`；本库用 portal 到 body
- *    的浮层，z-index 取 1100（高于 ContentDialog 的 1000，对齐「ToolTip 始终在最上层」）。
+ *    的浮层，z-index 取刻度里的 ToolTip 档（`--zIndexTooltip` 1400，高于模态档 1300），
+ *    对齐「ToolTip 始终在最上层」。
  *  - **触摸 / 长按**：WinUI 触摸长按（Touch 模式 1x 延时）也会弹；Web 侧 reka 的触发
  *    只认 pointerenter / pointermove（`pointerType === 'touch'` 被显式跳过）与 focus，
  *    故触摸端只在「点按后获得焦点」时生效，长按不弹。触摸端另有原生 tooltip 兜底。

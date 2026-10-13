@@ -357,8 +357,8 @@ describe('FluereTooltip 样式契约（WinUI 资源名 → Fluent token）', () 
     expect(declares('.fui-tooltip', 'overflow-wrap: break-word')).toBe(true)
   })
 
-  it('层级高于 ContentDialog（1000）与 Combobox 下拉（1000）', () => {
-    expect(declares('.fui-tooltip', '--fui-tooltip-z: 1100')).toBe(true)
+  it('层级取 z-index 刻度的 ToolTip 档（永远最上一层）', () => {
+    expect(declares('.fui-tooltip', '--fui-tooltip-z: var(--zIndexTooltip)')).toBe(true)
     expect(declares('.fui-tooltip', 'z-index: var(--fui-tooltip-z)')).toBe(true)
   })
 

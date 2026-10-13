@@ -9,6 +9,7 @@
  */
 import { Presence, TooltipContent, TooltipPortal, TooltipTrigger } from 'reka-ui'
 import { onMounted, ref } from 'vue'
+import type { CSSProperties } from 'vue'
 import type { FluereTooltipAlign, FluereTooltipPlacement } from './types'
 
 defineOptions({
@@ -30,6 +31,8 @@ defineProps<{
   content?: string | undefined
   /** 内容是否可见（由外层推导，供 `Presence` 决定卸载时机） */
   present: boolean
+  /** 浮层层级：由外层的 `useFlyout` 给出（引用 `--zIndex*` 刻度，含嵌套提升） */
+  layerStyle?: CSSProperties
 }>()
 
 /**
@@ -56,6 +59,7 @@ onMounted(() => {
       <TooltipContent
         :id="contentId"
         class="fui-tooltip"
+        :style="layerStyle"
         :side="placement"
         :side-offset="sideOffset"
         :align="align"
@@ -98,8 +102,8 @@ onMounted(() => {
   --fui-tooltip-border: var(--colorNeutralStrokeAlpha);
   /* WinUI 资源：FadeIn/FadeOutThemeAnimation 的时长（非公开 vsanimation.h，取最短淡入档） */
   --fui-tooltip-fade-duration: var(--durationFaster);
-  /* 浮层层级：必须高于 ContentDialog（1000）与 Combobox 下拉（1000） */
-  --fui-tooltip-z: 1100;
+  /* 浮层层级：ToolTip 永远最上层（0.4.2 刻度里高于模态档 1300） */
+  --fui-tooltip-z: var(--zIndexTooltip);
 
   z-index: var(--fui-tooltip-z);
   /* WinUI：ToolTip.IsHitTestVisible = false —— 提示面不吃指针。

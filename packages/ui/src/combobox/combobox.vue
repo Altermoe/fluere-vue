@@ -10,6 +10,7 @@ import {
   ComboboxItem as RekaComboboxItem,
 } from 'reka-ui'
 import { computed, nextTick, onMounted, onUnmounted, ref, useId, useSlots } from 'vue'
+import { useFlyout } from '../flyout/use-flyout'
 import { DEFAULT_MAX_DROPDOWN_HEIGHT, NEXT_ITEM_STEP, PREVIOUS_ITEM_STEP } from './constants'
 import {
   resolveHighlightIntent,
@@ -264,6 +265,33 @@ const popup = useComboboxPopup(
   },
 )
 const { isOpen, placement, applyOpen } = popup
+
+/**
+ * 浮层层级（0.4.1 迁移步骤 ①）：把下拉的开合状态镜像给 `useFlyout`，由层级栈给出
+ * 层级表达式 —— 展开状态的事实源仍是 `useComboboxPopup`（`open` getter 传进去），
+ * 原语只被动跟随，不接管开关。
+ *
+ * 关闭语义与焦点归位的分工（有意保留）：
+ *   - Esc / 外部点击 / 焦点移出：reka 的 `ComboboxContent`（DismissableLayer）已按
+ *     WinUI `ComboBox` 的 light-dismiss 行为实现并有既有契约测试，故 `closeOn*=false`，
+ *     避免两套监听器互相打架；
+ *   - 收起后收回焦点：`useComboboxPopup` 的收尾逻辑负责（见该文件头注释），
+ *     故 `returnFocus: false`。原语在这两条上只登记层级。
+ */
+const flyout = useFlyout({
+  tier: '--zIndexNavFlyout',
+  open: () => popup.isOpen.value,
+  closeOnEscape: false,
+  closeOnOutsidePointer: false,
+  returnFocus: false,
+})
+/**
+ * 层级样式必须**解构到顶层 ref** 再进模板：Vue 只对顶层绑定做 ref 自动解包，
+ * `:style="flyout.layerStyle"` 拿到的是 ComputedRef 本体而不是样式对象，
+ * 结果 z-index 静默不生效（2026-10-13 由真实浏览器实测抓到：弹层里没有 z-index，
+ * 只有 CSS 回退值在起作用）。Tooltip 侧因为写在 computed 里取了 `.value` 才没踩到。
+ */
+const { layerStyle: flyoutLayerStyle } = flyout
 
 /* ------------------------------------------------------------------ */
 /* 指针 / 焦点 / 输入法：焦点矩形、PointerFocused、组字屏蔽                */
@@ -522,7 +550,7 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
           class="fui-combobox__popup"
           :data-editable="editable ? '' : undefined"
           :data-split="splitState"
-          :style="popupStyle"
+          :style="[popupStyle, flyoutLayerStyle]"
           position="popper"
           side="bottom"
           align="start"
@@ -1000,7 +1028,11 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
 <style>
 /* ---- PopupBorder：宽度对齐触发元素 + 抬升描边 + 圆角 8 + Acrylic 近似 ---- */
 .fui-combobox__popup {
-  z-index: 1000; /* Teleport 到 body，需盖过页面内容 */
+  /* 层级：下拉浮层档（0.4.2 刻度，见 @fluere-vue/designs 的 data/repo-tokens.json）。
+     Teleport 到 body，需盖过页面内容；留组件局部变量以便消费方覆盖。
+     模态里再开下拉的嵌套提升由 0.4.1 的 useFlyout 层级栈负责（zIndexStep） */
+  --fui-combobox-popup-z: var(--zIndexNavFlyout);
+  z-index: var(--fui-combobox-popup-z);
   box-sizing: border-box;
   /* WinUI：Popup 宽 = ComboBox.ActualWidth（面板与触发元素严格对齐） */
   width: var(--reka-combobox-trigger-width, 64px);

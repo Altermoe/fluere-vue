@@ -80,7 +80,7 @@ pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI �
 - **多层底座要分清"谁提供上下文、谁产出 DOM"**：以 reka 为例，`TooltipProvider`（全局延时设置）与 `TooltipRoot`（open 状态 + 上下文）都**不产出 DOM**，直接放进 Grid 当"某个格子"用不会打乱布局（InfoBar 的关闭按钮即如此）。写之前先确认这一点，再决定要不要包一层宿主元素。
 - **`<component :is="A" v-if="x" /><B v-else />` 是个坑**：动态组件分支上的 `@update:open` 一类事件**不会被可靠转发**（实测父组件的处理函数一次都没触发，产物无报错，只是内部状态改了、外部不知道）。要切换宿主组件时，老老实实写两条字面量分支，并用 `computed` 的 props 对象 + 一个内部 Fixture 组件消重。
 - **底座"强制必须套 Provider"时，用注入旗标做缺省**：第三方 `createContext` 在缺 Provider 时会直接抛错。正确做法是包内自建一个 `Symbol` 旗标（`provide/inject`），`FluereTooltip` 据此判断祖先有没有 `FluereTooltipProvider`：没有就自带一层缺省配置（数值对齐 WinUI 的进程级缺省值），有就沿用祖先的——**既保证单用不炸，又不破坏"多个实例共享同一份全局手感"**。不要无条件再套一层，那会把祖先的配置挡掉。
-- **浮层层级要成体系**：文档站里 ContentDialog / Combobox 下拉是 `1000`，ToolTip 取 `1100`（永远最上层）。新加浮层时先看现有档位，别随手写 `9999`。
+- **浮层层级要成体系**：档位收在 `@fluere-vue/designs` 的 `data/repo-tokens.json`（`--zIndex*` 刻度，0.4.2 起）：窗口 < 内容区 < 导航浮层（下拉 1000）< 菜单 < 子菜单 < 模态遮罩（1300）< 外壳，ToolTip（1400）永远最上层。组件里**禁止**再写裸的浮层 z-index，只能引用刻度（组件内部局部 stacking 的 `1 / 2 / -1` 例外，且要注明「局部层、非浮层档位」）；模态内部再开的浮层由 `useFlyout` 的层级栈按 `--zIndexStep` 向上提升，别靠「同层 + Teleport 顺序」的巧合。契约测试见 `packages/ui/src/__tests__/z-index-tokens.test.ts`。
 - **受控 / 非受控都要支持**：`open === undefined` 时把 `open` 透传为 `undefined` 交回底座自管，并用底座抛回的 update 事件同步本地状态；受控时只认 Prop。别只做一种。
 
 ## 验证与环境操作

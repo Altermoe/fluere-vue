@@ -30,6 +30,7 @@ export type { FluereTooltipAlign, FluereTooltipPlacement, FluereTooltipProps } f
 <script setup lang="ts">
 import { TooltipRoot } from 'reka-ui'
 import { computed, inject, ref, useId, useSlots, watch } from 'vue'
+import { useFlyout } from '../flyout/use-flyout'
 import FluereTooltipFixture from './tooltip-fixture.vue'
 import FluereTooltipProvider from './tooltip-provider.vue'
 import { TOOLTIP_PROVIDER_FLAG } from './types'
@@ -94,6 +95,23 @@ const onOpenChange = (value: boolean) => {
   emit('update:open', value)
 }
 
+/**
+ * 浮层层级（0.4.1 迁移步骤 ①）：提示面走 `--zIndexTooltip` 档，且登记进层级栈 ——
+ * 于是「模态弹窗里 hover 出来的 ToolTip」会按 `--zIndexStep` 抬到模态之上，
+ * 而不是靠「ToolTip 档位比弹窗大」这一条静态假设。
+ *
+ * 有意保留 reka 负责的部分：关闭路径（指针离开 / 失焦 / `disable-hoverable-content`）
+ * 与延时窗口由 `TooltipRoot` 实现；原语这里只登记层级，不重复接管关闭与焦点归还
+ * （`returnFocus: false`：ToolTip 从不抢焦点，焦点本来就还在触发元素上）。
+ */
+const flyout = useFlyout({
+  tier: '--zIndexTooltip',
+  open: () => isOpen.value && !props.disabled,
+  closeOnEscape: false,
+  closeOnOutsidePointer: false,
+  returnFocus: false,
+})
+
 /** 是否渲染提示内容（有文本 Prop 或有 `#content` 插槽） */
 const hasContent = computed(() => Boolean(props.content) || Boolean(slots.content))
 
@@ -123,6 +141,7 @@ const fixtureProps = computed(() => ({
   label: props.label,
   content: props.content,
   present: isOpen.value && !props.disabled,
+  layerStyle: flyout.layerStyle.value,
 }))
 </script>
 

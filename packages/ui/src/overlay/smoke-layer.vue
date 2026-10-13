@@ -101,10 +101,11 @@ watch(
   /* WinUI 资源：ControlFasterAnimationDuration / s_OpacityChangeDuration = 83ms。
      Fluent 2 Web 的时长档位没有 83ms（UltraFast 50 / Faster 100），故按组件局部变量落地 */
   --fui-smoke-fade-duration: 83ms;
-  /* 层级：与弹窗内容层同层（1000），靠 Teleport 的挂载顺序（遮罩先、弹窗后）
-     决定绘制次序；留出同层空间是为了让弹窗内部再 Teleport 的浮层
-     （如 Combobox 下拉，同为 z-index 1000）仍能盖在弹窗之上 */
-  --fui-smoke-z: 1000;
+  /* 层级：模态档（0.4.2 刻度）。内容层（ContentDialog）同为模态档，
+     靠 Teleport 的挂载顺序（遮罩先、弹窗后）决定绘制次序。
+     「模态内部再 Teleport 的浮层（如 Combobox 下拉）要盖过弹窗」由
+     0.4.1 的 useFlyout 层级栈按 zIndexStep 提升，不再依赖「同为 1000」的巧合 */
+  --fui-smoke-z: var(--zIndexModal);
   /* WinUI ContentDialogSmokeFill ← SmokeFillColorDefault → colorBackgroundOverlay */
   --fui-smoke-fill: var(--colorBackgroundOverlay);
 

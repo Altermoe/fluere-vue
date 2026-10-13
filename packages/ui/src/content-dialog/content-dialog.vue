@@ -125,6 +125,7 @@ import { DialogContent, DialogDescription, DialogPortal, DialogRoot, DialogTitle
 import { computed, ref, useSlots } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import FluereButton from '../button/button.vue'
+import { useFlyout } from '../flyout/use-flyout'
 import FluereSmokeLayer from '../overlay/smoke-layer.vue'
 import type {
   FluereContentDialogButtonClickEventArgs,
@@ -211,6 +212,31 @@ const {
 })
 
 /**
+ * 浮层层级（0.4.1 迁移步骤 ①）：模态内容层登记进层级栈，档位取 `--zIndexModal`。
+ * 这样「弹窗内部再开的浮层」（Combobox 下拉、后续 MenuFlyout）会被抬到弹窗之上，
+ * 不再依赖旧实现里「遮罩 / 弹窗 / 下拉同为 1000 + Teleport 顺序」的巧合。
+ *
+ * 有意保留本组件自己的部分（都有 A 级对齐与既有契约测试）：
+ *   - Esc / 外部点击：`use-content-dialog` 的 `onEscape` + `preventOutsideDismiss`
+ *     （WinUI ContentDialog **没有** light-dismiss）⇒ 原语的关闭路径全部关掉；
+ *   - 焦点：初始焦点三级优先与「关闭前记住焦点」在 `use-content-dialog` / `focus.ts`
+ *     里逐条对齐 WinUI，故不交给原语的 `returnFocus`。
+ */
+const flyout = useFlyout({
+  tier: '--zIndexModal',
+  open: () => props.open,
+  closeOnEscape: false,
+  closeOnOutsidePointer: false,
+  returnFocus: false,
+})
+/**
+ * 层级样式要**解构到顶层 ref** 再进模板：Vue 只对顶层绑定自动解包 ref，
+ * 直接写 `:style="flyout.layerStyle"` 会把 ComputedRef 本体当样式对象，z-index 静默失效
+ * （2026-10-13 真实浏览器实测抓到）。
+ */
+const { layerStyle: dialogLayerStyle } = flyout
+
+/**
  * reka 的 DismissableLayer 请求改开关值时，走本组件自己的关闭流程，
  * 而不是直接回写 `open` —— 否则会绕过 `closing`（可取消）与 `closed.result`。
  * 正常情况下 reka 的这一路已被 `preventOutsideDismiss` / `onEscape` 拦住，这里只是兜底。
@@ -262,6 +288,7 @@ const buttonClass = (kind: FluereContentDialogButtonKind): string[] => [
     <DialogPortal :to="to">
       <DialogContent
         class="fui-content-dialog"
+        :style="dialogLayerStyle"
         :data-state="open ? 'open' : 'closed'"
         :data-buttons="commandLayout.state"
         :data-sizing="fullSizeDesired ? 'full' : 'default'"
@@ -368,9 +395,9 @@ const buttonClass = (kind: FluereContentDialogButtonKind): string[] => [
      Fluent 2 Web 的时长档位没有这两个值，故按组件局部变量落地 */
   --fui-content-dialog-close-scale-duration: 167ms;
   --fui-content-dialog-fade-duration: 83ms;
-  /* 层级：与遮罩层同层（1000），靠 Teleport 挂载顺序（遮罩先、弹窗后）决定绘制次序；
-     同层是为了让弹窗内部再 Teleport 的浮层（如 Combobox 下拉，同为 1000）仍能盖住弹窗 */
-  --fui-content-dialog-z: 1000;
+  /* 层级：模态档（0.4.2 刻度），与遮罩层同档、靠 Teleport 挂载顺序（遮罩先、弹窗后）决定绘制次序；
+     模态内部再 Teleport 的浮层由 0.4.1 的 useFlyout 层级栈提升（zIndexStep） */
+  --fui-content-dialog-z: var(--zIndexModal);
 
   position: fixed;
   inset: 0;

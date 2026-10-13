@@ -11,6 +11,8 @@ import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
 import FluereConfigProvider from './src/config-provider/config-provider.vue'
 import FluereContentDialog from './src/content-dialog/content-dialog.vue'
+import { FLYOUT_TIERS, acquireLayer, openLayerCount } from './src/flyout/layer-stack'
+import { useFlyout } from './src/flyout/use-flyout'
 // 共享原语（0.4.0 基建）：先 import 再本地 export —— 与下面组件一致。
 // 不要写成 `export { A, B } from '...'`：当前 Vite 变换会把其中的常量再导出
 // 提成一个引用本地绑定的 `export { A }`，而对应的 import 不生成，产物在运行期报
@@ -58,7 +60,18 @@ export {
   // 共享原语（0.4.0 基建）
   FOCUS_VISUAL_CLASS,
   useFocusVisual,
+  FLYOUT_TIERS,
+  acquireLayer,
+  openLayerCount,
+  useFlyout,
 }
+export type { FlyoutTier } from './src/flyout/layer-stack'
+export type {
+  FlyoutCloseReason,
+  FlyoutHasPopup,
+  UseFlyoutOptions,
+  UseFlyoutReturn,
+} from './src/flyout/use-flyout'
 export type {
   UseFocusVisualOptions,
   UseFocusVisualReturn,
