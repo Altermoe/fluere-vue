@@ -2,7 +2,7 @@
 # 本地手动发布脚本：把 @fluere-vue/* 六包发布到 npm（首发 bootstrap / 后续手动发版）。
 #
 # 为什么需要它：npm 的 trusted publisher 只能挂在**已存在**的包上，没有 pending publisher，
-# 六个包从未发布过 ⇒ 第一个版本必须用粒度 token / 本机 `npm login` 人工 bootstrap；之后才轮到
+# 六个包从未发布过 ⇒ 第一个版本必须用粒度 token / 本机 `pnpm login` 人工 bootstrap；之后才轮到
 # .github/workflows/release.yml 的 OIDC 自动发布（见 docs/release.md）。本脚本把 release.md 的
 # 手工流程收敛成一条命令：带阶段横幅、逐步确认、并对「版本/tag 合法性」做前置校验。
 #
@@ -30,9 +30,9 @@ ROOT_DIR="$(cd "$SELF_DIR/.." && pwd)"
 REGISTRY="https://registry.npmjs.org"
 VERSION_MJS="$ROOT_DIR/scripts/version.mjs"
 PUBLISHABLE="designs hooks icons themes ui utils"
-# 根 package.json 的 devEngines 要求 pnpm，npm 在仓库根会被拦下（EBADDEVENGINES）；
-# 从任一子包目录运行 npm 即可绕过（那里没有 devEngines）。所有 npm 命令都走 NPM_DIR。
-NPM_DIR="$ROOT_DIR/packages/ui"
+# 发布相关命令一律走 pnpm（根 package.json 的 devEngines/packageManager 要求它）：用 npm 在仓库根会被
+# EBADDEVENGINES 拦下；即便从子包目录运行，npm 也会对根 .npmrc 的 pnpm 专属键（shamefully-hoist 等）
+# 报 "Unknown project config" 警告。pnpm 从仓库根运行既无 engine 报错，也无这些警告。
 
 STAGE="startup"
 
@@ -187,35 +187,44 @@ else
     warn "远端 '$REMOTE' 不存在，push 步骤会失败（可用 --dry-run 走到预览为止）"
 fi
 
-# npm 认证（首发必须本机登录 / token）
+# npm registry 认证（首发必须本机登录 / token）
 # --check / --dry-run 是只读流程，未登录不算失败；真正发布才强制。
-# 注意：npm 命令都从 NPM_DIR 运行（见文件头 devEngines 说明）。
-npm_whoami() { ( cd "$NPM_DIR" && npm whoami --registry="$REGISTRY" 2>/dev/null ); }
-npm_view() { ( cd "$NPM_DIR" && npm view "$@" --registry="$REGISTRY" ); }
+# 注意：一律用 pnpm 从仓库根运行（见文件头：npm 会被 devEngines 拦下并对根 .npmrc 报警告）。
+# pnpm 的报错信息走 stdout（npm 走 stderr），失败时必须丢弃 stdout，否则错误文本会被当成用户名/版本。
+pnpm_whoami() {
+    local user
+    user="$(cd "$ROOT_DIR" && pnpm whoami --registry="$REGISTRY" 2>/dev/null)" || return 1
+    printf '%s' "$user"
+}
+pnpm_view() {
+    local out
+    out="$(cd "$ROOT_DIR" && pnpm view "$@" --registry="$REGISTRY" 2>/dev/null)" || return 1
+    printf '%s' "$out"
+}
 AUTH_REQUIRED=1
 if [ "$CHECK_ONLY" -eq 1 ] || [ "$DRY_RUN" -eq 1 ]; then
     AUTH_REQUIRED=0
 fi
-if ! NPM_USER="$(npm_whoami)"; then
-    warn "未登录 npm（registry=$REGISTRY）"
-    log "请先执行：npm login --registry=$REGISTRY"
+if ! NPM_USER="$(pnpm_whoami)"; then
+    warn "未登录 npm registry（registry=$REGISTRY）"
+    log "请先执行：pnpm login --registry=$REGISTRY"
     if [ "$AUTH_REQUIRED" -eq 0 ]; then
         warn "只读流程（--check / --dry-run）继续；真正发布前必须登录"
     elif [ ! -t 0 ] || [ "$ASSUME_YES" -eq 1 ]; then
-        die "未登录 npm，且当前无法交互登录：请先执行 npm login --registry=$REGISTRY"
-    elif confirm "现在执行 npm login？"; then
-        ( cd "$NPM_DIR" && npm login --registry="$REGISTRY" ) || die "npm login 失败"
-        NPM_USER="$(npm_whoami)" || die "登录后仍无法 whoami"
+        die "未登录 npm registry，且当前无法交互登录：请先执行 pnpm login --registry=$REGISTRY"
+    elif confirm "现在执行 pnpm login？"; then
+        ( cd "$ROOT_DIR" && pnpm login --registry="$REGISTRY" ) || die "pnpm login 失败"
+        NPM_USER="$(pnpm_whoami)" || die "登录后仍无法 whoami"
     else
-        die "未登录 npm，无法发布"
+        die "未登录 npm registry，无法发布"
     fi
 fi
 if [ -n "$NPM_USER" ]; then
-    log "npm 用户：$NPM_USER"
+    log "npm registry 用户：$NPM_USER"
 fi
 
 # 强制官方 registry（本机默认可能是镜像）
-log "本机默认 registry：$(cd "$NPM_DIR" && npm config get registry 2>/dev/null || echo unknown)"
+log "本机默认 registry：$(cd "$ROOT_DIR" && pnpm config get registry 2>/dev/null || echo unknown)"
 export npm_config_registry="$REGISTRY"
 export PNPM_CONFIG_REGISTRY="$REGISTRY"
 log "本次发布强制 registry：$REGISTRY（npm_config_registry + PNPM_CONFIG_REGISTRY）"
@@ -391,7 +400,7 @@ stage "6) 正式发布"
 
 already=0
 for p in $PUBLISHABLE; do
-    if npm_view "@fluere-vue/$p@$TARGET" version >/dev/null 2>&1; then
+    if pnpm_view "@fluere-vue/$p@$TARGET" version >/dev/null 2>&1; then
         already=$((already + 1))
     fi
 done
@@ -409,11 +418,11 @@ fi
 
 log "发布后校验："
 for p in $PUBLISHABLE; do
-    v="$(npm_view "@fluere-vue/$p@$TARGET" version 2>/dev/null || echo MISSING)"
+    v="$(pnpm_view "@fluere-vue/$p@$TARGET" version 2>/dev/null || echo MISSING)"
     log "  @fluere-vue/$p@$TARGET -> $v"
 done
 log "dist-tags（@fluere-vue/ui）："
-npm_view @fluere-vue/ui dist-tags 2>/dev/null | sed 's/^/    /' || true
+pnpm_view @fluere-vue/ui dist-tags 2>/dev/null | sed 's/^/    /' || true
 
 # --- 7) 打 tag 并推送 -------------------------------------------------------
 STAGE="7) 打 tag 并推送"

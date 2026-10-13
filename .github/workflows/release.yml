@@ -14,7 +14,7 @@
 #
 # ⚠️ 首次发布无法走 OIDC：npm 的 trusted publisher 是**挂在已存在的包**上的设置项，没有
 #    「pending publisher」，六个包从未发布过 => 0.3.0-rc.1 这一次必须先用粒度 token（或本机
-#    `npm login`）人工 bootstrap，之后在 npmjs.com 给六个包各配一次 trusted publisher，
+#    `pnpm login`）人工 bootstrap，之后在 npmjs.com 给六个包各配一次 trusted publisher，
 #    从第二个版本起才由本 workflow 自动发布。步骤见 docs/release.md。
 name: Release
 

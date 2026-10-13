@@ -101,7 +101,7 @@ pnpm release:manual --check              # 只跑前置检查（零副作用）
 > `--` 分隔符可加可不加：pnpm 会把它原样透传给脚本，脚本已当分隔符忽略；`pnpm release:manual --yes`
 > 与 `pnpm release:manual -- --yes` 等价。
 
-脚本阶段：`0) 前置检查`（仓库根 / 工具 / 干净树 / 分支可达性 / npm 登录 / 强制 registry / version:check）→
+脚本阶段：`0) 前置检查`（仓库根 / 工具 / 干净树 / 分支可达性 / pnpm 登录 / 强制 registry / version:check）→
 `1) 目标版本解析` → `2) 版本落定` → `3) 质量闸`（check + build + test + smoke:dist）→ `4) 提交版本产物` →
 `5) 发布预览` → `6) 正式发布` → `7) 打 tag 并推送` → `8) CHANGELOG 校验 / pre 收尾` → `9) 完成`。
 
@@ -111,8 +111,9 @@ pnpm release:manual --check              # 只跑前置检查（零副作用）
   未知参数退出码 `2`。相等 = 原样发布当前版本（不 bump、不生成 CHANGELOG 条目）。
 - **强制官方 registry**：本机 `~/.npmrc` 可能是镜像（如腾讯云）。脚本同时导出 `npm_config_registry` 与
   `PNPM_CONFIG_REGISTRY=https://registry.npmjs.org`（changesets 在 pnpm workspace 下调的是 pnpm，只设前者不稳）。
-- **npm 从子包目录运行**：根 `package.json` 的 `devEngines` 要求 pnpm，npm 在**仓库根**会被拦下
-  （`EBADDEVENGINES`）。脚本的 npm 命令（`whoami` / `login` / `view`）都从 `packages/ui` 运行绕开。
+- **一律用 pnpm（不要 npm）**：根 `package.json` 的 `devEngines` / `packageManager` 要求 pnpm，用 npm 在**仓库根**
+  会被拦下（`EBADDEVENGINES`），且会对根 `.npmrc` 的 pnpm 专属键（`shamefully-hoist` 等）报
+  `Unknown project config` 警告。脚本的 `whoami` / `login` / `view` / `config` 全部从**仓库根**用 pnpm 执行。
 - **pre 模式不传 `--tag`**：`.changeset/pre.json` 存在且 `mode=pre` 时，changesets 自动用 pre 的 tag；
   传 `--tag` 会报 `Releasing under custom tag is not allowed in pre mode!` 退出 1。
 - **非 pre 的 dist-tag**：预发布版本取标识（`0.3.0-alpha.2` → `alpha`、`0.3.0-rc.1` → `rc`）作 dist-tag，
@@ -240,7 +241,7 @@ provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish
    （否则 release PR 建不出来）。
 2. **首次发布必须人工 bootstrap**：npm 的 trusted publisher 是挂在**已存在的包**上的设置项，
    没有 pending publisher，六个包从未发布过 ⇒ 第一个版本发不出去。做法是先用粒度 token（或本机
-   `npm login`）发一次，再给六个包各配一次 trusted publisher，之后才轮到 workflow 自动发布。
+   `pnpm login`）发一次，再给六个包各配一次 trusted publisher，之后才轮到 workflow 自动发布。
 3. 六个包（`@fluere-vue/designs` / `hooks` / `icons` / `themes` / `ui` / `utils`）在 npmjs.com 的
    `Settings → Trusted Publisher` 各配一条：Repository = `Altermoe/fluere-vue`，Workflow filename =
    `release.yml`，**Environment 留空**（除非同时取消 workflow 里 `environment:` 的注释并填同名环境；
