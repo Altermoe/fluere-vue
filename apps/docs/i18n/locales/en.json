@@ -34,7 +34,8 @@
       "tooltip": "A supplementary info overlay shown on hover or focus.",
       "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside.",
       "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton).",
-      "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton."
+      "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton.",
+      "select": "A non-editable dropdown: shows the current option only, with no text input or search."
     }
   },
   "theme": {
@@ -125,6 +126,36 @@
     "hideCode": "Hide code"
   },
   "demos": {
+    "select": {
+      "basic": {
+        "label": "Refresh rate",
+        "placeholder": "Select an option",
+        "day": "Daily",
+        "week": "Weekly",
+        "month": "Monthly",
+        "empty": "none",
+        "statusLine": "Current: {value}"
+      },
+      "controlled": {
+        "label": "Appearance",
+        "auto": "Follow system",
+        "light": "Light",
+        "dark": "Dark",
+        "changeLine": "Last change: {value}",
+        "resetLabel": "Clear selection"
+      },
+      "states": {
+        "header": "Sync speed",
+        "description": "One option is disabled; the keyboard skips it.",
+        "fast": "Fast",
+        "medium": "Medium",
+        "slow": "Slow (disabled)",
+        "disabledHeader": "Disabled as a whole",
+        "none": "Not changeable",
+        "emptyHeader": "Empty list",
+        "emptyHint": "No options"
+      }
+    },
     "toggle-button": {
       "basic": {
         "boldLabel": "Bold",

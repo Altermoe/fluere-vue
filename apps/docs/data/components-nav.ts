@@ -165,7 +165,13 @@ const componentNavGroups: ComponentNavGroup[] = [
         icon: FluentIconRadioButton24Regular,
       },
       { slug: 'rating', name: 'Rating', implemented: false },
-      { slug: 'select', name: 'Select', implemented: false },
+      {
+        slug: 'select',
+        name: 'Select',
+        implemented: true,
+        summaryKey: 'select',
+        icon: FluentIconAppsListDetail24Regular,
+      },
       {
         slug: 'slider',
         name: 'Slider',

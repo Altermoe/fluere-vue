@@ -29,6 +29,7 @@ import FluereRadioButton from './src/radio/radio-button.vue'
 import FluereRadioGroup from './src/radio/radio-group.vue'
 import FluereScrollView from './src/scrollview/scroll-view.vue'
 import { SCROLL_VIEW_AGENT_EVENTS } from './src/scrollview/use-agent-surface'
+import FluereSelect from './src/select/select.vue'
 import FluereSlider from './src/slider/slider.vue'
 import FluereToggleButton from './src/toggle-button/toggle-button.vue'
 import FluereToggleGroupItem from './src/toggle-group/toggle-group-item.vue'
@@ -54,6 +55,7 @@ export {
   FluereRadioButton,
   FluereRadioGroup,
   FluereScrollView,
+  FluereSelect,
   FluereSlider,
   FluereSmokeLayer,
   FluereToggleButton,
@@ -84,6 +86,11 @@ export type {
 } from './src/focus-visual/use-focus-visual'
 export type { FluereButtonProps } from './src/button/button.vue'
 export type { FluereToggleButtonProps } from './src/toggle-button/toggle-button.vue'
+export type {
+  FluereSelectChangeEventArgs,
+  FluereSelectItem,
+  FluereSelectProps,
+} from './src/select/select.vue'
 export type { FluereToggleGroupProps } from './src/toggle-group/toggle-group.vue'
 export type { FluereToggleGroupItemProps } from './src/toggle-group/toggle-group-item.vue'
 export type {

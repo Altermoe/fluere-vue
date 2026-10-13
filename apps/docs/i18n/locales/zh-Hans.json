@@ -34,7 +34,8 @@
       "tooltip": "悬停或聚焦时显示的补充信息浮层。",
       "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。",
       "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。",
-      "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。"
+      "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。",
+      "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。"
     }
   },
   "theme": {
@@ -120,6 +121,36 @@
     "hideCode": "收起代码"
   },
   "demos": {
+    "select": {
+      "basic": {
+        "label": "刷新频率",
+        "placeholder": "请选择",
+        "day": "每天",
+        "week": "每周",
+        "month": "每月",
+        "empty": "未选择",
+        "statusLine": "当前：{value}"
+      },
+      "controlled": {
+        "label": "外观主题",
+        "auto": "跟随系统",
+        "light": "浅色",
+        "dark": "深色",
+        "changeLine": "最近一次 change：{value}",
+        "resetLabel": "清空选择"
+      },
+      "states": {
+        "header": "同步速度",
+        "description": "含一个不可选项，键盘会跳过它。",
+        "fast": "快",
+        "medium": "中",
+        "slow": "慢（不可选）",
+        "disabledHeader": "整组禁用",
+        "none": "不可更改",
+        "emptyHeader": "空列表",
+        "emptyHint": "没有可选项"
+      }
+    },
     "toggle-button": {
       "basic": {
         "boldLabel": "加粗",
