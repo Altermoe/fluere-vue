@@ -13,6 +13,12 @@ const routeLoading = useDocsRouteLoading()
 const { t, tm } = useDocsI18n()
 const localePath = useLocalePath()
 
+/**
+ * 已实现组件数：取自组件注册表（data/components-nav.ts），与 `/components` 总览页
+ * 同源，避免首页写死一个与当前覆盖情况不符的数字（此前硬编码为 `40+`）。
+ */
+const { implementedCards } = useComponentNav()
+
 /** 顶部导航链接：标题随语种解析，链接按 locale 前缀化 */
 const navLinks = computed(() => [
   { label: t('nav.docs'), to: localePath('/components') },
@@ -30,9 +36,9 @@ const features = computed(() => [
   tm('home.features.developerExperience'),
 ])
 
-/** 首页统计条 */
+/** 首页统计条：组件数按注册表实时计算，其余为固定事实项 */
 const stats = computed(() => [
-  { value: '40+', label: t('home.stats.components') },
+  { value: String(implementedCards.value.length), label: t('home.stats.components') },
   { value: '100%', label: t('home.stats.typescript') },
   { value: 'MIT', label: t('home.stats.license') },
 ])

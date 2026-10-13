@@ -42,69 +42,69 @@
     "openInNewTab": "Open GitHub repository in a new tab"
   },
   "home": {
-    "badge": "WinUI 3 native quality restored",
-    "heroTitle1": "WinUI 3 native quality,",
-    "heroTitle2": "rebuilt in your browser",
-    "heroIntroBefore": "A Vue 3 component library based on the native ",
+    "badge": "Modeled on WinUI 3 controls",
+    "heroTitle1": "WinUI 3 control styling,",
+    "heroTitle2": "reimplemented in Vue 3",
+    "heroIntroBefore": "A Vue 3 component library referencing the native ",
     "heroIntroLinkWinui": "WinUI 3",
-    "heroIntroAfter1": " controls, faithfully replicating each control's size, corner radius, press feel and motion against a real Windows 11 install, and restoring the translucency of ",
+    "heroIntroAfter1": " controls. It is implemented against real Windows behavior and the matching Windows App SDK source rather than the Fluent Design web specification alone: each control is checked state by state (rest / hover / pressed / selected / focus / disabled) for size, corner radius, stroke, fill and motion, and materials use web approximations of ",
     "heroIntroLinkMica": "Mica / Acrylic",
-    "heroIntroAfter2": " — what you see in your browser is that Windows control, not a web imitation of it.",
+    "heroIntroAfter2": ". Browsers cannot provide every native capability: system-level animations, haptic feedback and native window behaviors are out of scope for a full reproduction, and the implementation distinguishes faithfully reproduced, approximated and unsupported behavior.",
     "getStarted": "Get started",
-    "exploreComponents": "Explore components",
-    "readyTitle": "Ready to get started?",
-    "ctaIntro": "Whether you're building an internal tool or a customer-facing product, FluereVue gives you a smooth feel close to native Windows apps on the web.",
+    "exploreComponents": "Browse components",
+    "readyTitle": "Documentation and resources",
+    "ctaIntro": "Component props, events, examples and API tables are documented on this site; the entries below cover installation, the component inventory and design tokens.",
     "footer": "© 2026 FluereVue. MIT License.",
-    "metaDescription": "A Vue 3 component library built to native WinUI 3 standards — sizes, corner radii, press feel and motion matched against a real Windows 11 install, right in your browser.",
+    "metaDescription": "A Vue 3 component library referencing the native WinUI 3 controls, implemented against real Windows behavior and the matching Windows App SDK source; sizes, corner radii, strokes, fills and motion are checked state by state, with web approximations for materials such as Mica / Acrylic.",
     "features": {
       "accessibility": {
-        "title": "Accessibility out of the box.",
-        "subtitle": "Built with WAI-ARIA in mind",
+        "title": "Accessibility",
+        "subtitle": "Focus rectangles, color contrast and ARIA semantics",
         "items": [
-          "WAI-ARIA compliant",
+          "WAI-ARIA semantics",
           "Keyboard navigation",
           "Focus management",
           "Screen reader support"
         ]
       },
       "saveTime": {
-        "title": "Save time. Ship faster.",
-        "subtitle": "A carefully crafted component system",
+        "title": "Component system",
+        "subtitle": "Consistent props / event conventions and a composable structure",
         "items": [
-          "Rich base components",
-          "Consistent API design",
-          "Ready out of the box",
-          "Composable structure"
+          "Base form controls",
+          "Consistent props / event conventions",
+          "Self-contained styles, on-demand imports",
+          "Composable component structure"
         ]
       },
       "developerExperience": {
-        "title": "Developer Experience First.",
-        "subtitle": "Unstyled, Customizable, Familiar API",
+        "title": "Vue 3 + TypeScript",
+        "subtitle": "Self-contained styles, design tokens and SSR safety",
         "items": [
-          "Fully customizable styling",
-          "Seamless UnoCSS integration",
-          "TypeScript-friendly types",
-          "Fluent Design token system"
+          "Design-token-driven styles",
+          "Ships a UnoCSS preset",
+          "TypeScript type definitions",
+          "SSR-safe (capability detection with harmless defaults)"
         ]
       }
     },
     "stats": {
-      "components": "Components",
+      "components": "Implemented components",
       "typescript": "TypeScript",
       "license": "License"
     },
     "ctaCards": {
       "install": {
-        "title": "Install and Setup",
-        "desc": "Learn how to install and configure FluereVue, then build and style your first component."
+        "title": "Installation and setup",
+        "desc": "Install {'@'}fluere-vue/ui and vue, import the stylesheet, and render your first component."
       },
       "browse": {
-        "title": "Browse components",
-        "desc": "See all the components and utilities FluereVue provides."
+        "title": "Component reference",
+        "desc": "Browse the implemented component inventory, examples and API tables."
       },
       "themes": {
-        "title": "Explore Themes",
-        "desc": "Explore the Fluent Design theme system and design tokens."
+        "title": "Themes and design tokens",
+        "desc": "Design tokens (tokens.css), light / dark themes and the presetFluere theme adapter."
       }
     }
   },

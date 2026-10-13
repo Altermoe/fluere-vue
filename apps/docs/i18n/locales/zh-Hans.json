@@ -42,59 +42,64 @@
     "openInNewTab": "在新标签页打开 GitHub 仓库"
   },
   "home": {
-    "badge": "WinUI 3 原生质感还原",
-    "heroTitle1": "WinUI 3 native quality,",
-    "heroTitle2": "rebuilt in your browser",
+    "badge": "WinUI 3 控件参考实现",
+    "heroTitle1": "WinUI 3 control styling,",
+    "heroTitle2": "reimplemented in Vue 3",
     "heroIntroBefore": "以",
     "heroIntroLinkWinui": "WinUI 3",
-    "heroIntroAfter1": "原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机逐项复刻每个控件的尺寸、圆角、按压力感与动效，并还原",
+    "heroIntroAfter1": "原生控件为参考的 Vue 3 组件库。实现基准是 Windows 实机表现与对应版本的 Windows App SDK 源码，而不只是 Fluent Design 的 Web 规范；控件按 rest / hover / pressed / selected / focus / disabled 逐状态核对尺寸、圆角、描边、填充与动效，材质部分采用",
     "heroIntroLinkMica": "Mica / Acrylic",
-    "heroIntroAfter2": "的透光质感——你在浏览器里看到的，就是 Windows 上那一个控件，而不是它的 Web 仿冒品。",
-    "getStarted": "立即开始",
+    "heroIntroAfter2": "的 Web 近似实现。浏览器无法提供全部原生能力，系统级动画、触觉反馈与原生窗口行为不在完全复刻范围内；实现区分「实际还原」「近似实现」「暂不支持」三类口径。",
+    "getStarted": "快速开始",
     "exploreComponents": "浏览组件",
-    "readyTitle": "准备好了吗？",
-    "ctaIntro": "无论你是在构建内部工具还是面向客户的产品，FluereVue 都能让你在 Web 上获得接近 Windows 原生应用的顺滑手感。",
+    "readyTitle": "文档与资源",
+    "ctaIntro": "组件的 Props / 事件、示例与 API 表以文档站为准；以下入口分别对应安装配置、组件清单与设计令牌。",
     "footer": "© 2026 FluereVue. MIT 许可证。",
-    "metaDescription": "以 WinUI 3 原生控件为基准的 Vue 3 组件库，对照 Windows 11 实机复刻每个控件的尺寸、圆角、按压力感与动效，在浏览器里还原原生 Windows 质感。",
+    "metaDescription": "以 WinUI 3 原生控件为参考的 Vue 3 组件库，实现基准为 Windows 实机表现与对应版本的 Windows App SDK 源码；逐状态核对控件的尺寸、圆角、描边、填充与动效，并对 Mica / Acrylic 等材质做 Web 近似实现。",
     "features": {
       "accessibility": {
-        "title": "Accessibility out of the box.",
-        "subtitle": "遵循 WAI-ARIA 设计规范",
-        "items": ["WAI-ARIA compliant", "键盘导航", "焦点管理", "屏幕阅读器支持"]
+        "title": "Accessibility",
+        "subtitle": "焦点矩形、颜色对比度与 ARIA 语义",
+        "items": ["WAI-ARIA 语义", "键盘导航", "焦点管理", "屏幕阅读器支持"]
       },
       "saveTime": {
-        "title": "Save time. Ship faster.",
-        "subtitle": "精心打磨的组件体系",
-        "items": ["丰富的基础组件", "一致的 API 设计", "开箱即用", "可组合的结构"]
+        "title": "Component system",
+        "subtitle": "一致的 Props / 事件约定与可组合的组件结构",
+        "items": [
+          "基础表单控件",
+          "一致的 Props / 事件约定",
+          "样式自包含，支持按需引入",
+          "可组合的组件结构"
+        ]
       },
       "developerExperience": {
-        "title": "Developer Experience First.",
-        "subtitle": "Unstyled, Customizable, Familiar API",
+        "title": "Vue 3 + TypeScript",
+        "subtitle": "自包含样式、设计令牌与 SSR 安全",
         "items": [
-          "完全可定制的样式",
-          "与 UnoCSS 无缝集成",
-          "TypeScript 类型友好",
-          "Fluent Design 令牌系统"
+          "基于设计令牌的样式",
+          "提供 UnoCSS preset",
+          "TypeScript 类型定义",
+          "SSR 安全（能力探测 + 无害默认值）"
         ]
       }
     },
     "stats": {
-      "components": "Components 组件",
-      "typescript": "TypeScript 类型",
-      "license": "License 许可"
+      "components": "已实现组件",
+      "typescript": "TypeScript",
+      "license": "许可证"
     },
     "ctaCards": {
       "install": {
-        "title": "Install and Setup",
-        "desc": "了解如何在项目中安装和配置 FluereVue，并构建和样式化你的第一个组件。"
+        "title": "Installation and setup",
+        "desc": "安装 {'@'}fluere-vue/ui 与 vue，引入样式，并渲染第一个组件。"
       },
       "browse": {
-        "title": "Browse components",
-        "desc": "查看 FluereVue 提供的所有组件和工具。"
+        "title": "Component reference",
+        "desc": "查看已实现组件清单、示例与各组件的 API 表。"
       },
       "themes": {
-        "title": "Explore Themes",
-        "desc": "探索 Fluent Design 主题系统和设计令牌。"
+        "title": "Themes and design tokens",
+        "desc": "设计令牌（tokens.css）、明暗主题与主题适配层 presetFluere。"
       }
     }
   },
