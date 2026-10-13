@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.web.json",
+  "compilerOptions": {
+    // Playground 走 Vite 构建；本包没有 Node 侧代码，故类型环境仍为空（同 tsconfig.web.json）
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts"]
+}

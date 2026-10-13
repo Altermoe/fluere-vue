@@ -1,0 +1,86 @@
+/* Playground 页面级样式：只放布局与页面底色（组件必须自包含，页面级工具类只出现在 apps/*）。
+   颜色一律引用 token，明暗由 tokens.css 的 light-dark() + color-scheme 决定。 */
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  background: var(--colorNeutralBackground2);
+  color: var(--colorNeutralForeground1);
+  font-family: var(--fontFamilyBase);
+  font-size: var(--fontSizeBase300);
+  line-height: var(--lineHeightBase300);
+}
+
+.pg-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--spacingVerticalXXL) var(--spacingHorizontalXXL);
+}
+
+.pg-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacingHorizontalXL);
+  padding-bottom: var(--spacingVerticalL);
+  border-bottom: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+}
+
+.pg-title {
+  margin: 0;
+  font-size: var(--fontSizeBase600);
+  font-weight: var(--fontWeightSemibold);
+  line-height: var(--lineHeightBase600);
+}
+
+.pg-subtitle {
+  margin: var(--spacingVerticalXS) 0 0;
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+  line-height: var(--lineHeightBase200);
+}
+
+.pg-card {
+  margin-top: var(--spacingVerticalXL);
+  padding: var(--spacingVerticalXL) var(--spacingHorizontalXL);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusLarge);
+  background: var(--colorNeutralBackground1);
+  box-shadow: var(--shadow2);
+}
+
+.pg-card__title {
+  margin: 0 0 var(--spacingVerticalS);
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
+  line-height: var(--lineHeightBase400);
+}
+
+.pg-card__hint {
+  margin: 0 0 var(--spacingVerticalL);
+  color: var(--colorNeutralForeground3);
+  font-size: var(--fontSizeBase200);
+  line-height: var(--lineHeightBase200);
+}
+
+.pg-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacingHorizontalL);
+  margin-bottom: var(--spacingVerticalM);
+}
+
+.pg-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalS);
+}
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacingHorizontalXL) var(--spacingVerticalXL);
+}

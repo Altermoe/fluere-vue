@@ -1,11 +1,25 @@
 {
   "name": "@fluere-vue/playground",
-  "version": "0.3.0-alpha.1",
+  "version": "0.3.0-alpha.2",
   "private": true,
-  "description": "FluereVue Playground",
+  "description": "FluereVue Playground —— 视觉回归页（Wave 1 子集 + 0.4.x 通用件的全状态陈列）",
   "keywords": [],
   "license": "MIT",
   "author": "夕云葛城",
   "type": "module",
-  "scripts": {}
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tsc": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@fluere-vue/ui": "workspace:*",
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "catalog:",
+    "vite": "8.1.5",
+    "vue-tsc": "catalog:"
+  }
 }
