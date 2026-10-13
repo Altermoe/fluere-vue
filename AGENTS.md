@@ -2,7 +2,7 @@
 
 > 本文件是本仓库的入口约定。**动手改任何代码之前，先读完下面的【开发前必读】。**
 >
-> 配套文档：[docs/style-spec.md](./docs/style-spec.md)（对齐源与核对方法）、[docs/design/token-driven-style.md](./docs/design/token-driven-style.md)（token 管线）、[docs/ssr-guide.md](./docs/ssr-guide.md)（SSR 约束）、[docs/todo.md](./docs/todo.md)（实施清单与验收口径）。
+> 配套文档：[docs/style-spec.md](./docs/style-spec.md)（对齐源与核对方法）、[docs/design/token-driven-style.md](./docs/design/token-driven-style.md)（token 管线）、[docs/ssr-guide.md](./docs/ssr-guide.md)（SSR 约束）、[docs/release.md](./docs/release.md)（npm 发版与 tag 约定）、[docs/todo.md](./docs/todo.md)（实施清单与验收口径）。
 
 ## 【开发前必读】
 
@@ -23,6 +23,8 @@
 7. **`temp/` 已 gitignore**：WinUI 源码快照、Playwright 脚本、截图都放这里，**不要提交**，也不要把它们当作源码真相（真相在 upstream tag + 组件注释里）。
 
 8. **提交信息遵循仓库既有规范**（`.trae/rules/git-commit-message.md`，本地规则）：Conventional Commits + emoji（`feat: ✨` / `fix: 🐛` / `docs: 📝` / `refactor: ♻️` / `test: ✅` …），描述用中文，中英/中数之间留一个半角空格。
+
+9. **发版（npm 发布 / 打 tag）前必读 [docs/release.md](./docs/release.md)**：统一版本号、部署 tag（`v*`）与逐包 tag（`@fluere-vue/<pkg>@<ver>`）的关系、`pnpm release:manual` 的阶段与前置检查都以它为准。**seed 一个版本 ≠ 发布它**——给某版本号打过 `v*` 部署 tag 后，不要再"原样发布"同一版本，否则同版本号会指向两个提交（tag 冲突，2026-10-13 踩过）。发版脚本已把部署 tag 冲突判定提到**发布之前**（`pnpm release:manual --check` 可零副作用预演；确需复用该版本才加 `--move-tag`），别在发布后发现冲突才补救。
 
 ## 项目速览
 

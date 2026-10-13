@@ -96,14 +96,15 @@ pnpm release:manual 0.3.0-rc.1           # 目标更高：先把根 seed 到该�
 pnpm release:manual --yes                # 全程免确认（CI / 熟练用户）
 pnpm release:manual --dry-run            # 只跑到发布预览（零副作用）
 pnpm release:manual --check              # 只跑前置检查（零副作用）
+pnpm release:manual --move-tag           # 部署 tag v<version> 已存在时，允许把它移到本次发布提交
 ```
 
 > `--` 分隔符可加可不加：pnpm 会把它原样透传给脚本，脚本已当分隔符忽略；`pnpm release:manual --yes`
 > 与 `pnpm release:manual -- --yes` 等价。
 
 脚本阶段：`0) 前置检查`（仓库根 / 工具 / 干净树 / 分支可达性 / pnpm 登录 / 强制 registry / version:check）→
-`1) 目标版本解析` → `2) 版本落定` → `3) 质量闸`（check + build + test + smoke:dist）→ `4) 提交版本产物` →
-`5) 发布预览` → `6) 正式发布` → `7) 打 tag 并推送` → `8) CHANGELOG 校验 / pre 收尾` → `9) 完成`。
+`1) 目标版本解析` → `1.5) 部署 tag 冲突前置检查` → `2) 版本落定` → `3) 质量闸`（check + build + test + smoke:dist）→
+`4) 提交版本产物` → `5) 发布预览` → `6) 正式发布` → `7) 打 tag 并推送` → `8) CHANGELOG 校验 / pre 收尾` → `9) 完成`。
 
 必须知道的行为（都踩过坑）：
 
@@ -121,8 +122,14 @@ pnpm release:manual --check              # 只跑前置检查（零副作用）
 - **预览用 `changeset publish-plan`，不是 `publish --dry-run`**：`@changesets/cli` 的 `publish` **没有**
   `--dry-run` 选项（传了会 `Unknown option` 报错），预览走只读的 `publish-plan` / `status --verbose`；
   tarball 内容复核仍由 `pnpm smoke:dist` 覆盖。
-- **部署 tag 必须是注解 tag**：`git push --follow-tags` 只推**注解** tag，所以 `v<version>` 用 `git tag -a` 建
-  （changesets 生成的逐包 tag 本就是注解的）。OneDev deploy 只认 `v*`，且要求 tag 落在 main 可达提交上。
+- **部署 tag 必须是注解 tag**：`v<version>` 用 `git tag -a` 建（changesets 生成的逐包 tag 本就是注解的）。
+  OneDev deploy 只认 `v*`，且要求 tag 落在 main 可达提交上。**推送不再用 `--follow-tags`**：
+  `--follow-tags` 会顺带推所有从本次提交可达的注解 tag，一旦远端存在已分叉的历史 tag（如本地与 onedev
+  的 `v0.0.1` 不同）整条 push 会失败；脚本改为只推 `分支 + 部署 tag + 本次逐包 tag` 的显式 refspec。
+- **部署 tag 冲突前置判定（`--move-tag`）**：`v<version>` 是文档站部署标记，可能**早于**真正的 npm 发布
+  就被打上（先 seed 版本对齐文档站、之后又原样发布同一版本）。脚本在第 1.5 步判定：指向当前提交则复用；
+  指向别的提交则默认**早退**（退出码 2），确需把 tag 移到本次发布提交时才加 `--move-tag`（`git tag -f`
+  重建 + 只对该 tag force push）。详见下文「踩坑记录」。
 - **首发 / 部分失败幂等**：`changeset publish` 会跳过 registry 上已存在的版本，同一 commit 重跑安全；
   已发布版本不可撤销，更正只能发新版本或 `npm deprecate`（见下文「回滚与补救」）。
 
@@ -192,6 +199,48 @@ pnpm exec changeset publish          # pre 模式：不加 --tag
 provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish` job 建 GitHub Release 的部分、
 以及 `release.yml` 的 `pack` / `publish` 两个 job 本身（它们要等真实 release PR 合并后才会跑）。
 
+## 踩坑记录：seed 版本被原样发布，撞上部署 tag（2026-10-13）
+
+**现象**：同一次发版后，`0.3.0-alpha.2` 出现两套指向**不同提交**的 tag：
+
+| tag                                                               | 指向                            | 来源                         |
+| ----------------------------------------------------------------- | ------------------------------- | ---------------------------- |
+| `v0.3.0-alpha.2`                                                  | `6345d74`（10-12 的 seed 提交） | 手工打的文档站部署标记       |
+| `@fluere-vue/{designs,hooks,icons,themes,ui,utils}@0.3.0-alpha.2` | `8dfa64f`（10-13 的发布提交）   | `changeset publish` 自动生成 |
+
+两端都是**注解 tag**，所以看起来"同一个版本号被标了两次"；实际是本仓库刻意的**双层 tag**
+（逐包 tag 标识包版本；`v*` 是文档站部署标记，OneDev deploy 只认 `v*`），本身不是 bug。
+
+**根因**：10-12 为对齐文档站，把全仓版本 **seed** 到 `0.3.0-alpha.2` 并打了部署 tag `v0.3.0-alpha.2`
+（提交信息即"全仓版本 seed 到 0.3.0-alpha.2（对齐文档站部署 tag）"）。**seed 不是发布**——它只写
+`package.json` 版本、不发布、不消费 changeset。10-13 又用 `pnpm release:manual`（不带版本参数）
+把这个已 seed 的版本**原样发布**（`CMP=0`），于是同一个版本号先被部署 tag 占用、后又被当作发布版本。
+连带两个后果：① `.changeset/` 里的 3 条 changeset 没被消费，`0.3.0-alpha.2` 没有 CHANGELOG 条目；
+② 旧脚本在第 7 步才发现 `v0.3.0-alpha.2` 已存在并 `die`——**发布已经发出去了**，分支与 tag 都没推。
+
+**纠正**（本次实际执行，`v0.3.0-alpha.2` 由 `6345d74` 移到发布提交 `8dfa64f`）：
+
+```bash
+git tag -f -a v0.3.0-alpha.2 8dfa64f -m "docs site deploy: 0.3.0-alpha.2"   # 本地把部署 tag 重指到发布提交
+# 逐远端推送（以 onedev 为例，github 同理）：先推分支，保证 tag 落在 main 可达提交上，再推 tag。
+git push onedev main
+git push onedev '+refs/tags/v0.3.0-alpha.2:refs/tags/v0.3.0-alpha.2'        # 远端已有旧 tag，用 + 强制覆盖
+git push onedev 'refs/tags/@fluere-vue/designs@0.3.0-alpha.2' \
+                'refs/tags/@fluere-vue/hooks@0.3.0-alpha.2' …               # 其余逐包 tag 逐个补推
+```
+
+**新约束（已落进脚本）**：
+
+1. **seed ≠ 发布**：给某版本号打了 `v*` 部署 tag 之后，不要再"原样发布"该版本。真正的发布版本应由
+   changeset 从 seed 版本往上 bump（如 seed `0.3.0-alpha.2` → 发 `0.3.0-alpha.3`），这样版本号才是唯一的。
+2. 脚本第 **1.5 步**在发布前判定 `v<version>`：指向当前提交则复用，指向别的提交则**以退出码 2 早退**
+   （早退发生在写盘 / 发布之前），并提示"往上 bump"或"加 `--move-tag`"。`pnpm release:manual --check` 也覆盖这一项。
+3. tag 推送改用显式 refspec（不再 `--follow-tags`），并把"移动到已有部署 tag"收敛为一个显式开关
+   `--move-tag`，避免历史 tag 分叉让整条 push 失败。
+
+**没覆盖到的**：`v0.0.1` 在 onedev（`96bf4ae`）与本地/GitHub（`f5de617`）本就不同，是更早的历史分叉，
+本次未动；`--move-tag` 会 force push 部署 tag，远端受保护规则若拒绝则需人工处理。
+
 ## 回滚与补救
 
 - **发错了 tag / 版本**：
@@ -209,6 +258,9 @@ provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish
   git tag -d v0.3.0-rc.1                              # 本地
   ```
   撤销 tag 前先确认 npm 上的版本确实要废弃（版本本身撤不掉，只能 `deprecate`）。
+- **部署 tag 落错提交（`v*` 指向旧提交）**：本地 `git tag -f -a v<version> <正确提交> -m "docs site deploy: <version>"`
+  重指，再逐远端推分支与 tag；远端已有旧 tag 时用 `+`/`--force` 覆盖（见上文「踩坑记录」的纠正命令）。
+  日常发版不必手工做——`pnpm release:manual --move-tag` 已把这一步收敛为开关。
 - **同一 commit 重跑发布**：`changeset publish` 会跳过 registry 上已存在的版本，因此重跑是幂等的；
   若上次在「已发布、未打 tag」之间失败，重跑会补打 tag，不需要手工干预。
 

@@ -12,6 +12,7 @@
 #   pnpm release:manual --yes                # 全程免确认（CI / 熟练用户）
 #   pnpm release:manual --dry-run            # 只跑到预览，不发布 / 不打 tag / 不推送
 #   pnpm release:manual --check              # 只跑前置检查后退出（自测用，零副作用）
+#   pnpm release:manual --move-tag           # 部署 tag v<version> 已存在时，把它移到本次发布提交
 #
 # 关键事实（改本脚本前先读，均为实测结论）：
 #   - 本机 ~/.npmrc 的 registry 可能是镜像（如腾讯云）；发布必须强制 registry.npmjs.org，
@@ -20,7 +21,13 @@
 #   - `changeset publish` **没有 `--dry-run`**；预览用 `changeset publish-plan`（只读，产出发布计划）。
 #   - pre 模式（.changeset/pre.json 存在且 mode=pre）下**不能传 `--tag`**，否则 changesets 报
 #     "Releasing under custom tag is not allowed in pre mode!" 并退出 1；它自动用 pre 的 tag。
-#   - `git push --follow-tags` 只推**注解** tag；因此部署 tag v<version> 必须 `git tag -a` 建。
+#   - **部署 tag 冲突必须在发布之前判定**：`v<version>` 是文档站部署标记，可能早于真正的 npm 发布
+#     就被打上（先把版本 seed 到 X 并对齐文档站、之后又原样发布 X，就会撞车，2026-10-13 踩过）。
+#     故第 1.5 步提前判定该 tag 是否存在/指向哪个提交：指向当前提交则复用，否则默认**早退**；
+#     确需把 tag 移到本次发布提交时才加 `--move-tag`（用 `git tag -f` 重建，并只对该 tag force push）。
+#   - **推送用显式 refspec，不用 `--follow-tags`**：`--follow-tags` 会顺带推所有从本次提交可达的
+#     注解 tag，遇到远端已存在且已分叉的历史 tag（如本地与 onedev 的 v0.0.1 不同）整条 push 会失败。
+#     改为只推「分支 + 部署 tag + 本次逐包 tag」，且逐包 tag 不存在时自动跳过。
 #
 # 幂等性：changeset publish 会跳过 registry 上已存在的版本，同一 commit 重跑安全。
 set -euo pipefail
@@ -64,6 +71,8 @@ usage() {
   -y, --yes           全程免确认（非交互环境必须加）
   --dry-run           只跑到发布预览，不发布 / 不打 tag / 不推送
   --check             只跑前置检查后退出（自测用，零副作用）
+  --move-tag          部署 tag v<version> 已存在且指向别的提交时，允许把它移到本次发布提交
+                      （会用 git tag -f 重建、并只对该 tag force push；默认遇冲突直接早退）
   --allow-dirty       允许工作树不干净（版本写入会混入现有改动）
   --skip-gate         跳过 check / build / test / smoke 质量闸（重试时省时）
   --pre-exit          发布后执行 changeset pre exit（默认不做）
@@ -115,6 +124,7 @@ CHECK_ONLY=0
 ALLOW_DIRTY=0
 SKIP_GATE=0
 PRE_EXIT=0
+MOVE_TAG=0
 DIST_TAG_OVERRIDE=""
 
 while [ $# -gt 0 ]; do
@@ -124,6 +134,7 @@ while [ $# -gt 0 ]; do
         --check) CHECK_ONLY=1; shift ;;
         --allow-dirty) ALLOW_DIRTY=1; shift ;;
         --skip-gate) SKIP_GATE=1; shift ;;
+        --move-tag) MOVE_TAG=1; shift ;;
         --pre-exit) PRE_EXIT=1; shift ;;
         --dist-tag)
             [ $# -ge 2 ] || die2 "--dist-tag 缺少值"
@@ -176,6 +187,7 @@ if [ -n "$DIRTY" ]; then
 fi
 
 BRANCH="$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD)"
+HEAD_SHA="$(git -C "$ROOT_DIR" rev-parse HEAD)"
 REMOTE="$(git -C "$ROOT_DIR" config --get "branch.$BRANCH.remote" 2>/dev/null || true)"
 [ -n "$REMOTE" ] || REMOTE="origin"
 [ "$BRANCH" = "main" ] || warn "当前分支是 $BRANCH，不是 main"
@@ -252,11 +264,6 @@ fi
 CURRENT_VERSION="$(node -p "require('$ROOT_DIR/package.json').version")"
 ( cd "$ROOT_DIR" && pnpm version:check ) || die "版本一致性检查失败（pnpm version:check）"
 
-if [ "$CHECK_ONLY" -eq 1 ]; then
-    log "--check：前置检查通过，未做任何改动。当前版本 $CURRENT_VERSION"
-    exit 0
-fi
-
 # --- 1) 目标版本解析 --------------------------------------------------------
 STAGE="1) 目标版本解析"
 stage "1) 目标版本解析"
@@ -277,6 +284,34 @@ case "$CMP" in
     1) log "目标版本 $TARGET > 当前版本 $CURRENT_VERSION，将先 seed 再发布" ;;
     *) die "版本比较返回异常：$CMP" ;;
 esac
+
+# --- 1.5) 部署 tag 冲突前置检查（必须在任何写盘 / 发布之前） -----------------
+# 背景（2026-10-13 踩坑）：v<version> 是文档站部署标记，可能早于真正的 npm 发布就被打上——
+# 先把全仓版本 seed 到 X 并对齐部署 tag vX，之后又用本脚本原样发布 X，便会「已经发出去了」
+# 才在第 7 步发现 tag 已存在：白发布一次、且分支没推送。所以把判定提到发布之前，撞车即早退。
+DEPLOY_TAG="v$TARGET"
+DEPLOY_TAG_STATE="create" # create / reuse / move
+if EXISTING_TAG_COMMIT="$(git -C "$ROOT_DIR" rev-list -n1 "$DEPLOY_TAG" 2>/dev/null)"; then
+    if [ "$EXISTING_TAG_COMMIT" = "$HEAD_SHA" ]; then
+        DEPLOY_TAG_STATE="reuse"
+        log "部署 tag $DEPLOY_TAG 已存在且指向当前提交，将复用（不重建）"
+    elif [ "$MOVE_TAG" -eq 1 ]; then
+        DEPLOY_TAG_STATE="move"
+        warn "部署 tag $DEPLOY_TAG 已存在，指向 ${EXISTING_TAG_COMMIT:0:7}（非当前提交）；--move-tag 已指定，将移到 ${HEAD_SHA:0:7}"
+    else
+        die2 "部署 tag $DEPLOY_TAG 已存在，指向 ${EXISTING_TAG_COMMIT:0:7}，不是当前提交 ${HEAD_SHA:0:7}。
+  这通常说明该版本号已被 seed / 打过部署 tag，但还不是真正的发布版本。
+  推荐：不要复用这个版本号——把版本往上 bump（例如 $TARGET -> 新版本）后再发布；
+  确需把部署 tag 移到本次发布提交，则显式加 --move-tag 重跑。"
+    fi
+else
+    log "部署 tag $DEPLOY_TAG 不存在，将新建"
+fi
+
+if [ "$CHECK_ONLY" -eq 1 ]; then
+    log "--check：前置检查通过，未做任何改动。当前版本 $CURRENT_VERSION，部署 tag $DEPLOY_TAG 状态=$DEPLOY_TAG_STATE"
+    exit 0
+fi
 
 # --- 2) 版本落定（写盘，需确认） --------------------------------------------
 STAGE="2) 版本落定"
@@ -386,7 +421,11 @@ if [ "$PRE_MODE" -eq 0 ] && [ -n "$DIST_TAG" ]; then
     PUBLISH_CMD+=(--tag "$DIST_TAG")
 fi
 log "changeset publish 将创建逐包注解 tag：@fluere-vue/<pkg>@$TARGET"
-log "之后脚本还会创建部署 tag：v$TARGET"
+case "$DEPLOY_TAG_STATE" in
+    create) log "之后脚本会创建部署 tag：$DEPLOY_TAG" ;;
+    reuse) log "部署 tag $DEPLOY_TAG 已存在且指向当前提交，将复用" ;;
+    move) log "之后脚本会把部署 tag $DEPLOY_TAG 移到当前提交" ;;
+esac
 log "将执行：npm_config_registry=$REGISTRY PNPM_CONFIG_REGISTRY=$REGISTRY ${PUBLISH_CMD[*]}（cwd=$ROOT_DIR）"
 
 if [ "$DRY_RUN" -eq 1 ]; then
@@ -427,11 +466,20 @@ pnpm_view @fluere-vue/ui dist-tags 2>/dev/null | sed 's/^/    /' || true
 # --- 7) 打 tag 并推送 -------------------------------------------------------
 STAGE="7) 打 tag 并推送"
 stage "7) 打 tag 并推送"
-if git -C "$ROOT_DIR" rev-parse -q --verify "refs/tags/v$TARGET" >/dev/null; then
-    die "本地已存在 tag v$TARGET（如确认要复用请先 git tag -d v$TARGET）"
-fi
-git -C "$ROOT_DIR" tag -a "v$TARGET" -m "release v$TARGET"
-log "已创建注解 tag v$TARGET（注解 tag 才会被 --follow-tags 带上）"
+# 部署 tag 状态已在第 1.5 步判定（create / reuse / move）：消息沿用既有约定 "docs site deploy: <version>"。
+case "$DEPLOY_TAG_STATE" in
+    create)
+        git -C "$ROOT_DIR" tag -a "$DEPLOY_TAG" -m "docs site deploy: $TARGET"
+        log "已创建注解 tag $DEPLOY_TAG"
+        ;;
+    reuse)
+        log "部署 tag $DEPLOY_TAG 已存在且指向当前提交，跳过创建"
+        ;;
+    move)
+        git -C "$ROOT_DIR" tag -f -a "$DEPLOY_TAG" -m "docs site deploy: $TARGET"
+        log "已把部署 tag $DEPLOY_TAG 移到当前提交（${HEAD_SHA:0:7}）"
+        ;;
+esac
 
 DIRTY2="$(git -C "$ROOT_DIR" status --porcelain || true)"
 if [ -n "$DIRTY2" ]; then
@@ -439,12 +487,30 @@ if [ -n "$DIRTY2" ]; then
     printf '%s\n' "$DIRTY2" | sed 's/^/    /' >&2
 fi
 
-if confirm_type "$TARGET" "推送分支 $BRANCH 与 tag（git push $REMOTE $BRANCH --follow-tags）？"; then
-    ( cd "$ROOT_DIR" && git push "$REMOTE" "$BRANCH" --follow-tags ) ||
+# 只推「分支 + 部署 tag + 本次逐包 tag」的显式 refspec，不用 --follow-tags：
+# 后者会顺带推所有从本次提交可达的注解 tag，一旦远端有已分叉的历史 tag（如本地与 onedev 的
+# v0.0.1 不同）整条 push 会失败。部署 tag 被移动过时，只对它用 `+` 强制更新。
+TAG_REFS=()
+if [ "$DEPLOY_TAG_STATE" = "move" ]; then
+    TAG_REFS+=("+refs/tags/$DEPLOY_TAG:refs/tags/$DEPLOY_TAG")
+else
+    TAG_REFS+=("refs/tags/$DEPLOY_TAG:refs/tags/$DEPLOY_TAG")
+fi
+for p in $PUBLISHABLE; do
+    ref="refs/tags/@fluere-vue/$p@$TARGET"
+    if git -C "$ROOT_DIR" rev-parse -q --verify "$ref" >/dev/null; then
+        TAG_REFS+=("$ref:$ref")
+    else
+        warn "逐包 tag $ref 不存在（changeset publish 未创建？），推送时跳过"
+    fi
+done
+
+if confirm_type "$TARGET" "推送分支 $BRANCH 与 tag（$DEPLOY_TAG + 逐包 tag）到 $REMOTE？"; then
+    ( cd "$ROOT_DIR" && git push "$REMOTE" "$BRANCH" "${TAG_REFS[@]}" ) ||
         die "push 失败（tag 已在本地，可稍后单独补推）"
     log "已推送到 $REMOTE"
 else
-    warn "已跳过 push：tag 仅在本地，可用 git push $REMOTE $BRANCH --follow-tags 补推"
+    warn "已跳过 push：tag 仅在本地，可稍后补推（分支 + $DEPLOY_TAG + 逐包 tag）"
 fi
 
 # --- 8) CHANGELOG 校验 / pre 收尾 -------------------------------------------
@@ -485,6 +551,6 @@ fi
 stage "9) 完成"
 log "版本：$TARGET"
 log "registry：$REGISTRY，dist-tag：${DIST_TAG:-latest}"
-log "tag：v$TARGET（部署用）+ changeset 的逐包 tag（@fluere-vue/<pkg>@$TARGET）"
-log "回滚/补救见 docs/release.md#回滚与补救（npm deprecate / dist-tag rm|add / 删 tag）"
+log "tag：$DEPLOY_TAG（部署用，状态=$DEPLOY_TAG_STATE）+ changeset 的逐包 tag（@fluere-vue/<pkg>@$TARGET）"
+log "回滚/补救见 docs/release.md#回滚与补救（npm deprecate / dist-tag rm|add / 删 tag / 移 tag）"
 log "同一 commit 重跑幂等：changeset publish 会跳过已发布的版本"
