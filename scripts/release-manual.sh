@@ -21,6 +21,12 @@
 #   - `changeset publish` **没有 `--dry-run`**；预览用 `changeset publish-plan`（只读，产出发布计划）。
 #   - pre 模式（.changeset/pre.json 存在且 mode=pre）下**不能传 `--tag`**，否则 changesets 报
 #     "Releasing under custom tag is not allowed in pre mode!" 并退出 1；它自动用 pre 的 tag。
+#   - **预发布不会替你移动 `latest`**（2026-10-13 线上实测；判定代码见 @changesets/cli 的
+#     dist/getPublishPlan.mjs `getReleaseTag()`）：changesets 只在 `only-pre` 判定成立时才发到
+#     `latest`，而它要求"所有已发布版本的 prerelease[0] 都等于当前 pre tag"；本仓库六包带着占位版
+#     `0.0.0-stage`（`prerelease[0] === "stage"`）⇒ 判定恒为 false ⇒ 预发布只落在 pre tag，
+#     `latest` 原地不动（现状：停在 0.3.0-alpha.2）。要改指 latest 只能显式 `npm dist-tag add`。
+#     核对本次会发到哪个 tag，用只读的 `changeset publish-plan` 预演，别发完再猜。
 #   - **部署 tag 冲突必须在发布之前判定**：`v<version>` 是文档站部署标记，可能早于真正的 npm 发布
 #     就被打上（先把版本 seed 到 X 并对齐文档站、之后又原样发布 X，就会撞车，2026-10-13 踩过）。
 #     故第 1.5 步提前判定该 tag 是否存在/指向哪个提交：指向当前提交则复用，否则默认**早退**；
@@ -400,17 +406,18 @@ DIST_TAG=""
 if [ "$PRE_MODE" -eq 1 ]; then
     DIST_TAG="$PRE_TAG"
     log "pre 模式：changesets 自动用 dist-tag=$DIST_TAG，禁止传 --tag"
+    log "注意：这只决定预发布落到哪个 tag；latest 是否移动由 changesets 的 only-pre 判定决定，见下方 publish-plan 输出"
 elif [ -n "$DIST_TAG_OVERRIDE" ]; then
     DIST_TAG="$DIST_TAG_OVERRIDE"
     log "dist-tag 由 --dist-tag 指定：$DIST_TAG"
 elif [ -n "$PRERELEASE_ID" ]; then
     DIST_TAG="$PRERELEASE_ID"
-    log "预发布版本：dist-tag=$DIST_TAG（不使用 latest，避免污染）"
+    log "非 pre 模式的预发布版本：dist-tag=$DIST_TAG（不会因此移动 latest，见下方 publish-plan 输出）"
 else
     log "稳定版：不传 --tag，语义为 latest"
 fi
-if [ "$PRE_MODE" -eq 0 ]; then
-    warn "首次发布会把 latest 一并占到 $TARGET 上（已接受，见 docs/todo.md 3.5）"
+if [ "${DIST_TAG:-latest}" != "latest" ]; then
+    warn "本次发到 dist-tag=$DIST_TAG，latest 不会被移动；要改指需显式 npm dist-tag add（见 docs/release.md）"
 fi
 
 ( cd "$ROOT_DIR" && pnpm exec changeset status --verbose ) || true

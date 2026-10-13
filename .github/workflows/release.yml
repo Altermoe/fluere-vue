@@ -176,7 +176,14 @@ jobs:
       - name: install
         run: pnpm install --frozen-lockfile
       # 从 pack 的 tarball 发布：pack job 构建过什么就发什么，避免两次构建产出不一致。
-      # dist-tag 由 changesets 按 .changeset/pre.json 决定（rc 预发布模式下自动 `--tag rc`），
+      # dist-tag **在 pack 阶段就算好并写进 publish-plan.json**（changesets v3 的 pack.mjs），本 job 带
+      # fromPackDir 后 preState 为 undefined，只照读 plan 里的 tag、不再重新判定 ⇒ 要核对发到哪个 tag，
+      # 看 pack 日志里的 "Packages to publish … (alpha)" 一行即可。
+      # 判定规则**不是**"预发布一律不占 latest"、也不是"预发布一定会占 latest"：changesets 只在
+      # only-pre 成立时才发到 latest，该判定要求所有已发布版本的 prerelease[0] 都等于当前 pre tag。
+      # 本仓库六包带着占位版 0.0.0-stage（prerelease[0] === "stage"）⇒ 判定恒为 false ⇒ 预发布只落在
+      # .changeset/pre.json 的 tag 上、latest 原地不动。要改指 latest 只能显式 npm dist-tag add。
+      # 判定代码与 2026-10-13 线上实测数据见 docs/release.md「dist-tag 判定规则实测」。
       # provenance 由 pnpm 在 trusted publishing 下自动附带（无需 --provenance）。
       - name: publish packages
         uses: changesets/action/publish@v2

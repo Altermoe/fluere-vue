@@ -52,6 +52,8 @@ pnpm exec changeset pre exit         # rc 收尾（升正式版时再走一遍 s
 > **pre 模式下不许显式 `--tag`**：`changeset publish --tag rc` 会直接报
 > `Releasing under custom tag is not allowed in pre mode!` 并退出 1（彩排实测）。
 > 裸跑 `changeset publish` 即可——changesets 读 `.changeset/pre.json` 自动用 `rc` 作为 dist-tag。
+> 注意：这只决定**预发布落到哪个 tag**，不等于 `latest` 一定不动——`latest` 的最终归属还取决于
+> changesets 的 `only-pre` 判定，代码与实测见下文「dist-tag 由 changesets 判定」。
 
 `version:packages` 里的 `version.mjs sync` 会把根与六个可发布包拉平（以最大版本为准回写根），
 并在各发布包生成 `CHANGELOG.md`（changelog 提供方：`@changesets/cli/changelog`）。
@@ -117,8 +119,35 @@ pnpm release:manual --move-tag           # 部署 tag v<version> 已存在时，
   `Unknown project config` 警告。脚本的 `whoami` / `login` / `view` / `config` 全部从**仓库根**用 pnpm 执行。
 - **pre 模式不传 `--tag`**：`.changeset/pre.json` 存在且 `mode=pre` 时，changesets 自动用 pre 的 tag；
   传 `--tag` 会报 `Releasing under custom tag is not allowed in pre mode!` 退出 1。
-- **非 pre 的 dist-tag**：预发布版本取标识（`0.3.0-alpha.2` → `alpha`、`0.3.0-rc.1` → `rc`）作 dist-tag，
-  **绝不用 `latest`**；稳定版不传（即 `latest`）。首发仍会把 `latest` 一并占上（已接受，见 [docs/todo.md](./todo.md) 3.5）。
+- **dist-tag 由 changesets 判定，不是"预发布一律不占 `latest`"**：`@changesets/cli` v3
+  `dist/getPublishPlan.mjs` 的 `getReleaseTag()` 逻辑是「显式 `--tag` > pre tag > `latest`」，
+  而 pre tag 只在**该包不是"只有预发布"**时才用：
+  ```js
+  // publishedState 的判定（同一文件内）
+  if (
+    preState != null &&
+    info['dist-tags'].latest &&
+    info.versions.every((v) => semver.parse(v).prerelease[0] === preState.tag)
+  )
+    publishedState = 'only-pre'
+  //   only-pre  ⇒ getReleaseTag 走 return "latest"（包上还没有"正式版本"可指）
+  //   其余情况  ⇒ 走 return preState.tag（这里是 alpha / rc）
+  ```
+  关键是 `every(...)` 要求**所有**已发布版本的 `prerelease[0]` 都等于当前 pre tag；任何一个
+  **别的标识**的版本都会让它为 `false`。本仓库六包上的占位版 `0.0.0-stage` 的
+  `prerelease[0] === "stage"`（`semver.parse("0.0.0-stage").prerelease` → `["stage"]`），
+  于是判定恒为 `false` ⇒ **预发布一律落在 pre tag 上，`latest` 一直不动**，直到非 pre 的稳定版发布
+  （届时 `0.4.0` 不带 pre tag，`every(...)` 比较的是 `prerelease[0]`、稳定版为 `undefined`，
+  该判定本身是否放行仍以发布后实测 `dist-tags` 为准，别把这里的推演当既成事实）。
+  实测钉住：把六包版本推到 `0.4.0-alpha.2` 后对真实 registry 跑只读
+  `changeset publish-plan`，六包输出全是 `(alpha)`——`latest` 不在命中集合里。
+  **部署链路（`release.yml`）也是这条规则**：`pack` 把算好的 tag **写死进** `publish-plan.json`
+  （`pack.mjs`），`publish` job 带 `fromPackDir` 后 `preState` 为 `undefined`、只照读 plan 里的 tag，
+  不再重新判定，所以"pack 时算出什么 tag，就发到什么 tag"。
+  > 证据缺口：`0.3.0-alpha.2` 首发时 `latest` 与 `alpha` 同时指向它，与上面的判定
+  > （`0.0.0-stage` 已在 registry 上 ⇒ 应为 `alpha`）**不一致**，该次发布的真实成因没有证据留存，
+  > 本手册不再为它编机制。只把结论留在事实层：**`latest` 要改指，必须显式
+  > `npm dist-tag add`（见「回滚与补救」），不要指望发布链路替你动它。**
 - **预览用 `changeset publish-plan`，不是 `publish --dry-run`**：`@changesets/cli` 的 `publish` **没有**
   `--dry-run` 选项（传了会 `Unknown option` 报错），预览走只读的 `publish-plan` / `status --verbose`；
   tarball 内容复核仍由 `pnpm smoke:dist` 覆盖。
@@ -165,16 +194,16 @@ pnpm build
 pnpm exec changeset publish          # pre 模式：不加 --tag
 ```
 
-| 检查项        | 实测结果                                                                                             |
-| ------------- | ---------------------------------------------------------------------------------------------------- |
-| 六包发布      | `@fluere-vue/{designs,hooks,icons,themes,ui,utils}@0.3.0-rc.1` 全部成功                              |
-| dist-tags     | **`rc` 与 `latest` 同时指向 `0.3.0-rc.1`** —— 实测坐实了「首发会一并占 `latest`」（方案 1 已接受）   |
-| git tag       | 逐包生成 `@fluere-vue/<pkg>@0.3.0-rc.1`；**与部署用的 `v0.3.0-rc.1` 不是同一个 tag**，后者仍需手工打 |
-| 发布 manifest | `workspace:*` 已改写为 `0.3.0-rc.1`、`reka-ui` 固定为实际版本、`exports`/`types` 指向 `./dist/*`     |
-| 干净目录安装  | 新工程 `pnpm add @fluere-vue/ui@0.3.0-rc.1 vue` 成功，六个包从 registry 拉齐                         |
-| SSR           | `renderToString` 渲染 `<FluereButton>` 通过（输出含 `fui-button` 与文案）                            |
-| CSS 引入      | `import '@fluere-vue/ui/style.css'` 经 Vite 构建进产物（107.5 kB CSS，含 `fui-button`）              |
-| 纯类型引用    | 消费方 `vue-tsc --noEmit` **exit 0**（工具链对齐仓库：vue-tsc 3.3.8 + typescript 6.0.3）             |
+| 检查项        | 实测结果                                                                                                                                                                                                                                            |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 六包发布      | `@fluere-vue/{designs,hooks,icons,themes,ui,utils}@0.3.0-rc.1` 全部成功                                                                                                                                                                             |
+| dist-tags     | **`rc` 与 `latest` 同时指向 `0.3.0-rc.1`** —— 彩排观察值。注意这与 2026-10-13 线上结果**不同**（线上预发布只落在 pre tag、`latest` 不动），该差异的成因**没有证据留存**，本手册不为此编机制，只把"`latest` 要改指必须显式 `npm dist-tag add`"当结论 |
+| git tag       | 逐包生成 `@fluere-vue/<pkg>@0.3.0-rc.1`；**与部署用的 `v0.3.0-rc.1` 不是同一个 tag**，后者仍需手工打                                                                                                                                                |
+| 发布 manifest | `workspace:*` 已改写为 `0.3.0-rc.1`、`reka-ui` 固定为实际版本、`exports`/`types` 指向 `./dist/*`                                                                                                                                                    |
+| 干净目录安装  | 新工程 `pnpm add @fluere-vue/ui@0.3.0-rc.1 vue` 成功，六个包从 registry 拉齐                                                                                                                                                                        |
+| SSR           | `renderToString` 渲染 `<FluereButton>` 通过（输出含 `fui-button` 与文案）                                                                                                                                                                           |
+| CSS 引入      | `import '@fluere-vue/ui/style.css'` 经 Vite 构建进产物（107.5 kB CSS，含 `fui-button`）                                                                                                                                                             |
+| 纯类型引用    | 消费方 `vue-tsc --noEmit` **exit 0**（工具链对齐仓库：vue-tsc 3.3.8 + typescript 6.0.3）                                                                                                                                                            |
 
 彩排抓到的三件事（前两条已改文档，第三条已修复）：
 
@@ -269,7 +298,10 @@ No authorized job secret found (project: fluere-vue, job secret: CI_HTTP_PROXY)
   npm dist-tag rm @fluere-vue/ui rc                          # 移除污染的 dist-tag
   npm dist-tag add @fluere-vue/ui@<好版本> latest            # latest 回指上一版
   ```
-- **`latest` 被预发布污染**：走上面 `dist-tag add` 强制回指；正常发布用 `--tag rc` 本就不会占 `latest`。
+- **`latest` 被预发布占住**：按上文「dist-tag 由 changesets 判定」核对 `only-pre` 条件——若包上已有
+  非当前 pre tag 的历史版本（本仓库是 `0.0.0-stage`）而 `latest` 仍被预发布占了，说明判定与实际不符，
+  按"没有证据就显式处理"的原则用上面 `dist-tag add` 手工回指；若 `latest` 只是停在旧版本（正常现象），
+  等非 pre 的稳定版发布或手工回指。`latest` 指向预发布**不代表发布失败**，只影响不带版本号的安装。
 - **已发布版本不可变**：修正版必须发新版本号（`0.3.0-rc.2` 等），绝不覆盖已发布版本。
 - **撤销 git tag / GitHub Release**（`release.yml` 的 publish job 会同时建两者，但建的是**逐包**的
   `@fluere-vue/<pkg>@<ver>`——**不是** `v<version>`，2026-10-13 实测见下文「线上实测记录」）：
@@ -324,15 +356,36 @@ No authorized job secret found (project: fluere-vue, job secret: CI_HTTP_PROXY)
    不写 registry 进 `.npmrc`，OIDC 换取会失败。**不要**配 `NODE_AUTH_TOKEN`——凭据来自 OIDC。
    provenance 在 trusted publishing 下由 pnpm 自动附带，不需要 `--provenance`。
 
-### 两个已知陷阱（首次发布会踩）
+### 两个已知陷阱
 
-- **首次发布会把 `latest` 一并占上（已决策：接受）**：changesets 自己会警告「packages that have not had
-  normal releases will be published to `latest`」——六个包首次发布时，即使处于 rc 预发布模式，`latest` 也会
-  落在 `0.3.0-rc.1` 上。**按原计划执行、不做特殊处理**：新包无存量用户，`0.3.0` 稳定版发布后 `latest` 自动
-  回指，届时恢复正常语义；发布说明与 GitHub Release 正文里要写明这条已知行为，避免被当成事故。
-  决策记录见 `docs/todo.md` 3.5 的「前置硬约束与已确认决策」。
-- **dist-tag 事后回指需要目标版本已存在**：`npm dist-tag add <pkg>@<版本> latest` 里的版本必须
-  已经发布过，所以首次发布不能靠事后回指来「清掉」`latest`。
+- **预发布不会替你移动 `latest`**：changesets 只在 `only-pre` 判定成立时才把版本发到 `latest`，
+  而该判定要求"所有已发布版本的 `prerelease[0]` 都等于当前 pre tag"。**本仓库六个包带着
+  `0.0.0-stage` 占位版，判定恒为 `false`**，所以预发布一律落在 `alpha`、`latest` 原地不动
+  （判定代码见上文「dist-tag 由 changesets 判定」；六包现状 = `latest` 停在 `0.3.0-alpha.2`）。
+  后果是**用户 `npm i @fluere-vue/ui` 会装到旧版**，要装预发布必须显式写 `@alpha` / `@rc`。
+  发布说明与 GitHub Release 正文里要写明这条已知行为，避免被当成事故。
+  changesets 那条「packages that have not had normal releases will be published to `latest`」警告
+  只描述它自己的 `only-pre` 分支，**不要**据此推断"预发布会占 `latest`"。
+- **`latest` 要改指只能显式操作**：`npm dist-tag add <pkg>@<已发布版本> latest`（六个包各一次），
+  版本必须**已经发布过**，所以首次发布不能靠事后回指来「清掉」`latest`。
+
+### dist-tag 判定规则实测（2026-10-13，对真实 registry）
+
+起因：线上 `0.4.0-alpha.1` 六个包发布成功，但 `npm i @fluere-vue/ui` 仍装到 `0.3.0-alpha.2`
+（用户视角像"没发出去"）。实测过程与结论：
+
+| 步骤                     | 命令 / 端点                                                               | 结果                                                                            |
+| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 版本是否真在 registry 上 | `GET /@fluere-vue%2F<pkg>/0.4.0-alpha.1`                                  | 六包全 `200`                                                                    |
+| dist-tag 到底指哪        | `GET /-/package/@fluere-vue%2F<pkg>/dist-tags`                            | `{"latest":"0.3.0-alpha.2","alpha":"0.4.0-alpha.1"}`                            |
+| 消费方实际装到哪         | 干净目录 `npm i @fluere-vue/ui@latest` / `@alpha`                         | `0.3.0-alpha.2` / `0.4.0-alpha.1`                                               |
+| 为什么没命中 `latest`    | `semver.parse("0.0.0-stage").prerelease`                                  | `["stage"]` ≠ `"alpha"` ⇒ `every(...)` 为 `false` ⇒ `publishedState ≠ only-pre` |
+| 下一个版本会发到哪个 tag | 一次性副本里把六包推到 `0.4.0-alpha.2` → `changeset publish-plan`（只读） | 六包全是 `@fluere-vue/<pkg>@0.4.0-alpha.2 (alpha)`                              |
+
+判读要点：`pack` → `publish` 链路里 tag 是 **pack 阶段算好写进 `publish-plan.json`** 的，
+`publish` job 不再重算；所以核对发到哪个 tag，看 pack 日志里的
+"Packages to publish / (alpha)" 一行即可，不必等发完再猜。
+另：`pnpm release:manual --check` / `changeset publish-plan` 都是**只读**的，改判定逻辑前先用它预演。
 
 ### 线上实测记录（2026-10-12，GitHub Actions）
 
@@ -361,7 +414,7 @@ private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判�
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 推 `main`（`658f9f3` seed 提交）         | `Release` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343)：`select-mode` 判 `version` → `version` job 把消费掉的 changeset 收进 `.changeset/pre/`、bump 六包到 `0.4.0-alpha.1` 并**更新已存在的** release PR #2（不新建 PR）；`pack` / `publish` 按预期 skipped                                                                      |
 | 合并 release PR #2（发布提交 `6a0ba67`） | `Release` run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)：`select-mode` 判 `publish` → `pack`（`pnpm check && pnpm test` + `build` + `smoke:dist`）→ `publish`，**三个 job 全绿**                                                                                                                                                   |
-| npm                                      | 六个包 `0.4.0-alpha.1` 全部发布；`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`（pre 模式没污染 `latest`，符合预期）                                                                                                                                                                                                                                          |
+| npm                                      | 六个包 `0.4.0-alpha.1` 全部发布；`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`。按 `only-pre` 判定（六包带占位版 `0.0.0-stage` ⇒ 恒为假）这正是预期结果；**这是判定推演，未取到该 run 的 pack 日志**（GitHub API 未认证、日志取不到）。副作用：`npm i @fluere-vue/ui` 仍装 `0.3.0-alpha.2`，要装新版需显式 `@alpha`                                          |
 | 可信发布源                               | 每包 `_npm/v1/attestations` 都有两份证明（npm publish v0.1 + [SLSA provenance v1](https://slsa.dev/provenance/v1)）；签名证书（Fulcio 签发、**有效期仅 10 分钟**）的 SAN 为 `https://github.com/Altermoe/fluere-vue/.github/workflows/release.yml@refs/heads/main` —— 凭据来自 OIDC 而非任何长期 token，`id-token: write` 只给 publish job 的拆法确认可用               |
 | git tag / GitHub Release                 | `changeset publish` 建的是**逐包注解 tag** `@fluere-vue/<pkg>@0.4.0-alpha.1`（均指向 `6a0ba67`）与**逐包 GitHub Release**（`prerelease: true`，`github-actions[bot]` 建）；**没有** `v0.4.0-alpha.1` —— `v*` 是 OneDev 文档站部署标记，仍由 `release:manual` 打（见「踩坑记录」）                                                                                       |
 | OneDev 文档站（手工补推）                | 把 `main`、部署 tag `v0.4.0-alpha.1`（注解 tag，指发布提交 `6a0ba67`）与六个逐包 tag 推给 `onedev`；**分支先推、tag 后推**，tag 构建五个 job 全绿（`build#82` / `check#83` / `test#84` / `package-smoke#85` / `deploy#86`），`deploy` 日志 `[deploy] 健康检查通过：v0.4.0-alpha.1 已上线`；`https://fluere-vue.nahida.space/` 首页实测含 `docsVersion:"v0.4.0-alpha.1"` |
