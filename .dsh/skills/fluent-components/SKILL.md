@@ -6,6 +6,8 @@ whenToUse: When building or customizing any of the core Fluent controls (button,
 
 # Fluent 2 Components
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 组件规格：解剖（anatomy）、部件（parts）、状态、尺寸，以及每个部件应绑定的语义 token。**框架无关**——你在任意框架实现的都是这套结构，`fluent-adapter-*` 负责翻译成某个框架的 API/css。
 
 > 规格是设计契约；具体语法（className / style / prop）见 adapter。取值（色/字号等）见 `fluent-tokens` 的 `data/fluent-tokens.json`。

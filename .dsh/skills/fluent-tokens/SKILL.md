@@ -6,6 +6,8 @@ whenToUse: Any time you must pick a concrete color/spacing/typography/radius/dur
 
 # Fluent 2 Design Tokens
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 本 skill 提供 Fluent 2 语义 token 的**真实值引用**（来自官方 `@fluentui/tokens` 包）。token 是框架无关的设计语言事实来源：**任何 adapater/框架代码都应引用 token 名称，再翻译成目标表达**。
 
 ## 数据文件

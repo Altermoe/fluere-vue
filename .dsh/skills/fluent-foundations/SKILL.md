@@ -6,6 +6,8 @@ whenToUse: Establish structure for any Fluent-style UI regardless of framework �
 
 # Fluent 2 Foundations
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 Fluent 2 的「设计语言」层：不绑定任何框架，规定**为什么**与**原则**。与 `fluent-tokens`（值）、`fluent-components`（规格）、`fluent-patterns`（模式）、`fluent-adapter-*`（翻译）搭配使用。
 
 ## 原则（Fluent 2 的四个支柱）

@@ -6,6 +6,8 @@ whenToUse: Building a Flutter app that should carry the Fluent/Windows design la
 
 # Fluent 2 → Flutter Adapter
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 Flutter 没有官方 Fluent 组件库，所以本技能负责把 Fluent token **翻译成 Flutter 的表达**：语义颜色进 `ThemeData` / `ThemeExtension`，其它 token 绑定到 `ButtonStyle`、`TextStyle`、间距等。自带 **`fluent_tokens.dart`**（同目录），已把 `data/tokens/fluent-tokens.json` 编译成 Dart 常量。
 
 ## 使用 flens_tokens.dart

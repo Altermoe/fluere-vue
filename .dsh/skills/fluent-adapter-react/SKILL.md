@@ -6,6 +6,8 @@ whenToUse: Building a React app and need to apply the Fluent design language via
 
 # Fluent 2 → React Adapter
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 Fluent 官方 React 实现是 **Fluent UI React v9**（`@fluentui/react-components`）。**TypeScript 优先、Vite 8 优先**：项目用 Vite 8（[Rolldown 稳定版](https://vite.dev/blog/announcing-vite8)）+ TS 模板。关键点在：同一份 token 有两种消费形态——
 
 - **`tokens`**（来自 `@fluentui/tokens`）：值是 **`var(--...)` 引用**，专门给 CSS-in-JS / makeStyles 用。

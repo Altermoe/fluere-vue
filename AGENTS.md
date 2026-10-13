@@ -10,6 +10,8 @@
    **WinUI 3 / Windows App SDK 源码（`microsoft-ui-xaml`）> Fluent token 表 > 截图验证**。
    禁止把 Fluent UI React v9、Fluent 2 Web 规范页、WinUI 2 / UWP 文档、博客或二手 Web 实现、本仓库历史注释当作依据——它们最多用来找线索，结论必须回到源码或 token 方可落地。
 
+   > **`.dsh/skills/fluent-*` 的定位**：这些 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，对应本文件权威层级里的 **B 级（token 表）**，只可用于**找线索与取 token 值**；控件的几何、状态机、动效关键帧等**行为**一律以 **A 级 WinUI 3 源码**为裁决者。**禁止**据 skill 里的组件 / 模式描述推断 WinUI 行为；skill 与本文件、[style-spec](./docs/style-spec.md) 冲突时，以本文件与 style-spec 的权威层级为准。
+
 2. **先对版本，再读代码**：目标 WinUI3 Gallery 发行版 → 其 `standalone.props` 的 `WindowsAppSdkPackageVersion=N` → `microsoft-ui-xaml` tag **`winui3/release/<N>`**（不是 `main`）。本地快照在 `temp/winui-src`（当前 `winui3/release/2.5.1` / `ba3a8d5`）；判断是否漂移用"控件目录 tag 间 diff"，命令与判读规则见 [style-spec §3](./docs/style-spec.md#3-获取与核对源码)。
 
 3. **视觉值只写 token**：颜色 / 间距 / 圆角 / 描边 / 时长 / 缓动一律 `var(--TokenName)`（事实源 `packages/designs/data/fluent-tokens.json` → `generated/tokens.css`）。不许硬编码色值，不许凭截图取色。WinUI 资源名 → token 的映射写进组件注释（方法见 [style-spec §6](./docs/style-spec.md#6-winui-资源名--fluent-token-映射)）。

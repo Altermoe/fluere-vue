@@ -6,6 +6,8 @@ whenToUse: Targeting plain CSS, CSS Modules, CSS-in-JS, UnoCSS, or Tailwind CSS 
 
 # Fluent 2 → CSS / UnoCSS / Tailwind Adapter
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 把 Fluent token 翻译成 CSS 表达，跨 CSS 系列框架。本技能提供三种消费形态，**typeScript-first**（所有配置用 `.ts`）：
 
 1. **纯 CSS**：自带的 **`fluent.css`**，每个值映射为 `var(--TokenName)`，token 名与 `@fluentui/tokens` 完全一致。

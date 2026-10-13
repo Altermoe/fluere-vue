@@ -6,6 +6,8 @@ whenToUse: After generating or before shipping any UI that claims to follow Flue
 
 # Fluent 2 Verify（一致性审计）
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 对「任意框架、任意 adapter」产出的 UI 做一致性自查。**框架无关**——它只对照语义 token 与设计规则做检查。
 
 ## 检查项

@@ -6,6 +6,8 @@ whenToUse: When designing the structure of a page, form, list, navigation, or da
 
 # Fluent 2 Patterns
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 组合 `fluent-components` 的控件，按 Fluent 习惯组织成页面与交互。**框架无关蓝图**，adapter 负责翻译。
 
 ## 页面与栅格

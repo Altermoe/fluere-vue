@@ -6,6 +6,8 @@ whenToUse: Building a Vue 3 (Vite) app — typically TypeScript-first — and wa
 
 # Fluent 2 → Vue 3 (Vite) Adapter
 
+> **仓库从属声明（fluere-vue）**：本 skill 以 **Fluent 2 Web / `@fluentui/tokens`** 为事实源，仅用于**找线索与取 token 值（B 级）**；控件的几何 / 状态 / 动效等**行为**以 **WinUI 3 源码（A 级）** 为准，权威层级见仓库 `docs/style-spec.md` 与 `AGENTS.md`。在本仓库内**禁止**据本 skill 推断 WinUI 行为。
+
 Vue 3 没有官方的 Fluent React 版等价物（React 版 `@fluentui/react-components` 不适用于 Vue），所以 Vue 侧用两条路线承载 Fluent 设计语言，**TypeScript 优先、Vite 优先**：
 
 - **路线 A（推荐，轻量）**：UnoCSS / 纯 CSS 直接消费 Fluent token（`var(--TokenName)` + `fluent-*` 工具类）。用 Vue SFC 的 `<style>` / UnoCSS 生成工具类。
