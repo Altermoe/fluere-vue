@@ -50,7 +50,7 @@ export default defineNuxtConfig({
     ],
     // v10 起语言文件按需懒加载（lazy 选项已被移除，不再需要显式声明）
     // fallbackLocale 属 vue-i18n 配置，见 i18n/configs/i18n.config.ts
-    baseUrl: 'https://fluere-vue.nahida.website',
+    baseUrl: 'https://fluere-vue.nahida.space',
     // 记住上次语言选择；key 命名风格与既有的 fluere-docs-color-mode 保持一致。
     detectBrowserLanguage: {
       useCookie: true,

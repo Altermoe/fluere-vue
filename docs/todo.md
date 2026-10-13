@@ -23,6 +23,29 @@
 
 ---
 
+## 0.1.0-rc.1 计划范围（组件 Wave 计划，已收口）
+
+> 本节从 README 迁入（2026-10-13），回答「rc.1 按什么顺序做、哪些控件明确不做」。逐项勾选状态与规格源见下一节《0.1.0-rc.1 · 通用 WinUI 控件（已收口）》。
+
+实施顺序按「使用频率 × 需求度 × WinUI 还原成本 × `reka-ui` 底座可用性」排列：
+
+- **Wave 1 · 核心表单**：Checkbox、ToggleSwitch、RadioButton / RadioGroup、Slider、NumberBox、Combobox
+- **Wave 2 · 反馈与状态**：ProgressRing、ProgressBar、InfoBar、InfoBadge
+- **Wave 3 · 弹层与微交互**：ContentDialog（含共享弹层原语 `FluereSmokeLayer` / `useDisclosure`）、Tooltip / TooltipProvider
+- **Wave 4 · 加分项（原计划）**：ToggleButton / ToggleGroup、Avatar / Persona、DropDownButton
+- **首次发布未包含、后续版本排期**：NavigationView、ListView / GridView、CommandBar（rc.1 明确不做的清单与去向见下文《rc.1 明确不做》）
+
+### 早期路线图（已被后续排期取代）
+
+以下是项目启动期的四阶段高层规划，**内容已被本文件下半部分的《版本地图》与《0.4.0 – 0.9.0-rc.1 排期》取代**，仅保留作为历史记录，不再维护：
+
+- **阶段一 · 核心表单**：Button 族、CheckBox、RadioButton、TextBox、Slider、ToggleSwitch 等
+- **阶段二 · 导航与容器**：NavigationView、TabView、TreeView、ListView 等
+- **阶段三 · 动效与材质**：整理统一的动画实现，继续完善 Mica / Acrylic 效果
+- **阶段四 · 无障碍与发布**：补充单元测试和视觉回归，发布 npm 包并上线文档站
+
+---
+
 ## 0.1.0-rc.1 · 通用 WinUI 控件（已收口）
 
 范围：通用 WinUI 控件。本版回答「组件够不够用」。
