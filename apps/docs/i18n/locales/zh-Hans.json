@@ -33,7 +33,8 @@
       "progress-ring": "环形进度指示：不确定转圈与确定弧长。",
       "tooltip": "悬停或聚焦时显示的补充信息浮层。",
       "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。",
-      "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。"
+      "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。",
+      "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。"
     }
   },
   "theme": {
@@ -139,6 +140,33 @@
         "disabledLabel": "禁用",
         "disabledCheckedLabel": "禁用（已选中）",
         "iconOnlyLabel": "已选中"
+      }
+    },
+    "toggle-group": {
+      "single": {
+        "groupLabel": "文本对齐",
+        "items": ["左对齐", "居中", "右对齐"],
+        "currentLabel": "当前对齐：{align}",
+        "emptyLabel": "未选择",
+        "hint": "单选组只保留一个选中项；再次点击已选中项会取消选中（ARIA toggle button 语义）。Tab 进入组后用方向键或 Home / End 在项间移动焦点。悬停与按下时底色各加深一档（未选中档 NeutralBackground1Hover / Pressed，选中档 BrandBackgroundHover / Pressed）。"
+      },
+      "multiple": {
+        "groupLabel": "文本格式",
+        "items": ["加粗", "倾斜", "下划线"],
+        "selectedLabel": "已应用：{list}",
+        "emptyLabel": "未应用任何格式"
+      },
+      "disabled": {
+        "groupDisabledLabel": "整组禁用",
+        "itemDisabledLabel": "单项禁用",
+        "planItems": ["免费版", "专业版"],
+        "networkItems": ["Wi-Fi", "以太网"]
+      },
+      "size": {
+        "smallLabel": "小（24px，非受控 default-value）",
+        "mediumLabel": "中（32px，v-model 受控）",
+        "largeLabel": "大（40px，纵向组）",
+        "rangeItems": ["日", "周", "月"]
       }
     },
     "app-window": {

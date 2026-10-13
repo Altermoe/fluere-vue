@@ -33,7 +33,8 @@
       "progress-ring": "Circular progress indicator: indeterminate spinner and determinate arc.",
       "tooltip": "A supplementary info overlay shown on hover or focus.",
       "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside.",
-      "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton)."
+      "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton).",
+      "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton."
     }
   },
   "theme": {
@@ -144,6 +145,33 @@
         "disabledLabel": "Disabled",
         "disabledCheckedLabel": "Disabled, checked",
         "iconOnlyLabel": "Checked"
+      }
+    },
+    "toggle-group": {
+      "single": {
+        "groupLabel": "Text alignment",
+        "items": ["Align left", "Center", "Align right"],
+        "currentLabel": "Current alignment: {align}",
+        "emptyLabel": "None",
+        "hint": "A single-select group keeps one item pressed; clicking the pressed item again clears the selection (ARIA toggle button semantics). Tab into the group, then use the arrow keys or Home / End to move focus. Hovering and pressing each deepen the fill one step (NeutralBackground1Hover / Pressed when off, BrandBackgroundHover / Pressed when on)."
+      },
+      "multiple": {
+        "groupLabel": "Text formats",
+        "items": ["Bold", "Italic", "Underline"],
+        "selectedLabel": "Applied: {list}",
+        "emptyLabel": "No format applied"
+      },
+      "disabled": {
+        "groupDisabledLabel": "Entire group disabled",
+        "itemDisabledLabel": "Individual item disabled",
+        "planItems": ["Free", "Pro"],
+        "networkItems": ["Wi-Fi", "Ethernet"]
+      },
+      "size": {
+        "smallLabel": "Small (24px, uncontrolled via default-value)",
+        "mediumLabel": "Medium (32px, controlled via v-model)",
+        "largeLabel": "Large (40px, vertical)",
+        "rangeItems": ["Day", "Week", "Month"]
       }
     },
     "app-window": {

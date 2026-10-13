@@ -182,7 +182,13 @@ const componentNavGroups: ComponentNavGroup[] = [
       },
       { slug: 'tags-input', name: 'Tags Input', implemented: false },
       { slug: 'toggle', name: 'Toggle', implemented: false },
-      { slug: 'toggle-group', name: 'Toggle Group', implemented: false },
+      {
+        slug: 'toggle-group',
+        name: 'Toggle Group',
+        implemented: true,
+        summaryKey: 'toggle-group',
+        icon: FluentIconSquareMultiple24Regular,
+      },
     ],
   },
   {
