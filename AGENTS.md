@@ -2,7 +2,7 @@
 
 > 本文件是本仓库的入口约定。**动手改任何代码之前，先读完下面的【开发前必读】。**
 >
-> 配套文档：[docs/style-spec.md](./docs/style-spec.md)（对齐源与核对方法）、[docs/design/token-driven-style.md](./docs/design/token-driven-style.md)（token 管线）、[docs/ssr-guide.md](./docs/ssr-guide.md)（SSR 约束）、[docs/release.md](./docs/release.md)（npm 发版与 tag 约定）、[docs/todo.md](./docs/todo.md)（实施清单与验收口径）。
+> 配套文档：[docs/style-spec.md](./docs/style-spec.md)（对齐源与核对方法）、[docs/design/token-driven-style.md](./docs/design/token-driven-style.md)（token 管线）、[docs/ssr-guide.md](./docs/ssr-guide.md)（SSR 约束）、[docs/i18n.md](./docs/i18n.md)（文档站 i18n 文案规范与消息转义）、[docs/release.md](./docs/release.md)（npm 发版与 tag 约定）、[docs/todo.md](./docs/todo.md)（实施清单与验收口径）。
 
 ## 【开发前必读】
 
@@ -70,6 +70,7 @@ pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI �
 - **无同值 token 的视觉量 → 组件局部变量**：以 `--fui-<component>-<slot>` 形式在组件内声明，注释里写清"WinUI 资源名 + token 表找不到同值档"以及消费方如何覆盖。
 - **取不到 A 级源码的"值"要显式标注证据缺口**：例如淡入淡出时长落在非公开头文件里时，写清"取值来源 + 为什么只能取这个 + 一行覆盖方法（覆写 `--fui-<component>-*`）"，**禁止**写成"时长就是 xx ms"。
 - **SSR 安全**（详见 [docs/ssr-guide.md](./docs/ssr-guide.md)）：`setup()` 期不得直接访问 `window` / `document` / `matchMedia` / `ResizeObserver`；必须访问时用能力探测 + 无害默认值。生成唯一 id 用 Vue 的 `useId()`（SSR/水合一致），不要用 `getCurrentInstance().uid`。
+- **文档站文案一律走 i18n key**（详见 [docs/i18n.md](./docs/i18n.md)）：界面串写进 `apps/docs/i18n/locales/{zh-Hans,en}.json`（`zh-Hans` 为主语言，两侧 key 必须一致），组件库内置文案写进 `packages/ui/src/**/locale.ts`。**消息值不是纯文本**——`@` / `{` / `}` / `|` / `$` 都有语法含义，要原样输出必须写成 `{'@'}` 这类字面量插值；裸 `@`（如包名 `@fluere-vue/ui`）会让 vue-i18n 编译报 `Invalid linked format`、SSR / 预渲染直接 500，而 `pnpm check` **不编译消息、拦不住**。改完文案必须让消息真编译一次（dev server 两语种 200，或 `pnpm docs:generate`）。
 - **无障碍**：装饰性元素对 AT 隐藏、不抢 Tab 序、不拦指针；可访问名由消费方传入或提供 `label` 类 Prop。
 - **动效**：默认尊重 `prefers-reduced-motion`，且关闭动画后必须留下**合理静态形态**（不能出现空环或 0 长度弧）。
 - **测试位置**：组件同名 `.test.ts` 放组件目录；跨组件纯函数测试放 `__tests__/`。
@@ -104,6 +105,7 @@ pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI �
 - [ ] 契约测试 + （动效类）冻结帧像素测量通过
 - [ ] 浮层类组件额外在**真实浏览器**里量过计算样式（确认 scoped / Teleport 没有把样式静默吃掉），并留一张明暗对照截图
 - [ ] `pnpm check`、`pnpm test`、`pnpm lint:ssr` 全绿
+- [ ] 涉及界面文案时，消息已真实编译通过（dev server 两语种 200，或 `pnpm docs:generate`）——`pnpm check` 不覆盖消息编译，见 [docs/i18n.md](./docs/i18n.md)
 - [ ] `pnpm docs:generate` 中新增页面能预渲染，且不引入新的 404（既有失败需注明）
 - [ ] 文档站示例 + API 表已更新，旧结论/旧注释已清理
 - [ ] **可复现的验证结论留在仓库里**：测量方法、预期值、结论写进组件注释 / 契约测试 / 文档页（`temp/` 下的脚本与截图只是过程产物，不进仓库、也不能当作唯一证据留存）；`temp/` 快照、脚本、截图未提交
