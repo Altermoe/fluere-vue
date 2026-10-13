@@ -375,6 +375,19 @@
 
 > **0.4.5 已落地**：Input 收尾（password / textarea / header / description，含「显示」按钮、按住 `Alt+F8` 显示与掩码状态下的复制拦截）。规格源与 Web 取舍见组件契约注释，示例与 API 表见 `apps/docs/content/components/input.md`；本文档第 0 项已勾掉。
 
+> **0.4.0 进展（2026-10-13）**：四件基建 + 一个通用件已落地，逐条要点与证据如下；未做项明确列在末尾。
+>
+> - **0.4.2 z-index 刻度（已落地）**：新增 `packages/designs/data/repo-tokens.json`——**仓库自有令牌的旁路事实源**（`extract-tokens.mjs` 只重写 `fluent-tokens.json`，手写值不会再被上游抽取冲掉；重名由 `generate.mjs` 直接抛错拦截）。落 `--zIndexWindow/Content/NavFlyout/Menu/Submenu/Modal/Tooltip/Shell` + `--zIndexStep` 九档，刻度顺序由 `packages/designs/src/repo-tokens.test.ts` 守住。原先四处硬编码（Combobox 下拉 1000、SmokeLayer 1000、ContentDialog 1000、ToolTip 1100）全部改引刻度；`packages/ui/src/__tests__/z-index-tokens.test.ts` 扫描组件样式，禁止再出现裸的浮层 z-index（组件内部局部 stacking 的 `1/2/-1` 白名单放行）。档位口径同步进 AGENTS.md。
+> - **0.4.3 `useFocusVisual`（已落地）**：`packages/ui/src/focus-visual/`（CSS 原语 + composable）。几何与配色逐条对齐 A 级源码：`FocusRectManager.cpp`（primary=外描边、secondary=内描边、连续双环、内层 bounds 收进 firstThickness ⇒ **紧贴无间隙**、`FocusVisualMargin = -3`）+ `Common_themeresources_any.xaml`（亮 外 `#E4000000`/内 `#B3FFFFFF`，暗 外 `#FFFFFF`/内 `#B3000000`），映射到 `--colorStrokeFocus2`（外）/ `--colorStrokeFocus1`（内），alpha 差异记录在文件头；含 `forced-colors` 分支（→ `CanvasText`/`Canvas`）。Button 已试点：原单层 brand outline 换成双层矩形。
+> - **0.4.1 `useFlyout`（已落地）**：`packages/ui/src/flyout/`（`use-flyout.ts` + `layer-stack.ts`）。关闭路径 Esc / 外部 pointerdown / 焦点移出全覆盖并带 `FlyoutCloseReason`；焦点归还、`aria-expanded` / `aria-haspopup` / `role` / `aria-modal` 契约齐备；**层级栈**解决平面刻度表达不了的「模态里的下拉必须盖过模态」——z 表达式全程引用 token（`var(--zIndexNavFlyout)` / `calc(var(--zIndexModal) + var(--zIndexStep))`）。Tooltip / Combobox / ContentDialog 三套实现已接上层级栈，接线与「关闭语义仍由 reka / 自研逻辑负责」的分工由 `packages/ui/src/__tests__/flyout-migration.test.ts` 与组件注释固定。SSR 侧刻意**不在 setup 期登记层级**（避免模块级栈跨请求污染与首帧水合不匹配），服务端与首帧由组件样式表缺省值兜底，`use-flyout.test.ts` 有断言。
+> - **0.4.4 材质令牌（已落地）**：Mica / Acrylic / Layer / Subtle / Smoke 共 20 个 token 进 `repo-tokens.json`，值取 `Common_themeresources_any.xaml` 与 `Materials/Acrylic/AcrylicBrush_themeresources.xaml`（tag `winui3/release/2.5.1`），AARRGGBB → CSS 的换算与原值逐条写在 token 的 `note` 里；`kind: 'color'` 的令牌同时进 UnoCSS 颜色刻度（`bg-micaBackgroundFillColorBase` 可用）。Mica 本体由系统 DWM 绘制、公开源码树没有对应 Color 资源这一事实已记录（纯色基准取 `SolidBackgroundFillColor*`），真正的材质合成属 0.9.1 / 0.9.2。
+> - **0.4.6 `ToggleButton`（已落地）**：SFC + 契约测试（19）+ 中英文档页 + 3 个示例 + i18n key + 组件索引/导航条目。状态表逐条对齐 `CommonStyles/ToggleButton_themeresources.xaml`（未选中 `ControlFillColor*`、选中 `AccentFillColor*` → `--colorBrandBackground` 三档、选中前景 `TextOnAccentFillColorPrimaryBrush` → `--colorNeutralForegroundOnBrand`、不确定态与未选中同源）；三态循环对齐 `ToggleButton_Partial.cpp#OnToggleImpl`（`Indeterminate → Unchecked`、`Checked + IsThreeState → Indeterminate`）；过渡只走背景 83ms（模板 `BrushTransition Duration=0:0:0.083`，前景 / 描边是 `DiscreteObjectKeyFrame` 瞬切）；Fluent 无同值档的 `AccentFillColorDisabledBrush` / `TextOnAccentFillColorDisabledBrush` / `TextOnAccentFillColorSecondaryBrush` 落三个组件局部变量并记 WinUI 原值；焦点复用 0.4.3 原语。
+> - **0.4.6 `ToggleGroup`（已落地）**：`FluereToggleGroup` / `FluereToggleGroupItem`（reka `ToggleGroup` + `RovingFocusItem` 底座）、22 个契约测试、中英文档页、4 个示例。WinUI **没有** ToggleGroup 控件（`git ls-tree` 实测 34 个 ToggleButton、0 个 ToggleGroup），所以视觉以 WinUI `ToggleButton` 为准、分组语义按 WAI-ARIA + reka 契约，容器间距 4px 为库内自定——取舍逐条写进组件注释与文档；单选「再点取消」沿用 reka/ARIA 语义，文档给了「必须选中一项」的一行回退配方。
+> - **真实浏览器实测（0.4.0 的新增证据，脚本与截图为过程产物，留在 `temp/`）**：① 焦点矩形 Button 上 `:focus-visible` 命中，亮色 = 外 2px `rgb(0,0,0)` + 内 1px `rgb(255,255,255)`、暗色相反，`outline-offset: 1px`（紧贴无间隙）；② 三处浮层 inline 层级生效——Combobox 下拉 `z-index: var(--zIndexNavFlyout)` → 计算值 1000、Tooltip `var(--zIndexTooltip)` → 1400、ContentDialog 根 `var(--zIndexModal)` → 1300（遮罩 1300）；③ ToggleButton 选中态底色实测 `rgb(15, 108, 189)` = `--colorBrandBackground`。**这次实测抓到一个单测抓不到的真 bug**：`useFlyout` 返回的是 ref 对象，模板里写 `:style="flyout.layerStyle"` 不会自动解包嵌套 ref，Combobox / ContentDialog 的层级其实一直没生效（只有 CSS 回退值在兜底，肉眼与测试都像对的）；已改为解构到顶层 ref，并在 `flyout-migration.test.ts` 加了「模板不得直接引用 `flyout.layerStyle`」的守卫。
+> - **0.4.7 `Select`（已落地）**：`packages/ui/src/select/`——不可编辑下拉，底座 reka `Select`，视觉规格取 WinUI `ComboBox` **非编辑形态**（`src/controls/dev/ComboBox/ComboBox_themeresources.xaml`，该文件不在稀疏检出里，用 `git -C temp/winui-src show <tag>:<path>` 取）；14 个契约测试 + 中英文档页 + 3 个示例 + 组件索引/导航条目。触发面 / 下拉项 / 面板全部复用 `FluereCombobox` 非编辑形态的 token 口径，层级走 0.4.1 的 `useFlyout`、焦点走 0.4.3 的 `useFocusVisual`；面板样式写在**非 scoped** 块（Teleport 拿不到 `data-v-*`）。与 Combobox 的差异（不可编辑 / 无文本搜索 / 事件载荷）写进文档表格。
+> - **0.4.8 收尾（已落地）**：① `packages/ui/README.md` 组件索引补齐 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect`，并新增《共享原语（0.4.0 基建）》表；② `apps/playground` 从占位包落地为可跑的 Vite 视觉回归页（`pnpm --filter @fluere-vue/playground dev`，默认 60728）——一屏陈列 Wave 1 表单 + 按钮族（含 ToggleButton 三态 / ToggleGroup 单选多选）+ 反馈 + 浮层 + 明暗切换，并把《视觉自检清单》写进该包 README；③ 新增 changeset `.changeset/forty-jars-float.md` 记录 0.4.0 全部变更。实测：playground 页面无控制台错误、ContentDialog 打开时 `z-index` 计算值 1300、Esc 可关闭、主题切换生效。
+> - **仍未做（接手清单）**：① `packages/ui/README.md` 与 [README.md](../README.md) 的组件进度表尚未做与实现的**逐条**复核（索引已补，但没逐项对照）；② `FluereButton` 仍是旧口径（单层 outline 已换双层，但过渡仍是 150ms 三项，与 `ToggleButton` 已对齐的 A 级口径不一致），建议 0.5.0 开工时统一；③ 《发布检查（0.4.0 起）》清单中的发布动作（changeset 消费、版本号推进、打 tag）尚未执行——本轮只落代码与 changeset。
+
 ### 0.5.0 · Explorer 骨架（≈ 17 点组件 + 11 点文档站）
 
 > **本版的战略意义**：Explorer 拆分交付的第一段。首页自 0.5.0 起即可挂上可交互的窗口，hook 提前四个版本生效；同时让 0.6–0.8 的组件开发始终有一个可运行的目标物可对照。
@@ -470,11 +483,11 @@
 
 ### 0.4.0 开工前置（必做，否则整条排期不成立）
 
-- [ ] **重新拉起 WinUI 源码快照**：按 `docs/style-spec.md` §2/§3 对版本（目标 WinUI3 Gallery 发行版 → `WindowsAppSDKPackageVersion` → tag `winui3/release/<N>`），本地快照放 `temp/winui-src`（已 gitignore）并记录 commit
-- [ ] **确认 0.3 版本的三条主线是否已完成**（i18n / 文档站仿真化 / 自动发版流程）；未完成项与 0.4.0 的先后关系需明确（i18n 的 key 约定影响 0.5.0 起全部新增文案，构建器选型影响所有包入口）
-- [ ] **确定文档站仿真的范围边界文案**（与 README「不夸大承诺」一致），并写入站点 README
-- [ ] **明确构件归属**：窗口外壳 / 任务栏 / 开始菜单 / 系统托盘属**应用级组合**，放 `apps/*`，不进 `@fluere-vue/ui`；通用 WinUI 控件才进组件库
-- [ ] **文档站工作量单独统计**：文档站外壳（0.5.0）与组件库分列，避免 0.9.0 被双重低估
+- [x] **核对 WinUI 源码快照**：本地 `temp/winui-src` 已固定 tag `winui3/release/2.5.1`（commit `ba3a8d5`），与 [style-spec §2](./style-spec.md#2-版本地图先对版本再读代码) 的版本地图一致；本仓库是**稀疏检出**（`CommonStyles/` + `ProgressBar/` + `ProgressRing/`），0.4.4 需要的 `src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml` 已按需 `git show <tag>:<path>` 取到并落成 token（见 `packages/designs/data/repo-tokens.json` 的 `sources.materials`）。**风险记录**：本机到 github.com 的连通性不稳定（partial clone 补 blob 曾报 GnuTLS 失败），遇到取不到的 blob 时按「证据缺口」流程标注，不猜值。
+- [x] **确认 0.3 版本的三条主线状态**（结论，2026-10-13）：① i18n **基本收口**，仅剩 sitemap 按语言拆分与 Lighthouse / axe 实跑，均不阻塞 0.4.0；② 文档站 WindowsOS 仿真化**未开工**，按排期它就是 0.5.0 的布局基建（`DesktopShell` / `Taskbar` / `StartMenu`），不属于 0.4.0；③ 自动发版流程差**人工动作**（npmjs.com 给六个包配 Trusted Publisher + 合并 release PR），与 0.4.0 编码并行，不作为组件 PR 的合并前置。构件归属与 i18n key 约定不受影响。
+- [x] **确定文档站仿真的范围边界文案**：已写入 [apps/docs/README.md](../apps/docs/README.md) 的《WindowsOS 仿真边界（0.4.0 起，呈现在文档站可见处）》——仿真到什么程度 / 明确不做 / 移动端降级 / 构件归属 / 工作量口径五条，与根 README「不夸大承诺」一致
+- [x] **明确构件归属**：窗口外壳 / caption 按钮组合 / 任务栏 / 开始菜单 / 系统托盘属**应用级组合**，落在 `apps/*`；只有通用 WinUI 控件才进 `@fluere-vue/ui`（`FluereAppWindow` / `FluereCaptionButtons` 的组件本体在库内，桌面与任务栏的组装留在站点）——已记入 `apps/docs/README.md`
+- [x] **文档站工作量单独统计**：0.5.0 表已分列「≈ 17 点组件 + 11 点文档站」，口径继续沿用（本次未新增站点外壳工作）
 
 ### 发布检查（0.4.0 起，每个 minor 版本执行）
 
