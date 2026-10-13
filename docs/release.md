@@ -198,6 +198,7 @@ pnpm exec changeset publish          # pre 模式：不加 --tag
 **本次彩排没有覆盖**（所以 3.4 的「发布彩排」勾选不代表这些已验证）：OIDC trusted publishing 与
 provenance（本地 verdaccio 没有 OIDC，走的是 token 认证）、`publish` job 建 GitHub Release 的部分、
 以及 `release.yml` 的 `pack` / `publish` 两个 job 本身（它们要等真实 release PR 合并后才会跑）。
+→ 这几项已在 2026-10-13 的 `0.4.0-alpha.1` 真实发布里跑通，见下文「线上实测记录（2026-10-13）」。
 
 ## 踩坑记录：seed 版本被原样发布，撞上部署 tag（2026-10-13）
 
@@ -251,13 +252,15 @@ git push onedev 'refs/tags/@fluere-vue/designs@0.3.0-alpha.2' \
   ```
 - **`latest` 被预发布污染**：走上面 `dist-tag add` 强制回指；正常发布用 `--tag rc` 本就不会占 `latest`。
 - **已发布版本不可变**：修正版必须发新版本号（`0.3.0-rc.2` 等），绝不覆盖已发布版本。
-- **撤销 git tag / GitHub Release**（`release.yml` 的 publish job 会同时建两者）：
+- **撤销 git tag / GitHub Release**（`release.yml` 的 publish job 会同时建两者，但建的是**逐包**的
+  `@fluere-vue/<pkg>@<ver>`——**不是** `v<version>`，2026-10-13 实测见下文「线上实测记录」）：
   ```bash
-  gh release delete v0.3.0-rc.1 --yes --cleanup-tag   # 删 Release 并连带删远端 tag
-  git push origin :refs/tags/v0.3.0-rc.1              # 兜底：tag 还在就单独删
-  git tag -d v0.3.0-rc.1                              # 本地
+  gh release delete '@fluere-vue/ui@0.3.0-rc.1' --yes --cleanup-tag   # 删 Release 并连带删远端 tag
+  git push origin ':refs/tags/@fluere-vue/ui@0.3.0-rc.1'              # 兜底：tag 还在就单独删
+  git tag -d '@fluere-vue/ui@0.3.0-rc.1'                              # 本地
   ```
-  撤销 tag 前先确认 npm 上的版本确实要废弃（版本本身撤不掉，只能 `deprecate`）。
+  六个包（`designs` / `hooks` / `icons` / `themes` / `ui` / `utils`）逐包各来一遍。撤销 tag 前先确认
+  npm 上的版本确实要废弃（版本本身撤不掉，只能 `deprecate`）。
 - **部署 tag 落错提交（`v*` 指向旧提交）**：本地 `git tag -f -a v<version> <正确提交> -m "docs site deploy: <version>"`
   重指，再逐远端推分支与 tag；远端已有旧 tag 时用 `+`/`--force` 覆盖（见上文「踩坑记录」的纠正命令）。
   日常发版不必手工做——`pnpm release:manual --move-tag` 已把这一步收敛为开关。
@@ -327,10 +330,31 @@ private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判�
 `apps/docs/CHANGELOG.md`，version job 以 `ENOENT` 失败。修复后 `sync` / `check` 只覆盖六个
 可发布包（见上文「版本策略」）。
 
+### 线上实测记录（2026-10-13）
+
+首次由 CI 走完真实发布 `0.4.0-alpha.1`。
+
+这一次同时是 **npm Trusted Publishing（OIDC）的首次线上验证**（`0.3.0-alpha.2` 是本机
+`release:manual` 用粒度 token 人工 bootstrap 的，见上文「一次性准备」第 2 条）。前置动作：
+根 seed 到 `0.4.0-alpha.0` → `pnpm version:sync`（六包拉平）→ 推 `main`。
+
+| 阶段                                     | 实测结果                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 推 `main`（`658f9f3` seed 提交）         | `Release` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343)：`select-mode` 判 `version` → `version` job 把消费掉的 changeset 收进 `.changeset/pre/`、bump 六包到 `0.4.0-alpha.1` 并**更新已存在的** release PR #2（不新建 PR）；`pack` / `publish` 按预期 skipped                                                        |
+| 合并 release PR #2（发布提交 `6a0ba67`） | `Release` run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)：`select-mode` 判 `publish` → `pack`（`pnpm check && pnpm test` + `build` + `smoke:dist`）→ `publish`，**三个 job 全绿**                                                                                                                                     |
+| npm                                      | 六个包 `0.4.0-alpha.1` 全部发布；`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`（pre 模式没污染 `latest`，符合预期）                                                                                                                                                                                                                            |
+| 可信发布源                               | 每包 `_npm/v1/attestations` 都有两份证明（npm publish v0.1 + [SLSA provenance v1](https://slsa.dev/provenance/v1)）；签名证书（Fulcio 签发、**有效期仅 10 分钟**）的 SAN 为 `https://github.com/Altermoe/fluere-vue/.github/workflows/release.yml@refs/heads/main` —— 凭据来自 OIDC 而非任何长期 token，`id-token: write` 只给 publish job 的拆法确认可用 |
+| git tag / GitHub Release                 | `changeset publish` 建的是**逐包注解 tag** `@fluere-vue/<pkg>@0.4.0-alpha.1`（均指向 `6a0ba67`）与**逐包 GitHub Release**（`prerelease: true`，`github-actions[bot]` 建）；**没有** `v0.4.0-alpha.1` —— `v*` 是 OneDev 文档站部署标记，仍由 `release:manual` 打（见「踩坑记录」）                                                                         |
+
+> **复核 npm 是否真发出去，别只看 `npm view`**：registry 的 `dist-tags` 端点会先于 packument 更新。
+> 本次实测 `designs` / `utils` 的 packument 在发布完成后数分钟仍列旧版本（一度看起来像「只发了四个包」），
+> 而 `https://registry.npmjs.org/-/package/@fluere-vue%2F<pkg>/dist-tags` 已是新值。判定口径：
+> 以 `https://registry.npmjs.org/@fluere-vue%2F<pkg>/<version>` 的 HTTP 状态（200 = 已发布）为准。
+
 ### 尚未自动化 / 尚未线上验证
 
-- **`pack` 与 `publish` 两个 job 还没在线上跑过**：它们只在 `mode == publish`（即 release PR 合并、
-  main 上不再有 changeset）时执行，需要一次真实发布才能验证。首次 bootstrap 发布前请留出时间观察。
+- **`v<version>` 部署 tag 不由 `release.yml` 建**：GitHub 这条链路只产逐包 tag / Release，OneDev 文档站
+  部署要的 `v*` 仍需 `pnpm release:manual`（或手工 `git tag -a`）补——`0.4.0-alpha.1` 发布后即为此状态。
 - **release PR 拿不到 CI 检查**（`GITHUB_TOKEN` 防递归，见上文），已用 `pack` 里的自证步骤兜住；
   若希望 PR 上也有绿勾，需要给 action 配 PAT / GitHub App token，属于后续可选项。
 - `actions/checkout@v4` / `setup-node@v4` / `pnpm/action-setup@v4` 在 runner 上已被提示
