@@ -1,6 +1,6 @@
 {
   "name": "fluere-vue",
-  "version": "0.4.0-alpha.0",
+  "version": "0.4.0-alpha.1",
   "private": true,
   "description": "FluereVue：Fluent Design 2 设计规范的 Vue3 实现",
   "keywords": [
