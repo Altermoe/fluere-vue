@@ -98,6 +98,13 @@ const componentNavGroups: ComponentNavGroup[] = [
         icon: FluentIconControlButton24Regular,
       },
       {
+        slug: 'toggle-button',
+        name: 'Toggle Button',
+        implemented: true,
+        summaryKey: 'toggle-button',
+        icon: FluentIconToggleRight24Regular,
+      },
+      {
         slug: 'input',
         name: 'Input',
         implemented: true,

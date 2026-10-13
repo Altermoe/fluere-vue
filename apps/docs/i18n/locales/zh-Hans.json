@@ -32,7 +32,8 @@
       "progress": "线性进度指示：不确定滑块与确定填充。",
       "progress-ring": "环形进度指示：不确定转圈与确定弧长。",
       "tooltip": "悬停或聚焦时显示的补充信息浮层。",
-      "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。"
+      "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。",
+      "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。"
     }
   },
   "theme": {
@@ -118,6 +119,28 @@
     "hideCode": "收起代码"
   },
   "demos": {
+    "toggle-button": {
+      "basic": {
+        "boldLabel": "加粗",
+        "italicLabel": "倾斜",
+        "statusLine": "加粗：{bold} · 倾斜：{italic}"
+      },
+      "threeState": {
+        "label": "三态开关",
+        "statusLine": "当前：{state}",
+        "stateFalse": "否",
+        "stateTrue": "是",
+        "stateIndeterminate": "不确定"
+      },
+      "states": {
+        "smallLabel": "小",
+        "mediumLabel": "中",
+        "largeLabel": "大",
+        "disabledLabel": "禁用",
+        "disabledCheckedLabel": "禁用（已选中）",
+        "iconOnlyLabel": "已选中"
+      }
+    },
     "app-window": {
       "basic": {
         "title": "设置",

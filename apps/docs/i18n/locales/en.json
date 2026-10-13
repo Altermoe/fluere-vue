@@ -32,7 +32,8 @@
       "progress": "Linear progress indicator: indeterminate slider and determinate fill.",
       "progress-ring": "Circular progress indicator: indeterminate spinner and determinate arc.",
       "tooltip": "A supplementary info overlay shown on hover or focus.",
-      "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside."
+      "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside.",
+      "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton)."
     }
   },
   "theme": {
@@ -123,6 +124,28 @@
     "hideCode": "Hide code"
   },
   "demos": {
+    "toggle-button": {
+      "basic": {
+        "boldLabel": "Bold",
+        "italicLabel": "Italic",
+        "statusLine": "Bold: {bold} · Italic: {italic}"
+      },
+      "threeState": {
+        "label": "Three-state toggle",
+        "statusLine": "Current: {state}",
+        "stateFalse": "No",
+        "stateTrue": "Yes",
+        "stateIndeterminate": "Indeterminate"
+      },
+      "states": {
+        "smallLabel": "Small",
+        "mediumLabel": "Medium",
+        "largeLabel": "Large",
+        "disabledLabel": "Disabled",
+        "disabledCheckedLabel": "Disabled, checked",
+        "iconOnlyLabel": "Checked"
+      }
+    },
     "app-window": {
       "basic": {
         "title": "Settings",
