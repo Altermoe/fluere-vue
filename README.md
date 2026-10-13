@@ -1,6 +1,10 @@
 # FluereVue
 
+简体中文 | [English](./README.en-US.md)
+
 以 Windows 11 / WinUI 3 原生控件为参考的 Vue 3 组件库，重点还原控件的视觉样式、交互状态和动画细节。
+
+> **公网文档站**：<https://fluere-vue.nahida.space>（英文：<https://fluere-vue.nahida.space/en>）。在 npm 上阅读本说明时，组件的 Props / 事件、在线示例与 API 表请以文档站为准。
 
 FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App SDK 源码，而不只是 Fluent Design 的 Web 规范：开发时逐个核对控件在 `rest` / `hover` / `pressed` / `selected` / `focus` / `disabled` 等状态下的尺寸、圆角、描边、填充与动效，再在浏览器中实现。
 
@@ -114,9 +118,10 @@ pnpm dev          # 文档站 http://localhost:60727
 | [docs/ci.md](./docs/ci.md)                 | GitHub Actions / OneDev 工作流、检查任务与本地复现 CI   |
 | [docs/deployment.md](./docs/deployment.md) | OneDev 部署、Nginx、环境配置、健康检查与回滚            |
 | [docs/adr/](./docs/adr/)                   | 架构决策记录（如构建工具选型）                          |
+| [README.en-US.md](./README.en-US.md)       | 英文版 README（English）                                |
 | [AGENTS.md](./AGENTS.md)                   | 面向代码 Agent 的仓库操作约定                           |
 
-在线文档站：<https://fluere-vue.nahida.space>（源站代码在 [apps/docs](./apps/docs)）。
+在线文档站：<https://fluere-vue.nahida.space>（英文：<https://fluere-vue.nahida.space/en>；源站代码在 [apps/docs](./apps/docs)）。
 
 ## 持续集成与发布
 
