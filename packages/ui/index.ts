@@ -1,6 +1,9 @@
 // 引入全局 Fluent token CSS 变量（组件 scoped style 依赖 var(--TokenName)）
 // oxlint-disable-next-line import/no-unassigned-import
 import '@fluere-vue/designs/tokens.css'
+// 共享原语样式：WinUI 双层焦点矩形（非 scoped，理由见该文件头注释；0.4.3）
+// oxlint-disable-next-line import/no-unassigned-import
+import './src/focus-visual/focus-visual.css'
 import FluereAppWindow from './src/app-window/app-window.vue'
 import FluereCaptionButtons from './src/app-window/caption-buttons.vue'
 import FluereButton from './src/button/button.vue'
@@ -8,6 +11,11 @@ import FluereCheckbox from './src/checkbox/checkbox.vue'
 import FluereCombobox from './src/combobox/combobox.vue'
 import FluereConfigProvider from './src/config-provider/config-provider.vue'
 import FluereContentDialog from './src/content-dialog/content-dialog.vue'
+// 共享原语（0.4.0 基建）：先 import 再本地 export —— 与下面组件一致。
+// 不要写成 `export { A, B } from '...'`：当前 Vite 变换会把其中的常量再导出
+// 提成一个引用本地绑定的 `export { A }`，而对应的 import 不生成，产物在运行期报
+// 「Export 'A' is not defined in module」，文档站整页 500（2026-10-13 踩过）。
+import { FOCUS_VISUAL_CLASS, useFocusVisual } from './src/focus-visual/use-focus-visual'
 import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
@@ -47,7 +55,14 @@ export {
   FluereTooltip,
   FluereTooltipProvider,
   SCROLL_VIEW_AGENT_EVENTS,
+  // 共享原语（0.4.0 基建）
+  FOCUS_VISUAL_CLASS,
+  useFocusVisual,
 }
+export type {
+  UseFocusVisualOptions,
+  UseFocusVisualReturn,
+} from './src/focus-visual/use-focus-visual'
 export type { FluereButtonProps } from './src/button/button.vue'
 export type {
   FluereAppWindowDisplayMode,

@@ -93,6 +93,7 @@ export interface FluereButtonProps {
 
 <script setup lang="ts" generic="TIcon extends Component = Component">
 import { computed } from 'vue'
+import { useFocusVisual } from '../focus-visual/use-focus-visual'
 
 const props = withDefaults(defineProps<FluereButtonProps>(), {
   appearance: 'secondary',
@@ -106,8 +107,17 @@ const props = withDefaults(defineProps<FluereButtonProps>(), {
   iconOnly: false,
 })
 
+/**
+ * 焦点环：WinUI 双层焦点矩形（`FocusVisualPrimaryThickness` 2px +
+ * `FocusVisualSecondaryThickness` 1px + `FocusVisualMargin` -3），几何 / 配色 /
+ * 来源见 `../focus-visual/focus-visual.css`。0.4.3 起由共享原语统一提供，
+ * Button 不再自写单层 outline。
+ */
+const focusVisual = useFocusVisual()
+
 const rootClass = computed(() => [
   'fui-button',
+  focusVisual.class,
   `fui-button--${props.appearance}`,
   `fui-button--${props.size}`,
   `fui-button--${props.shape}`,
@@ -129,6 +139,7 @@ defineOptions({
     :disabled="disabled"
     :aria-pressed="selected || undefined"
     :class="rootClass"
+    :style="focusVisual.style"
   >
     <slot name="icon">
       <component
@@ -295,11 +306,12 @@ defineOptions({
   cursor: not-allowed;
 }
 
-/* ---- Focus（无障碍硬性约束） ---- */
-.fui-button:focus-visible {
-  outline: var(--strokeWidthThick) solid var(--colorCompoundBrandStroke);
-  outline-offset: 2px;
-}
+/* ---- Focus：WinUI 双层焦点矩形 ----
+   单层 brand outline 已由 0.4.3 的 useFocusVisual 取代（WinUI Button 的主题资源里
+   没有 Focused 视觉状态改描边，焦点完全由系统的 FocusVisualPrimary/Secondary 绘制）。
+   本组件**不写任何 :focus-visible 规则**：基础样式里的 `outline: none` 特异性是
+   (0,2,0)，会被原语的 (0,3,0) 压过；若在这里再写 `.fui-button:focus-visible`
+   就会因为同特异性按源码顺序把焦点环吃掉。 */
 
 /* ---- 纯图标：等比边长 ---- */
 .fui-button--icon-only {

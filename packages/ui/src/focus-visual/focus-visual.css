@@ -1,0 +1,68 @@
+/* ==================================================================== */
+/* 共享原语：WinUI 双层焦点矩形（FocusVisualPrimary / FocusVisualSecondary） */
+/* 对应 docs/todo.md 的 0.4.3。                                          */
+/*                                                                      */
+/* 为什么是**非 scoped** 的全局样式（本仓库少数的例外之一）：               */
+/*   这是跨组件复用的原语，被 Button / ToggleButton / Select，以及后续的    */
+/*   NavigationView / ListView 共同消费。若写成各组件的 scoped 块，同一套   */
+/*   几何与配色会在每个组件里复制一份并各自漂移——这正是 0.4.3 要消除的返工。 */
+/*   类名固定 `.fui-focus-visual` 私有前缀，全局作用域无碰撞风险。          */
+/*                                                                      */
+/* 规格来源：microsoft-ui-xaml tag winui3/release/2.5.1（本地快照）        */
+/*   src/dxaml/xcp/components/FocusRect/FocusRectManager.cpp             */
+/*     #GetFocusOptionsForElement —— primary=外描边、secondary=内描边、     */
+/*         isContinuous=true（连续双环，非 legacy 虚线）                    */
+/*     #ConfigureFocusElement     —— 内层矩形 bounds 收进 firstThickness，  */
+/*         即两级描边**紧贴、无间隙**；圆角同步收进                        */
+/*     #UpdateFocusRect           —— focusRect = ShrinkRectByThickness(    */
+/*         bounds, FocusVisualMargin)，内缩负值即整环外扩                   */
+/*   主题资源 Common_themeresources_any.xaml：                            */
+/*     暗色 FocusStrokeColorOuter #FFFFFF / Inner #B3000000               */
+/*     亮色 FocusStrokeColorOuter #E4000000 / Inner #B3FFFFFF             */
+/*     高对比度 Outer=SystemColorWindowTextColor / Inner=SystemColorWindowColor */
+/*   Button / ListViewItem / GridViewItem / CalendarView 主题资源：         */
+/*     外 2px（FocusVisualPrimaryThickness）+ 内 1px（Secondary）+ 外扩 3px */
+/*     （FocusVisualMargin = -3）                                        */
+/*                                                                      */
+/* token 映射（Fluent 2 表里语义位最近的档，明暗方向一致）：                */
+/*   外环 FocusStrokeColorOuterBrush → --colorStrokeFocus2（亮 #000/暗 #fff） */
+/*   内环 FocusStrokeColorInnerBrush → --colorStrokeFocus1（亮 #fff/暗 #000） */
+/*   差异：WinUI 外环带 90% alpha、内环 70% alpha，Fluent 两档为不透明；     */
+/*   同一亮暗方向，合成观感一致。消费方可一行覆写回 WinUI 原值，例如        */
+/*     .fui-focus-visual { --fui-focus-visual-outer-color: rgb(0 0 0 / 90%); } */
+/*                                                                      */
+/* Web 落地：外环用 outline（现代浏览器让 outline 跟随 border-radius），    */
+/* 内环用 box-shadow 的 0 0 0 <内厚> 扩散；outline-offset 取内环厚度，      */
+/* 于是两环紧贴无间隙、整体位于元素外侧（等价 FocusVisualMargin = -3）。     */
+/* ⚠️ 元素自身若已有 box-shadow（如浮层表面的投影），焦点态会被本原语覆盖；  */
+/*    这类元素请把内环并入自己的 box-shadow，或改用局部变量覆写。           */
+/* ==================================================================== */
+.fui-focus-visual {
+  /* WinUI FocusVisualPrimaryThickness 缺省 2 / FocusVisualSecondaryThickness 缺省 1 */
+  --fui-focus-visual-outer-thickness: 2px;
+  --fui-focus-visual-inner-thickness: 1px;
+  --fui-focus-visual-outer-color: var(--colorStrokeFocus2);
+  --fui-focus-visual-inner-color: var(--colorStrokeFocus1);
+}
+
+/*
+ * 选择器刻意重复类名（`.fui-focus-visual.fui-focus-visual`），把特异性提到
+ * (0,3,0)：组件 scoped 块里的 `.fui-x[data-v-…]` 是 (0,2,0)，其 `outline: none`
+ * 会在同特异性下按源码顺序吃掉焦点环。重复类名是这里唯一可靠的压过手段。
+ * `[data-focus-visible]` 用于焦点在容器、可见性由底座（reka）标注的场景。
+ */
+.fui-focus-visual.fui-focus-visual:focus-visible,
+.fui-focus-visual.fui-focus-visual[data-focus-visible] {
+  outline: var(--fui-focus-visual-outer-thickness) solid var(--fui-focus-visual-outer-color);
+  outline-offset: var(--fui-focus-visual-inner-thickness);
+  box-shadow: 0 0 0 var(--fui-focus-visual-inner-thickness) var(--fui-focus-visual-inner-color);
+}
+
+/* 高对比度：WinUI 的 WindowText / Window 对应 CSS 强制色的 CanvasText / Canvas */
+@media (forced-colors: active) {
+  .fui-focus-visual.fui-focus-visual:focus-visible,
+  .fui-focus-visual.fui-focus-visual[data-focus-visible] {
+    outline-color: CanvasText;
+    box-shadow: 0 0 0 var(--fui-focus-visual-inner-thickness) Canvas;
+  }
+}
