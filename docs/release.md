@@ -242,6 +242,25 @@ git push onedev 'refs/tags/@fluere-vue/designs@0.3.0-alpha.2' \
 **没覆盖到的**：`v0.0.1` 在 onedev（`96bf4ae`）与本地/GitHub（`f5de617`）本就不同，是更早的历史分叉，
 本次未动；`--move-tag` 会 force push 部署 tag，远端受保护规则若拒绝则需人工处理。
 
+## 踩坑记录：onedev 上「先推 tag、后推分支」会让 tag 构建全线秒败（2026-10-13）
+
+`v0.3.0-alpha.2` 的部署 tag 比分支早推 34 秒（tag `02:12:19`、分支 `02:12:53`），OneDev 侧
+`check` / `test` / `build` / `package-smoke` / `deploy` 五个 job **全部在 60 ms 内失败**
+（build 213–215 等），日志只有一行：
+
+```
+No authorized job secret found (project: fluere-vue, job secret: CI_HTTP_PROXY)
+```
+
+这不是限流也不是资源不足：OneDev 的 job secret 按**提交可达性**授权（授权写 `on branch "**"`，
+见 [.onedev-buildspec.yml](../.onedev-buildspec.yml) deploy job 的注释），tag 指向的提交当时还不在
+任何分支上，密钥直接不可用。
+
+`0.4.0-alpha.1` 改回「**分支先推、tag 后推**」（分支 `11:14:27` → 部署 tag `11:14:31`），
+同一批五个 job 全绿：`build#82` / `check#83` / `test#84` / `package-smoke#85` / `deploy#86`，
+部署日志收尾为 `[deploy] 健康检查通过：v0.4.0-alpha.1 已上线`。
+`release:manual` 的推送顺序（分支 → 部署 tag → 逐包 tag）正是为此，手工补推时别颠倒。
+
 ## 回滚与补救
 
 - **发错了 tag / 版本**：
@@ -338,13 +357,14 @@ private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判�
 `release:manual` 用粒度 token 人工 bootstrap 的，见上文「一次性准备」第 2 条）。前置动作：
 根 seed 到 `0.4.0-alpha.0` → `pnpm version:sync`（六包拉平）→ 推 `main`。
 
-| 阶段                                     | 实测结果                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 推 `main`（`658f9f3` seed 提交）         | `Release` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343)：`select-mode` 判 `version` → `version` job 把消费掉的 changeset 收进 `.changeset/pre/`、bump 六包到 `0.4.0-alpha.1` 并**更新已存在的** release PR #2（不新建 PR）；`pack` / `publish` 按预期 skipped                                                        |
-| 合并 release PR #2（发布提交 `6a0ba67`） | `Release` run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)：`select-mode` 判 `publish` → `pack`（`pnpm check && pnpm test` + `build` + `smoke:dist`）→ `publish`，**三个 job 全绿**                                                                                                                                     |
-| npm                                      | 六个包 `0.4.0-alpha.1` 全部发布；`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`（pre 模式没污染 `latest`，符合预期）                                                                                                                                                                                                                            |
-| 可信发布源                               | 每包 `_npm/v1/attestations` 都有两份证明（npm publish v0.1 + [SLSA provenance v1](https://slsa.dev/provenance/v1)）；签名证书（Fulcio 签发、**有效期仅 10 分钟**）的 SAN 为 `https://github.com/Altermoe/fluere-vue/.github/workflows/release.yml@refs/heads/main` —— 凭据来自 OIDC 而非任何长期 token，`id-token: write` 只给 publish job 的拆法确认可用 |
-| git tag / GitHub Release                 | `changeset publish` 建的是**逐包注解 tag** `@fluere-vue/<pkg>@0.4.0-alpha.1`（均指向 `6a0ba67`）与**逐包 GitHub Release**（`prerelease: true`，`github-actions[bot]` 建）；**没有** `v0.4.0-alpha.1` —— `v*` 是 OneDev 文档站部署标记，仍由 `release:manual` 打（见「踩坑记录」）                                                                         |
+| 阶段                                     | 实测结果                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 推 `main`（`658f9f3` seed 提交）         | `Release` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343)：`select-mode` 判 `version` → `version` job 把消费掉的 changeset 收进 `.changeset/pre/`、bump 六包到 `0.4.0-alpha.1` 并**更新已存在的** release PR #2（不新建 PR）；`pack` / `publish` 按预期 skipped                                                                      |
+| 合并 release PR #2（发布提交 `6a0ba67`） | `Release` run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)：`select-mode` 判 `publish` → `pack`（`pnpm check && pnpm test` + `build` + `smoke:dist`）→ `publish`，**三个 job 全绿**                                                                                                                                                   |
+| npm                                      | 六个包 `0.4.0-alpha.1` 全部发布；`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`（pre 模式没污染 `latest`，符合预期）                                                                                                                                                                                                                                          |
+| 可信发布源                               | 每包 `_npm/v1/attestations` 都有两份证明（npm publish v0.1 + [SLSA provenance v1](https://slsa.dev/provenance/v1)）；签名证书（Fulcio 签发、**有效期仅 10 分钟**）的 SAN 为 `https://github.com/Altermoe/fluere-vue/.github/workflows/release.yml@refs/heads/main` —— 凭据来自 OIDC 而非任何长期 token，`id-token: write` 只给 publish job 的拆法确认可用               |
+| git tag / GitHub Release                 | `changeset publish` 建的是**逐包注解 tag** `@fluere-vue/<pkg>@0.4.0-alpha.1`（均指向 `6a0ba67`）与**逐包 GitHub Release**（`prerelease: true`，`github-actions[bot]` 建）；**没有** `v0.4.0-alpha.1` —— `v*` 是 OneDev 文档站部署标记，仍由 `release:manual` 打（见「踩坑记录」）                                                                                       |
+| OneDev 文档站（手工补推）                | 把 `main`、部署 tag `v0.4.0-alpha.1`（注解 tag，指发布提交 `6a0ba67`）与六个逐包 tag 推给 `onedev`；**分支先推、tag 后推**，tag 构建五个 job 全绿（`build#82` / `check#83` / `test#84` / `package-smoke#85` / `deploy#86`），`deploy` 日志 `[deploy] 健康检查通过：v0.4.0-alpha.1 已上线`；`https://fluere-vue.nahida.space/` 首页实测含 `docsVersion:"v0.4.0-alpha.1"` |
 
 > **复核 npm 是否真发出去，别只看 `npm view`**：registry 的 `dist-tags` 端点会先于 packument 更新。
 > 本次实测 `designs` / `utils` 的 packument 在发布完成后数分钟仍列旧版本（一度看起来像「只发了四个包」），
@@ -354,7 +374,8 @@ private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判�
 ### 尚未自动化 / 尚未线上验证
 
 - **`v<version>` 部署 tag 不由 `release.yml` 建**：GitHub 这条链路只产逐包 tag / Release，OneDev 文档站
-  部署要的 `v*` 仍需 `pnpm release:manual`（或手工 `git tag -a`）补——`0.4.0-alpha.1` 发布后即为此状态。
+  部署要的 `v*` 仍需 `pnpm release:manual`（或手工 `git tag -a` + 逐个 refspec 补推）——`0.4.0-alpha.1`
+  就是这么补的（见上文「线上实测记录」的 OneDev 一行）。
 - **release PR 拿不到 CI 检查**（`GITHUB_TOKEN` 防递归，见上文），已用 `pack` 里的自证步骤兜住；
   若希望 PR 上也有绿勾，需要给 action 配 PAT / GitHub App token，属于后续可选项。
 - `actions/checkout@v4` / `setup-node@v4` / `pnpm/action-setup@v4` 在 runner 上已被提示
