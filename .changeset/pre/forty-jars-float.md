@@ -17,6 +17,6 @@
 
 **新组件**：`FluereToggleButton`（三态 `checked: boolean | null`，状态表对齐 `ToggleButton_themeresources.xaml`，选中铺 `--colorBrandBackground`，三态循环对齐 `ToggleButton_Partial.cpp#OnToggleImpl`）、`FluereToggleGroup` / `FluereToggleGroupItem`（分组单选 / 多选 + 方向键 roving focus；WinUI 无同名控件，取舍已写入文档）、`FluereSelect`（不可编辑下拉，reka `Select` 底座，视觉取 WinUI `ComboBox` 非编辑形态；与 `FluereCombobox` 的差异写进文档）。三者均含契约测试、中英文档页与示例。
 
-**收尾**：`packages/ui/README.md` 补齐组件索引与共享原语表；`apps/playground` 从占位包落地为可跑的 Vite 视觉回归页（Wave 1 表单 + 按钮族 + 反馈 + 浮层 + 明暗切换，含《视觉自检清单》）。
+**收尾**：`packages/ui/README.md` 补齐组件索引与共享原语表；根 `README.md` 组件进度表补齐 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect` 三行并收敛 `FluereButton` 的 WinUI 映射；`FluereButton` 背景过渡统一到 A 级口径（`background-color 83ms linear`，来源 `Button_themeresources.xaml`，与 `FluereToggleButton` 一致）；`apps/playground` 从占位包落地为可跑的 Vite 视觉回归页（Wave 1 表单 + 按钮族 + 反馈 + 浮层 + 明暗切换，含《视觉自检清单》）。
 
 **文档**：`apps/docs/README.md` 增补《WindowsOS 仿真边界》；`docs/todo.md` 记录 0.4.0 进展与未做项。

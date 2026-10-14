@@ -99,7 +99,7 @@
 
 - [x] `pnpm check`（lint + format + tsc）
 - [x] `pnpm test` / SSR smoke（`packages/ui/src/__tests__/ssr-smoke.test.ts`）
-- [ ] 用 Wave 1 子集在 `apps/playground` 搭一个真实设置页做视觉回归（rest / hover / pressed / selected / focus / disabled）——`apps/playground` 仍是占位包（无 dev 脚本），本项随 0.4.0 的收尾闸门一并处理
+- [x] 用 Wave 1 子集在 `apps/playground` 搭一个真实设置页做视觉回归（rest / hover / pressed / selected / focus / disabled）—— **已由 0.4.8 落地**：`apps/playground` 从占位包变为可跑的 Vite 视觉回归页（`pnpm --filter @fluere-vue/playground dev`，默认 60728），一屏陈列 Wave 1 表单 + 按钮族（含 ToggleButton 三态 / ToggleGroup 单选多选）+ 反馈 + 浮层 + 明暗切换，《视觉自检清单》见该包 README
 - [x] 为每个新组件补文档页 + 更新 README「组件进度」索引
 
 > 自 0.4.0 起，发布检查按**每个 minor 版本**执行，清单见《发布检查（0.4.0 起）》。
@@ -386,7 +386,7 @@
 > - **真实浏览器实测（0.4.0 的新增证据，脚本与截图为过程产物，留在 `temp/`）**：① 焦点矩形 Button 上 `:focus-visible` 命中，亮色 = 外 2px `rgb(0,0,0)` + 内 1px `rgb(255,255,255)`、暗色相反，`outline-offset: 1px`（紧贴无间隙）；② 三处浮层 inline 层级生效——Combobox 下拉 `z-index: var(--zIndexNavFlyout)` → 计算值 1000、Tooltip `var(--zIndexTooltip)` → 1400、ContentDialog 根 `var(--zIndexModal)` → 1300（遮罩 1300）；③ ToggleButton 选中态底色实测 `rgb(15, 108, 189)` = `--colorBrandBackground`。**这次实测抓到一个单测抓不到的真 bug**：`useFlyout` 返回的是 ref 对象，模板里写 `:style="flyout.layerStyle"` 不会自动解包嵌套 ref，Combobox / ContentDialog 的层级其实一直没生效（只有 CSS 回退值在兜底，肉眼与测试都像对的）；已改为解构到顶层 ref，并在 `flyout-migration.test.ts` 加了「模板不得直接引用 `flyout.layerStyle`」的守卫。
 > - **0.4.7 `Select`（已落地）**：`packages/ui/src/select/`——不可编辑下拉，底座 reka `Select`，视觉规格取 WinUI `ComboBox` **非编辑形态**（`src/controls/dev/ComboBox/ComboBox_themeresources.xaml`，该文件不在稀疏检出里，用 `git -C temp/winui-src show <tag>:<path>` 取）；14 个契约测试 + 中英文档页 + 3 个示例 + 组件索引/导航条目。触发面 / 下拉项 / 面板全部复用 `FluereCombobox` 非编辑形态的 token 口径，层级走 0.4.1 的 `useFlyout`、焦点走 0.4.3 的 `useFocusVisual`；面板样式写在**非 scoped** 块（Teleport 拿不到 `data-v-*`）。与 Combobox 的差异（不可编辑 / 无文本搜索 / 事件载荷）写进文档表格。
 > - **0.4.8 收尾（已落地）**：① `packages/ui/README.md` 组件索引补齐 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect`，并新增《共享原语（0.4.0 基建）》表；② `apps/playground` 从占位包落地为可跑的 Vite 视觉回归页（`pnpm --filter @fluere-vue/playground dev`，默认 60728）——一屏陈列 Wave 1 表单 + 按钮族（含 ToggleButton 三态 / ToggleGroup 单选多选）+ 反馈 + 浮层 + 明暗切换，并把《视觉自检清单》写进该包 README；③ 新增 changeset `.changeset/forty-jars-float.md` 记录 0.4.0 全部变更。实测：playground 页面无控制台错误、ContentDialog 打开时 `z-index` 计算值 1300、Esc 可关闭、主题切换生效。
-> - **仍未做（接手清单）**：① `packages/ui/README.md` 与 [README.md](../README.md) 的组件进度表尚未做与实现的**逐条**复核（索引已补，但没逐项对照）；② `FluereButton` 仍是旧口径（单层 outline 已换双层，但过渡仍是 150ms 三项，与 `ToggleButton` 已对齐的 A 级口径不一致），建议 0.5.0 开工时统一；③ 《发布检查（0.4.0 起）》清单中的发布动作（changeset 消费、版本号推进、打 tag）尚未执行——本轮只落代码与 changeset。
+> - **0.4.8 → 0.5.0 遗留项收尾（2026-10-14）**：① 组件进度表**逐条复核已完成**——根 [README.md](../README.md) 补上此前缺失的 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect` 三行（并把 `FluereButton` 的 WinUI 映射由「Button / ToggleButton」收敛为「Button」，ToggleButton 归其独立组件），`packages/ui/README.md` 索引与 `index.ts` 导出逐条核对一致；② `FluereButton` 过渡**已统一到 A 级口径**——由 `--durationFast`(150ms) 三项改为 `background-color 83ms linear`（A 级来源 `src/controls/dev/CommonStyles/Button_themeresources.xaml`，与 `FluereToggleButton` 同款，契约测试守住），并删掉 `FluereToggleButton` 里「FluereButton 与 A 级有偏差（待统一）」的过时注释；③ 发布动作（changeset 消费 / 版本号推进 / 打 tag）**仍未执行**——本轮范围只到代码与文档收尾，发布按《发布检查（0.4.0 起）》单独走。
 
 ### 0.5.0 · Explorer 骨架（≈ 17 点组件 + 11 点文档站）
 

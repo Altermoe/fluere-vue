@@ -26,29 +26,32 @@ FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App 
 
 当前版本 **0.3.0-alpha.2**（预发布），六个包均已发布到 npm，可直接安装使用。组件覆盖情况：
 
-| 组件                                     | 对应 WinUI 3 控件                 | 状态   | 版本       |
-| ---------------------------------------- | --------------------------------- | ------ | ---------- |
-| `FluereButton`                           | Button / ToggleButton             | 已完成 | 0.1.0-rc.1 |
-| `FluereCheckbox`                         | CheckBox                          | 已完成 | 0.1.0-rc.1 |
-| `FluereToggleSwitch`                     | ToggleSwitch                      | 已完成 | 0.1.0-rc.1 |
-| `FluereRadioGroup` / `FluereRadioButton` | RadioButton                       | 已完成 | 0.1.0-rc.1 |
-| `FluereSlider`                           | Slider                            | 已完成 | 0.1.0-rc.1 |
-| `FluereNumberBox`                        | NumberBox                         | 已完成 | 0.1.0-rc.1 |
-| `FluereCombobox`                         | ComboBox                          | 已完成 | 0.1.0-rc.1 |
-| `FluereContentDialog`                    | ContentDialog                     | 已完成 | 0.1.0-rc.1 |
-| `FluereInfoBadge`                        | InfoBadge                         | 已完成 | 0.1.0-rc.1 |
-| `FluereInfoBar`                          | InfoBar                           | 已完成 | 0.1.0-rc.1 |
-| `FluereProgressBar`                      | ProgressBar                       | 已完成 | 0.1.0-rc.1 |
-| `FluereProgressRing`                     | ProgressRing                      | 已完成 | 0.1.0-rc.1 |
-| `FluereInput`                            | TextBox / PasswordBox             | 已完成 | 0.1.0-rc.1 |
-| `FluereTooltip`                          | ToolTip / ToolTipService          | 已完成 | 0.1.0-rc.1 |
-| `FluereConfigProvider`                   | —（i18n / 全局配置）              | 已完成 | 0.3.0-rc.1 |
-| `FluereScrollView`                       | ScrollView                        | 已完成 | 0.3.0-rc.1 |
-| `FluereAppWindow`                        | TitleBar（窗口外框）              | 已完成 | 0.5.0      |
-| `FluereCaptionButtons`                   | AppWindowTitleBar（caption 按钮） | 已完成 | 0.5.0      |
+| 组件                                          | 对应 WinUI 3 控件                 | 状态   | 版本       |
+| --------------------------------------------- | --------------------------------- | ------ | ---------- |
+| `FluereButton`                                | Button                            | 已完成 | 0.1.0-rc.1 |
+| `FluereCheckbox`                              | CheckBox                          | 已完成 | 0.1.0-rc.1 |
+| `FluereToggleSwitch`                          | ToggleSwitch                      | 已完成 | 0.1.0-rc.1 |
+| `FluereRadioGroup` / `FluereRadioButton`      | RadioButton                       | 已完成 | 0.1.0-rc.1 |
+| `FluereSlider`                                | Slider                            | 已完成 | 0.1.0-rc.1 |
+| `FluereNumberBox`                             | NumberBox                         | 已完成 | 0.1.0-rc.1 |
+| `FluereCombobox`                              | ComboBox                          | 已完成 | 0.1.0-rc.1 |
+| `FluereContentDialog`                         | ContentDialog                     | 已完成 | 0.1.0-rc.1 |
+| `FluereInfoBadge`                             | InfoBadge                         | 已完成 | 0.1.0-rc.1 |
+| `FluereInfoBar`                               | InfoBar                           | 已完成 | 0.1.0-rc.1 |
+| `FluereProgressBar`                           | ProgressBar                       | 已完成 | 0.1.0-rc.1 |
+| `FluereProgressRing`                          | ProgressRing                      | 已完成 | 0.1.0-rc.1 |
+| `FluereInput`                                 | TextBox / PasswordBox             | 已完成 | 0.1.0-rc.1 |
+| `FluereTooltip`                               | ToolTip / ToolTipService          | 已完成 | 0.1.0-rc.1 |
+| `FluereConfigProvider`                        | —（i18n / 全局配置）              | 已完成 | 0.3.0-rc.1 |
+| `FluereScrollView`                            | ScrollView                        | 已完成 | 0.3.0-rc.1 |
+| `FluereToggleButton`                          | ToggleButton                      | 已完成 | 0.4.0      |
+| `FluereToggleGroup` / `FluereToggleGroupItem` | —（分组切换，WinUI 无同名控件）   | 已完成 | 0.4.0      |
+| `FluereSelect`                                | ComboBox（非编辑形态）            | 已完成 | 0.4.0      |
+| `FluereAppWindow`                             | TitleBar（窗口外框）              | 已完成 | 0.5.0      |
+| `FluereCaptionButtons`                        | AppWindowTitleBar（caption 按钮） | 已完成 | 0.5.0      |
 
 - 每个组件的 Props / 事件 / 示例见[文档站](#文档与站点)的组件页。
-- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮）；已发布的 `0.3.0-alpha.2` 尚未包含 `0.5.0` 的组件。
+- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮）；已发布的 `0.3.0-alpha.2` 尚未包含 `0.4.0` / `0.5.0` 的组件。
 - 逐版本实施顺序、验收口径与 0.4.0 – 0.9.0-rc.1 排期见 [docs/todo.md](./docs/todo.md)。
 - 在线体验（开发中的组件同步更新）：<https://fluere-vue.nahida.space>
 

@@ -273,8 +273,7 @@ const onClick = (): void => {
      —— **只有背景**走 83ms 过渡；BorderBrush / Foreground 在状态切换里都是
      `DiscreteObjectKeyFrame KeyTime=0`（瞬切，没有动画）。
      BrushTransition 的公开源码只给了时长、没有给缓动，这里按线性处理并注明。
-     注：本库 FluereButton 用的是 `--durationFast`(150ms) + `--curveEasyEase` 且连
-     color / border-color 一起过渡，与 A 级有偏差（既有口径，待统一）。 */
+     （`FluereButton` 已按同一口径统一，见其样式块注释。） */
   transition: background-color 83ms linear;
 }
 

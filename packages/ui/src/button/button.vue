@@ -180,10 +180,14 @@ defineOptions({
   cursor: pointer;
   user-select: none;
   outline: none;
-  transition:
-    background-color var(--durationFast) var(--curveEasyEase),
-    color var(--durationFast) var(--curveEasyEase),
-    border-color var(--durationFast) var(--curveEasyEase);
+  /* WinUI：模板里的 `ContentPresenter.BackgroundTransition = BrushTransition Duration=0:0:0.083`
+     —— **只有背景**走 83ms 过渡；BorderBrush / Foreground 在状态切换里都是
+     `DiscreteObjectKeyFrame KeyTime=0`（瞬切，没有动画）。
+     BrushTransition 的公开源码只给了时长、没有给缓动，这里按线性处理并注明。
+     A 级来源（tag `winui3/release/2.5.1`）：`src/controls/dev/CommonStyles/Button_themeresources.xaml`
+     #L173-174（`Normal` / `Accent` 等模板一致）。与 `FluereToggleButton` 同一口径——
+     相较旧的 `--durationFast`(150ms) 三项过渡，这里只过渡背景，与 A 级对齐。 */
+  transition: background-color 83ms linear;
 }
 
 /* ---- 尺寸（Fluent 高度 24/32/40） ---- */
