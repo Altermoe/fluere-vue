@@ -14,6 +14,10 @@ overlay style (a 2px thin thumb that appears once the pointer enters the contain
 
 By default `content-orientation="vertical"`; the wheel / touch panning / dragging the scrollbar can all scroll.
 
+Touch panning is owned exclusively by **native Touch Events** (non-passive listeners that call
+`preventDefault` on `touchmove`), handled separately from pen; therefore native scroll containers inside
+the content (e.g. code blocks) cannot be scrolled by touch — an existing limitation of the touch model.
+
 ::demo-block{title="Basic usage (vertical)"}
 #preview
 :ScrollViewVerticalDemo
@@ -64,7 +68,7 @@ With `content-orientation="both"`, the content is unconstrained in both horizont
 ## Nested scrolling
 
 An inner ScrollView sits within the outer content. **Mouse-wheel ownership** aligns with WinUI 3: when the pointer stays over the inner scroll view, the inner one exclusively owns the wheel,
-so even if the inner one has already scrolled to its limit the outer one will not scroll along; only when the pointer is moved to outer content outside the inner one does the wheel go to the outer view (touch / pen is exclusively captured by the pointer).
+so even if the inner one has already scrolled to its limit the outer one will not scroll along; only when the pointer is moved to outer content outside the inner one does the wheel go to the outer view (touch is owned exclusively by native touch events, pen is exclusively captured by the pointer).
 
 ::demo-block{title="Nested scrolling"}
 #preview
@@ -359,4 +363,4 @@ Called through a template ref; each returns the `correlationId` of this operatio
 | --------- | ------------------ |
 | `default` | Scrollable content |
 
-> **Wheel ownership** (aligned with WinUI 3): when the pointer is inside this component and that direction is actually scrollable, this wheel is owned exclusively by the component — even at the scroll limit it will not scroll the outer ScrollView; when `horizontal/verticalScrollChainMode` is `auto` / `never`, reaching the limit swallows the wheel (equivalent to `overscroll-behavior: contain`), and only when it is `always` is the unconsumed remaining delta explicitly handed to the outer view. When the current direction has no scrollable content, or that direction is disabled, the wheel is not owned and bubbles to the outer view. Touch / pen is exclusively captured by the pointer and does not go through this determination.
+> **Wheel ownership** (aligned with WinUI 3): when the pointer is inside this component and that direction is actually scrollable, this wheel is owned exclusively by the component — even at the scroll limit it will not scroll the outer ScrollView; when `horizontal/verticalScrollChainMode` is `auto` / `never`, reaching the limit swallows the wheel (equivalent to `overscroll-behavior: contain`), and only when it is `always` is the unconsumed remaining delta explicitly handed to the outer view. When the current direction has no scrollable content, or that direction is disabled, the wheel is not owned and bubbles to the outer view. Touch is owned exclusively by native touch events and pen is exclusively captured by the pointer; neither goes through this determination.

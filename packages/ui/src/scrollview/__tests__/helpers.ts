@@ -22,6 +22,8 @@ import { useAnimation } from '../use-animation'
 import type { AnimationEngine } from '../use-animation'
 import { useInertia } from '../use-inertia'
 import type { InertiaEngine } from '../use-inertia'
+import { usePanGesture } from '../use-pan-gesture'
+import type { PanGesture } from '../use-pan-gesture'
 import { useScrollApi } from '../use-scroll-api'
 import type { ScrollApi } from '../use-scroll-api'
 import type { ScrollBars } from '../use-scroll-bars'
@@ -130,6 +132,7 @@ export interface EngineHarness {
   animation: AnimationEngine
   inertia: InertiaEngine
   api: ScrollApi
+  gesture: PanGesture
   dispose: () => void
 }
 
@@ -145,13 +148,15 @@ export const makeEngine = (
   let animation!: AnimationEngine
   let inertia!: InertiaEngine
   let api!: ScrollApi
+  let gesture!: PanGesture
   scope.run(() => {
     bars = makeBars()
     animation = useAnimation(core, bars)
     inertia = useInertia(core, animation)
     api = useScrollApi(core, animation, inertia)
+    gesture = usePanGesture(core, bars, animation, inertia)
   })
-  return { core, bars, animation, inertia, api, dispose: () => scope.stop() }
+  return { core, bars, animation, inertia, api, gesture, dispose: () => scope.stop() }
 }
 
 /**

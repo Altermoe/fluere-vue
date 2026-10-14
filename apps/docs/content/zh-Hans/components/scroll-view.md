@@ -14,6 +14,9 @@ overlay 样式（2px 细滑块，指针进入容器即显示；指针移到滚�
 
 默认 `content-orientation="vertical"`，滚轮 / 触控平移 / 拖动滚动条均可滚动。
 
+触控平移由**原生 Touch Events** 独占手势（监听器非 passive，`touchmove` 时阻止浏览器默认行为），
+与「笔」分开处理；因此内容区内的原生滚动容器（如代码块）在触摸下不可滑动，属既有的触控模型限制。
+
 ::demo-block{title="基础用法（垂直）"}
 #preview
 :ScrollViewVerticalDemo
@@ -64,7 +67,7 @@ overlay 样式（2px 细滑块，指针进入容器即显示；指针移到滚�
 ## 嵌套滚动
 
 内层 ScrollView 位于外层内容之中。**鼠标滚轮归属**对齐 WinUI 3：指针停在内层上时由内层独占滚轮，
-即使内层已滚到极限，外层也不会跟着滚动；把指针移到内层之外的外层内容上，滚轮才交给外层（触控 / 笔由指针捕获独占）。
+即使内层已滚到极限，外层也不会跟着滚动；把指针移到内层之外的外层内容上，滚轮才交给外层（触控由原生触摸事件独占，笔由指针捕获独占）。
 
 ::demo-block{title="嵌套滚动"}
 #preview
@@ -358,4 +361,4 @@ root.dispatchEvent(
 | ------------- | -------- |
 | `default`     | 滚动内容 |
 
-> **滚轮归属**（对齐 WinUI 3）：指针位于本组件内、且该方向确实可滚动时，本次滚轮由本组件独占——即使已到滚动极限也不会滚到外层 ScrollView；`horizontal/verticalScrollChainMode` 为 `auto` / `never` 时到极限即吞掉滚轮（等价 `overscroll-behavior: contain`），为 `always` 时才把未消化的剩余增量显式交给外层。本方向没有可滚动内容、或该方向被禁用时不占有滚轮，冒泡交给外层。触控 / 笔由指针捕获独占，不走这套判定。
+> **滚轮归属**（对齐 WinUI 3）：指针位于本组件内、且该方向确实可滚动时，本次滚轮由本组件独占——即使已到滚动极限也不会滚到外层 ScrollView；`horizontal/verticalScrollChainMode` 为 `auto` / `never` 时到极限即吞掉滚轮（等价 `overscroll-behavior: contain`），为 `always` 时才把未消化的剩余增量显式交给外层。本方向没有可滚动内容、或该方向被禁用时不占有滚轮，冒泡交给外层。触控由原生触摸事件独占、笔由指针捕获独占，不走这套判定。
