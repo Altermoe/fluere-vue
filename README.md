@@ -24,7 +24,7 @@ FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App 
 
 ## 项目状态与组件覆盖
 
-当前版本 **0.3.0-alpha.2**（预发布），六个包均已发布到 npm，可直接安装使用。组件覆盖情况：
+当前版本 **0.4.1-alpha.1**（预发布），六个包均已发布到 npm，可直接安装使用。组件覆盖情况：
 
 | 组件                                          | 对应 WinUI 3 控件                 | 状态   | 版本       |
 | --------------------------------------------- | --------------------------------- | ------ | ---------- |
@@ -51,7 +51,7 @@ FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App 
 | `FluereCaptionButtons`                        | AppWindowTitleBar（caption 按钮） | 已完成 | 0.5.0      |
 
 - 每个组件的 Props / 事件 / 示例见[文档站](#文档与站点)的组件页。
-- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮）；已发布的 `0.3.0-alpha.2` 尚未包含 `0.4.0` / `0.5.0` 的组件。
+- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮）；当前已发布的 `0.4.1-alpha.1` 已包含上表全部组件（含 `0.4.0` / `0.5.0` 批次）。
 - 逐版本实施顺序、验收口径与 0.4.0 – 0.9.0-rc.1 排期见 [docs/todo.md](./docs/todo.md)。
 - 在线体验（开发中的组件同步更新）：<https://fluere-vue.nahida.space>
 
@@ -83,7 +83,7 @@ import { FluereButton } from '@fluere-vue/ui'
 
 - `vue`（`^3.5`）是对等依赖，由消费方提供；包为纯 ESM，JS 可按需 tree-shake，样式需整体引入一次。
 - 语言包与 `FluereConfigProvider` 用法见 [packages/ui/README.md](./packages/ui/README.md)。
-- 本版本为预发布，`pnpm add` 默认取 `latest`（当前指向 `0.3.0-alpha.2`）；需要锁定版本时写 `@fluere-vue/ui@0.3.0-alpha.2`。
+- 本版本为预发布，`pnpm add` 默认取 `latest`（预发布不会移动它，`latest` 仍停在 `0.3.0-alpha.2`）；需要锁定本预发布版本时写 `@fluere-vue/ui@0.4.1-alpha.1`，或直接用 `@alpha` dist-tag。
 
 > 包尚未发布稳定版（`0.3.0`），预发布期间仍可能出现破坏性变更；发版流程与已知注意事项见 [docs/release.md](./docs/release.md)。
 
