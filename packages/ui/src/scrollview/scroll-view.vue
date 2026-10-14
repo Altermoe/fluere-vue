@@ -16,7 +16,9 @@
  *  - use-agent-surface.ts      Agent 交互面（状态反射 + DOM 命令事件）
  *  - use-anchor.ts             锚点逻辑
  *  - use-wheel-input.ts        滚轮与滚动链式传递
- *  - use-pointer-input.ts      触控 / 笔平移（含手势分发）
+ *  - use-pan-gesture.ts        平移 / 捏合共用状态机（输入无关）
+ *  - use-touch-input.ts        触摸输入（原生 Touch Events，含 preventDefault 独占）
+ *  - use-pointer-input.ts      笔输入（Pointer Events，含指针捕获）
  *  - use-pinch-input.ts        双指捏合缩放
  *  - use-scrollbar-input.ts    滚动条拖拽 / 轨道翻页 / 两端步进按钮
  *  - use-keyboard-input.ts     键盘方向键滚动
@@ -38,11 +40,13 @@ import { useBringIntoView } from './use-bring-into-view'
 import { useInertia } from './use-inertia'
 import { useKeyboardInput } from './use-keyboard-input'
 import { useMeasurement } from './use-measurement'
+import { usePanGesture } from './use-pan-gesture'
 import { usePointerInput } from './use-pointer-input'
 import { useScrollApi } from './use-scroll-api'
 import { useScrollBars } from './use-scroll-bars'
 import { useScrollbarInput } from './use-scrollbar-input'
 import type { StepDirection } from './use-scrollbar-input'
+import { useTouchInput } from './use-touch-input'
 import { useWheelInput } from './use-wheel-input'
 /* ------------------------------------------------------------------ */
 /* 轨道两端步进按钮描述（key 决定箭头朝向，direction 为偏移增量方向）    */
@@ -121,7 +125,12 @@ const agent = useAgentSurface(core, api, bringIntoViewController)
 const anchor = useAnchor(core)
 useMeasurement(core, anchor)
 const wheel = useWheelInput(core, bars, api, animation)
-const pointer = usePointerInput(core, bars, animation, inertia)
+/** 平移 / 捏合共用状态机：由触摸层（原生 Touch Events）与指针层（笔）共同驱动 */
+const gesture = usePanGesture(core, bars, animation, inertia)
+const pointer = usePointerInput(core, gesture)
+// 触摸层自行在 presenter 上注册原生触摸监听（非 passive，touchmove 时独占手势），
+// 因此无需模板绑定，也不使用其返回值。
+useTouchInput(core, gesture)
 const scrollbar = useScrollbarInput(core, bars, api, animation, inertia)
 const keyboard = useKeyboardInput(core, api)
 
