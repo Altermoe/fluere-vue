@@ -22,6 +22,8 @@
   "dependencies": {
     "@nuxt/content": "^3.16.0",
     "@nuxtjs/i18n": "catalog:",
+    "@nuxtjs/robots": "catalog:",
+    "@nuxtjs/sitemap": "catalog:",
     "vue": "catalog:"
   },
   "devDependencies": {

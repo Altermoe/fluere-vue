@@ -38,7 +38,23 @@ const docsRootDir = dirname(new URL(import.meta.url).pathname)
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: false },
-  modules: ['@nuxtjs/i18n', '@unocss/nuxt', '@nuxt/content'],
+  modules: ['@nuxtjs/i18n', '@unocss/nuxt', '@nuxt/content', '@nuxtjs/sitemap', '@nuxtjs/robots'],
+  // 站点级事实源（nuxt-site-config 读取）：提供 sitemap 与 robots 生成所需的绝对
+  // 站点地址，与 i18n.baseUrl 保持同一域名（改域名时两处要一起改）。
+  site: {
+    url: 'https://fluere-vue.nahida.space',
+    name: 'FluereVue',
+  },
+  // sitemap / robots 走 Nuxt SEO 官方模块的缺省行为（不额外配选项）：
+  //  - sitemap：纳入被预渲染的全部页面路由，并按 @nuxtjs/i18n 的路由自动补 hreflang
+  //    alternate（zh-Hans 无前缀 / en 带 /en 前缀，与 plugins/i18n-head.ts 的
+  //    useLocaleHead 输出一致）；多语种下产出 /sitemap.xml 索引 + 逐语言子 sitemap；
+  //  - robots：默认全站允许抓取，并自动带上指向 sitemap 索引的 Sitemap 指令。
+  // 二者在 `nuxt generate` 下随 nitro.prerender 产出静态 /sitemap.xml / /robots.txt。
+  robots: {
+    // 明确放行全站（缺省 allow 即 '/'），保留 Sitemap 自动注入。
+    allow: '/',
+  },
   i18n: {
     // 路由策略：默认语种（zh-Hans）不带前缀，其余语种（en）走 /en 前缀。
     // 一期语言固定 zh-Hans（作为 zh-CN 的默认呈现）+ en。

@@ -118,7 +118,7 @@
 > 范围（已确认）：**文档站全站 + 组件库内建文案通道与语言包导出**。
 > 一期语言：`zh-Hans`（默认，兼容 `zh-CN`）与 `en`。
 
-**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap 未做）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。**组件库 i18n 通道（1.4）已落地**（见下方 1.4：`@fluere-vue/hooks` 增 `provide-locale`/`use-locale`/`useScopeMessages`，`@fluere-vue/ui` 增 `FluereConfigProvider`，首批 6 组件 locale 切片，回退链 `zh-Hans→zh→en` 与并发 SSR 隔离已单测覆盖）。仍未收口：1.1 的 sitemap、1.5 的 Lighthouse / axe 实跑、目标 3 的 `@fluere-vue/ui/locales/*` 子路径导出（1.4 已在组件目录内布好 `locale.ts` 切片，聚合入口随 0.3 构建落地）。
+**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap / robots 见 1.1，已接入）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。**组件库 i18n 通道（1.4）已落地**（见下方 1.4：`@fluere-vue/hooks` 增 `provide-locale`/`use-locale`/`useScopeMessages`，`@fluere-vue/ui` 增 `FluereConfigProvider`，首批 6 组件 locale 切片，回退链 `zh-Hans→zh→en` 与并发 SSR 隔离已单测覆盖）。仍未收口：1.5 的 Lighthouse / axe 实跑、目标 3 的 `@fluere-vue/ui/locales/*` 子路径导出（1.4 已在组件目录内布好 `locale.ts` 切片，聚合入口随 0.3 构建落地）。
 
 #### 1.1 选型与基建
 
@@ -128,7 +128,7 @@
 - [x] 首帧语言恢复：**未采用内联脚本方案**，改为「语言由路由前缀决定」——`<html lang>` 与路由一致，故无「先 zh 后切 en」闪烁，也不存在水合不匹配；浏览器偏好仅在根路径做服务端重定向
 - [x] `hreflang` alternate 与 `og:locale` / `og:url` 由 `useLocaleHead({ seo: true })` 输出，实测四组 alternate 齐备
 - [x] 每语言独立的 `title` / `description` / `og:title` / `og:description`：**已落地**——组件页取 content frontmatter（`pages/components/[...slug].vue` 的 `useSeoMeta`，回退态随正文为中文）、Overview 与首页取 i18n key；`<title>` 模板在 `app.vue`（`<页面标题> · FluereVue`，首页回落品牌名）。实测：`/components/checkbox` → `Checkbox 复选框 · FluereVue`，`/en/components/checkbox` → `Checkbox · FluereVue`，og 与 description 随语种
-- [ ] sitemap 按语言拆分：**未做**（未接入 `@nuxtjs/sitemap`）
+- [x] sitemap 按语言拆分 + robots.txt：**已落地**（接入 `@nuxtjs/sitemap` `9.1.0` + `@nuxtjs/robots` `7.0.2`，随 nuxt 升级到 `4.6.1` 一并引入；`nuxt generate` 产出 `/sitemap.xml` 索引 → `/__sitemap__/zh-CN.xml` / `/__sitemap__/en.xml` 两份按语言拆分、各带 `hreflang`（zh-CN / en / x-default）alternate 的子 sitemap，以及 `/robots.txt`（全站 Allow + `Sitemap: /sitemap_index.xml`）。配置见 `apps/docs/nuxt.config.ts` 的 `site` 段与 `robots` 配置（sitemap 走模块缺省））
 
 #### 1.2 界面串与导航
 
