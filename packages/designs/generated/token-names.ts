@@ -473,6 +473,10 @@ export const tokenNames = {
   "layerFillColorAlt": true,
   "layerOnAcrylicFillColorDefault": true,
   "layerOnMicaBaseAltFillColorDefault": true,
+  "layerOnMicaBaseAltFillColorSecondary": true,
+  "layerOnMicaBaseAltFillColorTransparent": true,
+  "solidBackgroundFillColorTertiary": true,
+  "dividerStrokeColorDefault": true,
   "layerOnMicaBaseAltFillColorTertiary": true,
   "cardBackgroundFillColorDefault": true,
   "smokeFillColorDefault": true,
@@ -488,7 +492,10 @@ export const tokenNames = {
   "acrylicTintColorBase": true,
   "acrylicTintLuminosityColorBase": true,
   "micaBackgroundFillColorBase": true,
-  "micaBackgroundFillColorBaseAlt": true
+  "micaBackgroundFillColorBaseAlt": true,
+  "navigationPaneExpandedWidth": true,
+  "navigationPaneCompactWidth": true,
+  "shellTaskbarHeight": true
 } as const
 
 export type FluereTokenName = keyof typeof tokenNames

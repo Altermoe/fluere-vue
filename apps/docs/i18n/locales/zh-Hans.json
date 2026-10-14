@@ -35,7 +35,8 @@
       "app-window": "窗口外框样式容器：标题栏插槽、可拖拽区、caption 按钮事件代理与内容可视区域，位置 / 尺寸 / 层级由外部控制。",
       "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。",
       "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。",
-      "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。"
+      "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。",
+      "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。"
     }
   },
   "theme": {
@@ -730,6 +731,42 @@
       },
       "placement": {
         "topContent": "Placement = Top（默认）"
+      }
+    },
+    "tab-view": {
+      "basic": {
+        "label": "示例选项卡",
+        "items": ["文档", "图片", "收藏"],
+        "body": "第 {index} 个选项卡的内容。切换时上一个面板会被卸载（等价 WinUI 只有一个 ContentPresenter）。"
+      },
+      "close": {
+        "label": "可关闭选项卡",
+        "tabs": ["概览", "详情", "设置"],
+        "addTab": "新建选项卡",
+        "empty": "已全部关闭，点「新建选项卡」再开一个",
+        "hint": "关闭按钮与新建按钮都只抛事件：删不删、删完选谁由消费方决定。删掉当前选中项时，组件按 WinUI 的规则向后环形找第一个可用项。",
+        "eventClose": "关闭请求：{header}",
+        "eventAdd": "新建请求",
+        "eventNone": "还没有触发事件"
+      },
+      "widthMode": {
+        "label": "宽度模式",
+        "equal": "Equal 等宽",
+        "sizeToContent": "SizeToContent 按内容",
+        "compact": "Compact 折叠成图标",
+        "tabs": ["选项卡一", "选项卡二", "选项卡三"],
+        "hint": "Equal 下每个 tab 的宽度是 clamp(可用宽 / tab 数, 100, 240)；Compact 只折叠未被选中的 tab，选中项强制恢复图标加文本。"
+      },
+      "overflow": {
+        "label": "溢出的选项卡条",
+        "prefix": "选项卡 {index}",
+        "hint": "宽度不够时出现左右滚动按钮（步长 50px、贴边禁用）：它们不进 Tab 序、对读屏隐藏，对应 WinUI 把 HorizontalScrollBarVisibility 置为 Visible 的行为。"
+      },
+      "states": {
+        "label": "状态与可关闭性",
+        "tabs": ["可关闭（选中）", "可关闭（未选中）", "不可关闭", "禁用"],
+        "overlayLabel": "关闭按钮只在悬停或选中时显示",
+        "hint": "悬停 / 按下 / 选中 / 禁用四态的取值逐条来自 TabViewItem 的 VisualState；关闭按钮的叠加模式里 Auto 与 Always 行为相同（上游同一个 default 分支），只有 on-pointer-over 是「悬停或选中才显示」。"
       }
     }
   }

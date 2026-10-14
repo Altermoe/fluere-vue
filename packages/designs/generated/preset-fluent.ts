@@ -161,6 +161,9 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --zIndexStep: 10;
   --smokeFillColorDefault: rgba(0, 0, 0, 0.302);
   --subtleFillColorTransparent: rgba(255, 255, 255, 0);
+  --navigationPaneExpandedWidth: 320;
+  --navigationPaneCompactWidth: 48;
+  --shellTaskbarHeight: 48;
 }
 
 :root {
@@ -484,6 +487,10 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --layerFillColorAlt: light-dark(#ffffff, rgba(255, 255, 255, 0.051));
   --layerOnAcrylicFillColorDefault: light-dark(rgba(255, 255, 255, 0.251), rgba(255, 255, 255, 0.035));
   --layerOnMicaBaseAltFillColorDefault: light-dark(rgba(255, 255, 255, 0.702), rgba(58, 58, 58, 0.451));
+  --layerOnMicaBaseAltFillColorSecondary: light-dark(rgba(0, 0, 0, 0.039), rgba(255, 255, 255, 0.059));
+  --layerOnMicaBaseAltFillColorTransparent: light-dark(rgba(0, 0, 0, 0), rgba(255, 255, 255, 0));
+  --solidBackgroundFillColorTertiary: light-dark(#f9f9f9, #282828);
+  --dividerStrokeColorDefault: light-dark(rgba(0, 0, 0, 0.059), rgba(255, 255, 255, 0.082));
   --layerOnMicaBaseAltFillColorTertiary: light-dark(#f9f9f9, #2c2c2c);
   --cardBackgroundFillColorDefault: light-dark(rgba(255, 255, 255, 0.702), rgba(255, 255, 255, 0.051));
   --subtleFillColorSecondary: light-dark(rgba(0, 0, 0, 0.035), rgba(255, 255, 255, 0.059));
@@ -872,6 +879,10 @@ const themeColors = {
     'layerFillColorAlt': 'var(--layerFillColorAlt)',
     'layerOnAcrylicFillColorDefault': 'var(--layerOnAcrylicFillColorDefault)',
     'layerOnMicaBaseAltFillColorDefault': 'var(--layerOnMicaBaseAltFillColorDefault)',
+    'layerOnMicaBaseAltFillColorSecondary': 'var(--layerOnMicaBaseAltFillColorSecondary)',
+    'layerOnMicaBaseAltFillColorTransparent': 'var(--layerOnMicaBaseAltFillColorTransparent)',
+    'solidBackgroundFillColorTertiary': 'var(--solidBackgroundFillColorTertiary)',
+    'dividerStrokeColorDefault': 'var(--dividerStrokeColorDefault)',
     'layerOnMicaBaseAltFillColorTertiary': 'var(--layerOnMicaBaseAltFillColorTertiary)',
     'cardBackgroundFillColorDefault': 'var(--cardBackgroundFillColorDefault)',
     'smokeFillColorDefault': 'var(--smokeFillColorDefault)',

@@ -31,6 +31,8 @@ import FluereScrollView from './src/scrollview/scroll-view.vue'
 import { SCROLL_VIEW_AGENT_EVENTS } from './src/scrollview/use-agent-surface'
 import FluereSelect from './src/select/select.vue'
 import FluereSlider from './src/slider/slider.vue'
+import FluereTabViewItem from './src/tab-view/tab-view-item.vue'
+import FluereTabView from './src/tab-view/tab-view.vue'
 import FluereToggleButton from './src/toggle-button/toggle-button.vue'
 import FluereToggleGroupItem from './src/toggle-group/toggle-group-item.vue'
 import FluereToggleGroup from './src/toggle-group/toggle-group.vue'
@@ -58,6 +60,8 @@ export {
   FluereSelect,
   FluereSlider,
   FluereSmokeLayer,
+  FluereTabView,
+  FluereTabViewItem,
   FluereToggleButton,
   FluereToggleGroup,
   FluereToggleGroupItem,
@@ -163,6 +167,13 @@ export type {
   FluereToggleSwitchProps,
   FluereToggleSwitchSize,
 } from './src/toggle-switch/toggle-switch.vue'
+export type {
+  FluereTabViewCloseButtonOverlayMode,
+  FluereTabViewItemProps,
+  FluereTabViewProps,
+  FluereTabViewTabCloseRequestedEventArgs,
+  FluereTabViewWidthMode,
+} from './src/tab-view/types'
 export type {
   FluereSliderOrientation,
   FluereSliderProps,

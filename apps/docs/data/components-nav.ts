@@ -20,6 +20,7 @@ import {
   FluentIconBadge24Regular,
   FluentIconCheckboxChecked24Regular,
   FluentIconCircleHalfFill24Regular,
+  FluentIconContentView24Regular,
   FluentIconControlButton24Regular,
   FluentIconDataBarHorizontal24Regular,
   FluentIconDualScreenVerticalScroll24Regular,
@@ -297,7 +298,13 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'separator', name: 'Separator', implemented: false },
       { slug: 'splitter', name: 'Splitter', implemented: false },
       { slug: 'stepper', name: 'Stepper', implemented: false },
-      { slug: 'tabs', name: 'Tabs', implemented: false },
+      {
+        slug: 'tab-view',
+        name: 'Tab View',
+        implemented: true,
+        summaryKey: 'tab-view',
+        icon: FluentIconContentView24Regular,
+      },
       { slug: 'toast', name: 'Toast', implemented: false },
       { slug: 'toolbar', name: 'Toolbar', implemented: false },
       {

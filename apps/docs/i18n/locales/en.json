@@ -35,7 +35,8 @@
       "app-window": "Window chrome container: title-bar slots, drag regions, caption-button event proxying and the content viewport; position, size and stacking stay outside.",
       "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton).",
       "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton.",
-      "select": "A non-editable dropdown: shows the current option only, with no text input or search."
+      "select": "A non-editable dropdown: shows the current option only, with no text input or search.",
+      "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling."
     }
   },
   "theme": {
@@ -740,6 +741,42 @@
       },
       "placement": {
         "topContent": "Placement = Top (default)"
+      }
+    },
+    "tab-view": {
+      "basic": {
+        "label": "Example tabs",
+        "items": ["Documents", "Pictures", "Favorites"],
+        "body": "Content of tab {index}. Switching tabs unmounts the previous panel, mirroring WinUI, which owns a single ContentPresenter."
+      },
+      "close": {
+        "label": "Closable tabs",
+        "tabs": ["Overview", "Details", "Settings"],
+        "addTab": "New tab",
+        "empty": "All tabs are closed — press \"New tab\" to open one",
+        "hint": "The close button and the add button only raise events: removing items and picking the next selection is the consumer’s job. When the selected tab disappears, the component migrates the selection with WinUI’s rule (first enabled tab, wrapping forward).",
+        "eventClose": "Close requested: {header}",
+        "eventAdd": "Add requested",
+        "eventNone": "No events yet"
+      },
+      "widthMode": {
+        "label": "Width mode",
+        "equal": "Equal",
+        "sizeToContent": "Size to content",
+        "compact": "Compact (icon only)",
+        "tabs": ["Tab one", "Tab two", "Tab three"],
+        "hint": "In equal mode every tab is clamp(available / count, 100, 240); compact only collapses unselected tabs — the selected one always restores icon plus text."
+      },
+      "overflow": {
+        "label": "Overflowing tab strip",
+        "prefix": "Tab {index}",
+        "hint": "When the strip overflows, two scroll buttons appear (50 px steps, disabled at either end). They stay out of the tab order and are hidden from screen readers, matching WinUI setting HorizontalScrollBarVisibility to Visible."
+      },
+      "states": {
+        "label": "States and closability",
+        "tabs": ["Closable (selected)", "Closable (unselected)", "Not closable", "Disabled"],
+        "overlayLabel": "Close buttons only while hovered or selected",
+        "hint": "Hover, pressed, selected and disabled values come straight from TabViewItem’s visual states. Among the overlay modes, Auto and Always behave identically (the same default branch upstream); only on-pointer-over hides the button until hover or selection."
       }
     }
   }

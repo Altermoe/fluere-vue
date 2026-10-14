@@ -32,6 +32,8 @@ import FluereRadioButton from '../radio/radio-button.vue'
 import FluereRadioGroup from '../radio/radio-group.vue'
 import FluereScrollView from '../scrollview/scroll-view.vue'
 import FluereSlider from '../slider/slider.vue'
+import FluereTabViewItem from '../tab-view/tab-view-item.vue'
+import FluereTabView from '../tab-view/tab-view.vue'
 import FluereToggleSwitch from '../toggle-switch/toggle-switch.vue'
 import FluereTooltipProvider from '../tooltip/tooltip-provider.vue'
 import FluereTooltip from '../tooltip/tooltip.vue'
@@ -416,6 +418,35 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     // 独立使用时同样取内建文案（scope=caption-buttons，无 Provider 时缺省 zh-Hans）
     const standalone = await renderUnder('en', () => h(FluereCaptionButtons, { maximized: true }))
     expect(standalone).toContain('aria-label="Restore Down"')
+  })
+
+  it('TabView 直出 tab 条与面板，内建文案跟随 locale（含 v-for 之外的手写子项）', async () => {
+    const tabs = (locale: string) =>
+      renderUnder(locale, () =>
+        h(
+          FluereTabView,
+          { label: 'Tabs' },
+          {
+            default: () => [
+              h(FluereTabViewItem, { header: 'One' }, { default: () => 'panel-one' }),
+              h(FluereTabViewItem, { header: 'Two' }, { default: () => 'panel-two' }),
+            ],
+          },
+        ),
+      )
+
+    const en = await tabs('en')
+    expect(en).toContain('role="tablist"')
+    expect(en).toContain('aria-label="Add New Tab"')
+    expect(en).toContain('aria-label="Close Tab"')
+    // 只挂载选中面板的内容（默认选中第 0 个）
+    expect(en).toContain('panel-one')
+    expect(en).not.toContain('panel-two')
+
+    const zh = await tabs('zh-Hans')
+    expect(zh).toContain('aria-label="添加新标签页"')
+    expect(zh).toContain('aria-label="关闭标签页"')
+    expect(zh).toContain('One')
   })
 
   it('两个并发 SSR 请求在不同 locale 下渲染，互不串语言（实例级 context）', async () => {

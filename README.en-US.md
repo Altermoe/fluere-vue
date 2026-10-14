@@ -26,27 +26,33 @@ FluereVue is built against real Windows behavior and the matching Windows App SD
 
 Current version **0.4.1-alpha.1** (pre-release); all six packages are published to npm and ready to install. Component coverage:
 
-| Component                                | WinUI 3 control          | Status | Version    |
-| ---------------------------------------- | ------------------------ | ------ | ---------- |
-| `FluereButton`                           | Button / ToggleButton    | Done   | 0.1.0-rc.1 |
-| `FluereCheckbox`                         | CheckBox                 | Done   | 0.1.0-rc.1 |
-| `FluereToggleSwitch`                     | ToggleSwitch             | Done   | 0.1.0-rc.1 |
-| `FluereRadioGroup` / `FluereRadioButton` | RadioButton              | Done   | 0.1.0-rc.1 |
-| `FluereSlider`                           | Slider                   | Done   | 0.1.0-rc.1 |
-| `FluereNumberBox`                        | NumberBox                | Done   | 0.1.0-rc.1 |
-| `FluereCombobox`                         | ComboBox                 | Done   | 0.1.0-rc.1 |
-| `FluereContentDialog`                    | ContentDialog            | Done   | 0.1.0-rc.1 |
-| `FluereInfoBadge`                        | InfoBadge                | Done   | 0.1.0-rc.1 |
-| `FluereInfoBar`                          | InfoBar                  | Done   | 0.1.0-rc.1 |
-| `FluereProgressBar`                      | ProgressBar              | Done   | 0.1.0-rc.1 |
-| `FluereProgressRing`                     | ProgressRing             | Done   | 0.1.0-rc.1 |
-| `FluereInput`                            | TextBox / PasswordBox    | Done   | 0.1.0-rc.1 |
-| `FluereTooltip`                          | ToolTip / ToolTipService | Done   | 0.1.0-rc.1 |
-| `FluereConfigProvider`                   | — (i18n / global config) | Done   | 0.3.0-rc.1 |
-| `FluereScrollView`                       | ScrollView               | Done   | 0.3.0-rc.1 |
+| Component                                     | WinUI 3 control                                 | Status | Version    |
+| --------------------------------------------- | ----------------------------------------------- | ------ | ---------- |
+| `FluereButton`                                | Button / ToggleButton                           | Done   | 0.1.0-rc.1 |
+| `FluereCheckbox`                              | CheckBox                                        | Done   | 0.1.0-rc.1 |
+| `FluereToggleSwitch`                          | ToggleSwitch                                    | Done   | 0.1.0-rc.1 |
+| `FluereRadioGroup` / `FluereRadioButton`      | RadioButton                                     | Done   | 0.1.0-rc.1 |
+| `FluereSlider`                                | Slider                                          | Done   | 0.1.0-rc.1 |
+| `FluereNumberBox`                             | NumberBox                                       | Done   | 0.1.0-rc.1 |
+| `FluereCombobox`                              | ComboBox                                        | Done   | 0.1.0-rc.1 |
+| `FluereContentDialog`                         | ContentDialog                                   | Done   | 0.1.0-rc.1 |
+| `FluereInfoBadge`                             | InfoBadge                                       | Done   | 0.1.0-rc.1 |
+| `FluereInfoBar`                               | InfoBar                                         | Done   | 0.1.0-rc.1 |
+| `FluereProgressBar`                           | ProgressBar                                     | Done   | 0.1.0-rc.1 |
+| `FluereProgressRing`                          | ProgressRing                                    | Done   | 0.1.0-rc.1 |
+| `FluereInput`                                 | TextBox / PasswordBox                           | Done   | 0.1.0-rc.1 |
+| `FluereTooltip`                               | ToolTip / ToolTipService                        | Done   | 0.1.0-rc.1 |
+| `FluereConfigProvider`                        | — (i18n / global config)                        | Done   | 0.3.0-rc.1 |
+| `FluereScrollView`                            | ScrollView                                      | Done   | 0.3.0-rc.1 |
+| `FluereToggleButton`                          | ToggleButton                                    | Done   | 0.4.0      |
+| `FluereToggleGroup` / `FluereToggleGroupItem` | — (grouped toggle, no same-named WinUI control) | Done   | 0.4.0      |
+| `FluereSelect`                                | ComboBox (non-editable)                         | Done   | 0.4.0      |
+| `FluereAppWindow`                             | TitleBar (window chrome)                        | Done   | 0.5.0      |
+| `FluereCaptionButtons`                        | AppWindowTitleBar (caption buttons)             | Done   | 0.5.0      |
+| `FluereTabView` / `FluereTabViewItem`         | TabView                                         | Done   | 0.5.0      |
 
 - See the component pages on the [documentation site](https://fluere-vue.nahida.space) for each component's Props / events / examples.
-- The **Version** column marks the milestone at which a component landed in the repository: `0.1.0-rc.1` is the general control batch, `0.3.0-rc.1` is the i18n / configuration batch; the currently published `0.4.1-alpha.1` includes every component listed above.
+- The **Version** column marks the milestone at which a component landed in the repository: `0.1.0-rc.1` is the general control batch, `0.3.0-rc.1` is the i18n / configuration batch, `0.4.0` closes out the primitives plus ToggleButton / ToggleGroup / Select, and `0.5.0` is the Explorer-skeleton batch (window chrome, caption buttons, tabs); the currently published `0.4.1-alpha.1` already includes the `0.4.0` and `0.5.0` batches.
 - Per-version implementation order, acceptance criteria, and the 0.4.0 – 0.9.0-rc.1 schedule are in [docs/todo.md](./docs/todo.md).
 - Live playground (components under development are updated continuously): <https://fluere-vue.nahida.space>
 

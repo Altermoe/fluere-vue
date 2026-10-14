@@ -49,9 +49,10 @@ FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App 
 | `FluereSelect`                                | ComboBox（非编辑形态）            | 已完成 | 0.4.0      |
 | `FluereAppWindow`                             | TitleBar（窗口外框）              | 已完成 | 0.5.0      |
 | `FluereCaptionButtons`                        | AppWindowTitleBar（caption 按钮） | 已完成 | 0.5.0      |
+| `FluereTabView` / `FluereTabViewItem`         | TabView                           | 已完成 | 0.5.0      |
 
 - 每个组件的 Props / 事件 / 示例见[文档站](#文档与站点)的组件页。
-- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮）；当前已发布的 `0.4.1-alpha.1` 已包含上表全部组件（含 `0.4.0` / `0.5.0` 批次）。
+- 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮 + 选项卡）；当前已发布的 `0.4.1-alpha.1` 已包含上表全部组件（含 `0.4.0` / `0.5.0` 批次）。
 - 逐版本实施顺序、验收口径与 0.4.0 – 0.9.0-rc.1 排期见 [docs/todo.md](./docs/todo.md)。
 - 在线体验（开发中的组件同步更新）：<https://fluere-vue.nahida.space>
 
