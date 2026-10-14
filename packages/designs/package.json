@@ -1,6 +1,6 @@
 {
   "name": "@fluere-vue/designs",
-  "version": "0.4.0-alpha.1",
+  "version": "0.4.1-alpha.0",
   "description": "Fluent Design 2 设计语言（唯一事实源：data/fluent-tokens.json）",
   "keywords": [
     "design-tokens",
