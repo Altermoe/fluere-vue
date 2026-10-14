@@ -90,6 +90,20 @@ export default defineNuxtConfig({
     '~/assets/docs-prose.css',
   ],
   vite: {
+    // 生产构建必须用 esbuild 压缩 CSS（而非 Vite 8 默认的 Lightning CSS）。
+    //
+    // 设计令牌用原生 `light-dark(light, dark)` + `<html>` 上的 `color-scheme` 解析，
+    // 站点手动切换通过 useColorMode 往 <html> 写 `color-scheme` 来覆盖它。
+    // 但 Lightning CSS 会把 `light-dark()` 降级为「`--lightningcss-light/--lightningcss-dark`
+    // 变量 + 一条 `@media (prefers-color-scheme: dark)`」——降级后明暗只认系统偏好，
+    // 手动写入的 `color-scheme` 不再影响令牌解析。这就是「dev 能切换、生产切了界面不变」
+    // 的根因：dev 不压缩 CSS，原生 `light-dark()` 得以保留；生产压缩器把它改写掉了。
+    // （实测构建产物里 `--colorNeutralBackground1: light-dark(#fff,#242424)` 变成
+    //  `var(--lightningcss-light,#fff)var(--lightningcss-dark,#242424)`。）
+    // esbuild 压缩器不改写 `light-dark()`，故显式指定它，保住由 `color-scheme` 驱动的手动切换。
+    build: {
+      cssMinify: 'esbuild',
+    },
     plugins: [
       {
         name: 'prune-unresolvable-optimize-deps',
