@@ -339,7 +339,10 @@ defineOptions({ name: 'FluereToggleSwitch' })
       </span>
     </button>
 
-    <!-- 表单提交：位于表单内 + name 时补隐藏原生 checkbox（随 form 提交） -->
+    <!-- 表单提交：位于表单内 + name 时补隐藏原生 checkbox（随 form 提交）。
+         仅供表单序列化，真正的语义控件是上面的 role=switch 按钮，故移出 Tab 序
+         （tabindex=-1）并隐藏于无障碍树（aria-hidden）——与 reka 的
+         VisuallyHiddenInput 处理 checkbox/radio 的方式一致。 -->
     <input
       v-if="name"
       class="fui-switch__input"
@@ -348,6 +351,8 @@ defineOptions({ name: 'FluereToggleSwitch' })
       :value="value"
       :checked="model"
       :disabled="disabled"
+      tabindex="-1"
+      aria-hidden="true"
     />
   </span>
 </template>
