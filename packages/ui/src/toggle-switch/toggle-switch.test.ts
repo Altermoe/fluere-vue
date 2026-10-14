@@ -180,6 +180,9 @@ describe('FluereToggleSwitch 渲染契约', () => {
     expect(input.attributes('name')).toBe('dark')
     expect(input.attributes('value')).toBe('on')
     expect((input.element as HTMLInputElement).checked).toBe(true)
+    // 隐藏复选框仅随表单序列化，不抢 Tab / 不进无障碍树（真正的控件是 role=switch）
+    expect(input.attributes('tabindex')).toBe('-1')
+    expect(input.attributes('aria-hidden')).toBe('true')
   })
 })
 
