@@ -22,30 +22,31 @@ import '@fluere-vue/ui/style.css'
 
 ## 组件索引
 
-| 导出                                          | 源码                                                         | 文档                                                                                           |
-| --------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `FluereAppWindow` / `FluereCaptionButtons`    | [app-window](./src/app-window/app-window.vue)                | [App Window](../../apps/docs/content/zh-Hans/components/app-window.md)                         |
-| `FluereButton`                                | [button](./src/button/button.vue)                            | [Button](../../apps/docs/content/zh-Hans/components/button.md)                                 |
-| `FluereToggleButton`                          | [toggle-button](./src/toggle-button/toggle-button.vue)       | [Toggle Button](../../apps/docs/content/zh-Hans/components/toggle-button.md)                   |
-| `FluereToggleGroup` / `FluereToggleGroupItem` | [toggle-group](./src/toggle-group/toggle-group.vue)          | [Toggle Group](../../apps/docs/content/zh-Hans/components/toggle-group.md)                     |
-| `FluereInput`                                 | [input](./src/input/input.vue)                               | [Input](../../apps/docs/content/zh-Hans/components/input.md)                                   |
-| `FluereSelect`                                | [select](./src/select/select.vue)                            | [Select](../../apps/docs/content/zh-Hans/components/select.md)                                 |
-| `FluereScrollView`                            | [scrollview](./src/scrollview/scroll-view.vue)               | [Scroll View](../../apps/docs/content/zh-Hans/components/scroll-view.md)                       |
-| `FluereCheckbox`                              | [checkbox](./src/checkbox/checkbox.vue)                      | [Checkbox](../../apps/docs/content/zh-Hans/components/checkbox.md)                             |
-| `FluereCombobox`                              | [combobox](./src/combobox/combobox.vue)                      | [Combobox](../../apps/docs/content/zh-Hans/components/combobox.md)                             |
-| `FluereNumberBox`                             | [number-box](./src/number-box/number-box.vue)                | [Number Box](../../apps/docs/content/zh-Hans/components/number-box.md)                         |
-| `FluereRadioGroup` / `FluereRadioButton`      | [radio](./src/radio/radio-group.vue)                         | [Radio Group](../../apps/docs/content/zh-Hans/components/radio-group.md)                       |
-| `FluereSlider`                                | [slider](./src/slider/slider.vue)                            | [Slider](../../apps/docs/content/zh-Hans/components/slider.md)                                 |
-| `FluereToggleSwitch`                          | [toggle-switch](./src/toggle-switch/toggle-switch.vue)       | [Switch](../../apps/docs/content/zh-Hans/components/switch.md)                                 |
-| `FluereInfoBadge`                             | [info-badge](./src/info-badge/info-badge.vue)                | [Info Badge](../../apps/docs/content/zh-Hans/components/info-badge.md)                         |
-| `FluereInfoBar`                               | [infobar](./src/infobar/infobar.vue)                         | [Info Bar](../../apps/docs/content/zh-Hans/components/infobar.md)                              |
-| `FluereProgressBar`                           | [progress-bar](./src/progress-bar/progress-bar.vue)          | [Progress Bar](../../apps/docs/content/zh-Hans/components/progress.md)                         |
-| `FluereProgressRing`                          | [progress-ring](./src/progress-ring/progress-ring.vue)       | [Progress Ring](../../apps/docs/content/zh-Hans/components/progress-ring.md)                   |
-| `FluereContentDialog`                         | [content-dialog](./src/content-dialog/content-dialog.vue)    | [Content Dialog](../../apps/docs/content/zh-Hans/components/content-dialog.md)                 |
-| `FluereSmokeLayer`                            | [overlay](./src/overlay/smoke-layer.vue)                     | [Content Dialog](../../apps/docs/content/zh-Hans/components/content-dialog.md)（共享弹层原语） |
-| `FluereTooltip` / `FluereTooltipProvider`     | [tooltip](./src/tooltip/tooltip.vue)                         | [Tooltip](../../apps/docs/content/zh-Hans/components/tooltip.md)                               |
-| `FluereConfigProvider`                        | [config-provider](./src/config-provider/config-provider.vue) | [Config Provider / i18n](../../apps/docs/content/zh-Hans/components/config-provider.md)        |
-| `FluereTabView` / `FluereTabViewItem`         | [tab-view](./src/tab-view/tab-view.vue)                      | [Tab View](../../apps/docs/content/zh-Hans/components/tab-view.md)                             |
+| 导出                                                                | 源码                                                         | 文档                                                                                           |
+| ------------------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `FluereAppWindow` / `FluereCaptionButtons`                          | [app-window](./src/app-window/app-window.vue)                | [App Window](../../apps/docs/content/zh-Hans/components/app-window.md)                         |
+| `FluereButton`                                                      | [button](./src/button/button.vue)                            | [Button](../../apps/docs/content/zh-Hans/components/button.md)                                 |
+| `FluereToggleButton`                                                | [toggle-button](./src/toggle-button/toggle-button.vue)       | [Toggle Button](../../apps/docs/content/zh-Hans/components/toggle-button.md)                   |
+| `FluereToggleGroup` / `FluereToggleGroupItem`                       | [toggle-group](./src/toggle-group/toggle-group.vue)          | [Toggle Group](../../apps/docs/content/zh-Hans/components/toggle-group.md)                     |
+| `FluereInput`                                                       | [input](./src/input/input.vue)                               | [Input](../../apps/docs/content/zh-Hans/components/input.md)                                   |
+| `FluereSelect`                                                      | [select](./src/select/select.vue)                            | [Select](../../apps/docs/content/zh-Hans/components/select.md)                                 |
+| `FluereScrollView`                                                  | [scrollview](./src/scrollview/scroll-view.vue)               | [Scroll View](../../apps/docs/content/zh-Hans/components/scroll-view.md)                       |
+| `FluereCheckbox`                                                    | [checkbox](./src/checkbox/checkbox.vue)                      | [Checkbox](../../apps/docs/content/zh-Hans/components/checkbox.md)                             |
+| `FluereCombobox`                                                    | [combobox](./src/combobox/combobox.vue)                      | [Combobox](../../apps/docs/content/zh-Hans/components/combobox.md)                             |
+| `FluereNumberBox`                                                   | [number-box](./src/number-box/number-box.vue)                | [Number Box](../../apps/docs/content/zh-Hans/components/number-box.md)                         |
+| `FluereRadioGroup` / `FluereRadioButton`                            | [radio](./src/radio/radio-group.vue)                         | [Radio Group](../../apps/docs/content/zh-Hans/components/radio-group.md)                       |
+| `FluereSlider`                                                      | [slider](./src/slider/slider.vue)                            | [Slider](../../apps/docs/content/zh-Hans/components/slider.md)                                 |
+| `FluereToggleSwitch`                                                | [toggle-switch](./src/toggle-switch/toggle-switch.vue)       | [Switch](../../apps/docs/content/zh-Hans/components/switch.md)                                 |
+| `FluereInfoBadge`                                                   | [info-badge](./src/info-badge/info-badge.vue)                | [Info Badge](../../apps/docs/content/zh-Hans/components/info-badge.md)                         |
+| `FluereInfoBar`                                                     | [infobar](./src/infobar/infobar.vue)                         | [Info Bar](../../apps/docs/content/zh-Hans/components/infobar.md)                              |
+| `FluereProgressBar`                                                 | [progress-bar](./src/progress-bar/progress-bar.vue)          | [Progress Bar](../../apps/docs/content/zh-Hans/components/progress.md)                         |
+| `FluereProgressRing`                                                | [progress-ring](./src/progress-ring/progress-ring.vue)       | [Progress Ring](../../apps/docs/content/zh-Hans/components/progress-ring.md)                   |
+| `FluereContentDialog`                                               | [content-dialog](./src/content-dialog/content-dialog.vue)    | [Content Dialog](../../apps/docs/content/zh-Hans/components/content-dialog.md)                 |
+| `FluereSmokeLayer`                                                  | [overlay](./src/overlay/smoke-layer.vue)                     | [Content Dialog](../../apps/docs/content/zh-Hans/components/content-dialog.md)（共享弹层原语） |
+| `FluereTooltip` / `FluereTooltipProvider`                           | [tooltip](./src/tooltip/tooltip.vue)                         | [Tooltip](../../apps/docs/content/zh-Hans/components/tooltip.md)                               |
+| `FluereConfigProvider`                                              | [config-provider](./src/config-provider/config-provider.vue) | [Config Provider / i18n](../../apps/docs/content/zh-Hans/components/config-provider.md)        |
+| `FluereTabView` / `FluereTabViewItem`                               | [tab-view](./src/tab-view/tab-view.vue)                      | [Tab View](../../apps/docs/content/zh-Hans/components/tab-view.md)                             |
+| `FluereNavigationView` / `…Item` / `…ItemHeader` / `…ItemSeparator` | [navigation-view](./src/navigation-view/navigation-view.vue) | [Navigation View](../../apps/docs/content/zh-Hans/components/navigation-view.md)               |
 
 > 完整导出清单（含 `SCROLL_VIEW_AGENT_EVENTS` 与全部 Props / 事件类型）以 [index.ts](./index.ts) 为准；
 > 英文文档与上表同名，位于 [content/en/components](../../apps/docs/content/en/components)。

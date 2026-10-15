@@ -1,0 +1,278 @@
+/* ==================================================================== */
+/* FluereNavigationView 的行视觉（列表 / 项 / 指示条 / 图标盒 / 文本 /   */
+/* chevron / 分组标题 / 分隔线）。                                      */
+/*                                                                      */
+/* 为什么是**非 scoped** 的全局样式（本仓库少数的例外之一，另一个是        */
+/* focus-visual.css）：                                                  */
+/*   NavigationView 的导航行由**两个不同的组件**渲染 —— 递归列表          */
+/*   `navigation-view-items.vue` 渲染菜单项，父组件 `navigation-view.vue` */
+/*   渲染内置「设置」项（它对应上游的 `FooterMenuItemsHost`，不在          */
+/*   `MenuItems` 树里）。Vue 的 scoped 样式只对**渲染该 VNode 的组件自己   */
+/*   模板里的元素**生效，两个组件的 `data-v-*` 不同 ⇒ 同一套行视觉若各写   */
+/*   一份 scoped 块，会立刻漂移（历史上 TabView 的关闭按钮就踩过「样式静默  */
+/*   失效」：单测全绿、浏览器里全是默认值，见 AGENTS.md〈验证与环境操作〉）。*/
+/*   类名固定 `.fui-navigation-view__*` 私有前缀，全局作用域无碰撞风险。   */
+/*                                                                      */
+/* 规格来源：microsoft-ui-xaml tag winui3/release/2.5.1（本地快照）       */
+/*   src/controls/dev/NavigationView/NavigationView_themeresources.xaml  */
+/*     :217  NavigationViewItemOnLeftMinHeight = 36                     */
+/*     :219  NavigationViewItemOnLeftIconBoxHeight = 16                 */
+/*     :220-222 SelectionIndicator 3 × 16 / 圆角 2                      */
+/*     :223  NavigationViewItemSeparatorHeight = 1                      */
+/*     :228  NavigationViewItemButtonMargin = 4,2                       */
+/*     :229  NavigationViewItemInnerHeaderMargin = 16,0                 */
+/*     :247  NavigationViewItemSeparatorMargin = 0,3,0,4                */
+/*     :251  NavigationViewItemContentPresenterMargin = 4,-1,8,-1       */
+/*     :255  NavigationViewItemExpandChevronMargin = 0,0,-14,0          */
+/*     :447  MUX_NavigationViewItemPresenterStyleWhenOnLeftPane 圆角      */
+/*           OverlayCornerRadius(8)                                     */
+/*     :499-502 Disabled 态 LayoutRoot.Opacity = 0.3                    */
+/*     :611-613 IconColumn.Width = TemplateSettings.SmallerIconWidth、   */
+/*              IconBox.Height = 16                                     */
+/*     :604  ContentGrid.Margin = 0,0,14,0                              */
+/*     :617  ExpandCollapseChevron 宽 40                                */
+/*   src/controls/dev/NavigationView/NavigationView.xaml                 */
+/*     :83   ListSizeCompact 把 PaneContentGrid.Width 设为 CompactPaneLength */
+/*     :564  InnerHeaderGrid.Height = 40                                */
+/*     :1081-1086 NavigationViewItemHeaderTextStyle（14 / SemiBold）     */
+/*   src/controls/dev/NavigationView/NavigationViewItem.cpp              */
+/*     :253-263 m_isClosedCompact 判据                                   */
+/*     :269-285 HandleExpansionStateMemory（顶层项强制折叠 + 记忆）        */
+/*     :645  chevron 可见性判据                                          */
+/*     :76-84 / NavigationViewItemSeparator.cpp:74-83                    */
+/*           缩进 = Depth() * c_itemIndentation(31)                     */
+/*   src/controls/dev/NavigationView/NavigationViewItemBase.h:63         */
+/*           c_itemIndentation = 31                                     */
+/*                                                                      */
+/* token 映射（WinUI 资源名 → Fluent token，逐条见组件文件头的对照表）：   */
+/*   NavigationViewItemBackground* → --subtleFillColor{Transparent,      */
+/*     Secondary,Tertiary}（同值）                                       */
+/*   NavigationViewItemForeground* → --colorNeutralForeground{1,2,       */
+/*     Disabled}（沿用 app-window / tab-view 的既有映射）                 */
+/*   NavigationViewItemHeaderForeground → --colorNeutralForeground2      */
+/*   NavigationViewSelectionIndicatorForeground ← AccentFillColorDefault */
+/*     Brush → --colorBrandBackground（沿用 ToggleButton 的既有映射）     */
+/*   NavigationViewItemSeparatorForeground ← DividerStrokeColorDefault   */
+/*     Brush → --dividerStrokeColorDefault（0.5.3 新增，同值）            */
+/*                                                                      */
+/* 所有度量都读 `--fui-navigation-view-*` 局部变量（由                */
+/* navigation-view.vue 在根节点声明），消费方可一行覆写。               */
+/* ==================================================================== */
+
+/* ---- 列表容器 ---- */
+.fui-navigation-view__list {
+  display: flex;
+  flex-direction: column;
+  /* 层级缩进：`Depth() * c_itemIndentation`（31px，NavigationViewItemBase.h:63） */
+  margin-inline-start: calc(
+    var(--fui-navigation-view-indentation) * var(--fui-navigation-view-depth, 0)
+  );
+  margin-block: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fui-navigation-view__row {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- 分组标题 ---- */
+/* 高 40（NavigationView.xaml:564）；折叠时高 0 且文字 Collapsed（:548-552）。
+   过渡时长逐条来自 :518-544：展开 200ms、收起 100ms，缓动 cubic-bezier(0,0.35,0.15,1)。 */
+.fui-navigation-view__header {
+  display: flex;
+  align-items: center;
+  block-size: var(--fui-navigation-view-header-height);
+  /* NavigationViewItemInnerHeaderMargin = 16,0（:229） */
+  padding-inline: var(--spacingHorizontalL);
+  overflow: hidden;
+  transition:
+    block-size var(--fui-navigation-view-header-fade-in) var(--fui-navigation-view-pane-curve),
+    opacity var(--fui-navigation-view-header-fade-in) var(--fui-navigation-view-pane-curve);
+}
+
+.fui-navigation-view__header.is-collapsed {
+  block-size: 0;
+  opacity: 0;
+  transition-duration: var(--fui-navigation-view-header-fade-out);
+}
+
+/* NavigationViewItemHeaderTextStyle：字号 14 / SemiBold / 不换行（:1081-1086） */
+.fui-navigation-view__header-text {
+  font-size: var(--fontSizeBase300);
+  font-weight: var(--fontWeightSemibold);
+  line-height: var(--lineHeightBase300);
+  color: var(--colorNeutralForeground2);
+  white-space: nowrap;
+}
+
+/* ---- 分隔线 ---- */
+.fui-navigation-view__separator {
+  /* NavigationViewItemSeparatorHeight = 1（:223） */
+  block-size: var(--strokeWidthThin);
+  /* NavigationViewItemSeparatorMargin = 0,3,0,4（:247） */
+  margin: var(--spacingVerticalXXS) 0 var(--spacingVerticalXS);
+  background-color: var(--dividerStrokeColorDefault);
+}
+
+/* ---- 导航项 ---- */
+.fui-navigation-view__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  /* 最小高 36（:217）；NavigationViewItemButtonMargin = 4,2（:228）折进 padding */
+  min-block-size: var(--fui-navigation-view-item-min-height);
+  /* 圆角 OverlayCornerRadius = 8（:447） */
+  border-radius: var(--borderRadiusXLarge);
+  /* 右 14 来自 ContentGrid.Margin = 0,0,14,0（:604） */
+  padding: var(--spacingVerticalXXS) var(--spacingHorizontalXS) var(--spacingVerticalXXS) 0;
+  margin: 0 var(--spacingHorizontalXS);
+  font-family: inherit;
+  /* 字号 ControlContentThemeFontSize = 14（NavigationView.xaml:427） */
+  font-size: var(--fontSizeBase300);
+  line-height: var(--lineHeightBase300);
+  /* NavigationViewItemForeground ← TextFillColorPrimaryBrush（:21） */
+  color: var(--colorNeutralForeground1);
+  /* NavigationViewItemBackground ← SubtleFillColorTransparentBrush（:9） */
+  background-color: var(--subtleFillColorTransparent);
+  border: none;
+  cursor: default;
+  text-align: start;
+}
+
+/* PointerOver → SubtleFillColorSecondaryBrush（:10）；
+   ForegroundPointerOver ← TextFillColorPrimaryBrush（:22，不变） */
+.fui-navigation-view__item:hover:not(:disabled) {
+  background-color: var(--subtleFillColorSecondary);
+}
+
+/* Pressed → SubtleFillColorTertiaryBrush（:11）；
+   ForegroundPressed ← TextFillColorSecondaryBrush（:23） */
+.fui-navigation-view__item:active:not(:disabled) {
+  background-color: var(--subtleFillColorTertiary);
+  color: var(--colorNeutralForeground2);
+}
+
+/* Selected → SubtleFillColorSecondaryBrush（:17） */
+.fui-navigation-view__item.is-selected {
+  background-color: var(--subtleFillColorSecondary);
+}
+
+/* SelectedPointerOver → SubtleFillColorTertiaryBrush（:18） */
+.fui-navigation-view__item.is-selected:hover:not(:disabled) {
+  background-color: var(--subtleFillColorTertiary);
+}
+
+/* SelectedPressed → SubtleFillColorSecondaryBrush（:19） */
+.fui-navigation-view__item.is-selected:active:not(:disabled) {
+  background-color: var(--subtleFillColorSecondary);
+}
+
+/* Disabled 态给 LayoutRoot.Opacity = ListViewItemDisabledThemeOpacity(0.3)（:499-502） */
+.fui-navigation-view__item:disabled {
+  color: var(--colorNeutralForegroundDisabled);
+  opacity: var(--fui-navigation-view-disabled-opacity);
+}
+
+/* 聚焦环由 0.4.3 的 useFocusVisual 原语负责（双层 2px + 1px，UseSystemFocusVisuals=True，
+   NavigationView.xaml:429）；指针点击不显示焦点环 */
+.fui-navigation-view__item:focus {
+  outline: none;
+}
+
+/* ---- 选中指示条 ---- */
+.fui-navigation-view__indicator {
+  position: absolute;
+  /* Grid HorizontalAlignment=Left VerticalAlignment=Center（:601） */
+  inset-inline-start: 0;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  /* NavigationViewSelectionIndicatorWidth/Height/Radius = 3/16/2（:220-222） */
+  inline-size: var(--fui-navigation-view-indicator-width);
+  block-size: var(--fui-navigation-view-indicator-height);
+  border-radius: var(--borderRadiusSmall);
+  /* NavigationViewSelectionIndicatorForeground ← AccentFillColorDefaultBrush（:48） */
+  background-color: var(--colorBrandBackground);
+  opacity: 0;
+  /* 上游 ShowSelectionIndicator 直接改 Opacity（NavigationViewItem.cpp:402-408），无过渡；
+     这里同样不加 transition（「指示条在项之间滑动」的位置动画属 0.9.x，见组件差异表第 6 条） */
+}
+
+.fui-navigation-view__indicator.is-visible {
+  opacity: 1;
+}
+
+/* ---- 图标盒 ---- */
+.fui-navigation-view__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* IconColumn.Width = TemplateSettings.SmallerIconWidth（NavigationViewItemPresenter.cpp:289） */
+  inline-size: var(--fui-navigation-view-icon-column-width);
+  flex: 0 0 auto;
+  /* IconBox.Height = 16（:219） */
+  block-size: var(--fui-navigation-view-icon-box-height);
+  color: inherit;
+}
+
+/* ---- 文本 ---- */
+.fui-navigation-view__label {
+  flex: 1 1 auto;
+  /* NavigationViewItemContentPresenterMargin = 4,-1,8,-1（:251） */
+  margin-inline: var(--spacingHorizontalXS) var(--spacingHorizontalS);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 紧凑且关闭：只留图标。文本**保留在无障碍树里**（不用 display:none），
+   这样可访问名仍取得到 —— 对应上游「紧凑时用 ToolTip 兜底文案」的 Web 口径 */
+.fui-navigation-view__item.is-icon-only .fui-navigation-view__label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 紧凑且关闭：图标盒居中（上游 ListSizeCompact 把 PaneContentGrid.HorizontalAlignment
+   设为 Left 并折叠内容，NavigationView.xaml:82-90） */
+.fui-navigation-view__item.is-icon-only {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+/* ---- 展开箭头 ---- */
+.fui-navigation-view__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  /* ExpandCollapseChevron 宽 40、Margin = 0,0,-14,0（:617、:255） */
+  inline-size: var(--fui-navigation-view-chevron-box-width);
+  margin-inline-end: var(--fui-navigation-view-chevron-margin-end);
+  color: var(--colorNeutralForeground1);
+  /* chevron 旋转：AnimatedIcon 的 LottieGen 总时长 433.33ms
+     （AnimatedChevronUpDownSmallVisualSource.cpp:104）；本库只表达静态两端，
+     单段 ≈48ms 取 --durationUltraFast(50ms)，证据缺口见 constants.ts */
+  transition: rotate var(--fui-navigation-view-chevron-duration) var(--curveEasyEase);
+}
+
+/* 上游 fallback 字形 E70D 是「朝下」的 chevron；展开时旋转 180° 朝上 */
+.fui-navigation-view__chevron.is-expanded {
+  rotate: 180deg;
+}
+
+/* prefers-reduced-motion：去掉过渡，但保留合理静态形态
+   （面板仍可开合、指示条仍可见、箭头仍指向正确方向） */
+@media (prefers-reduced-motion: reduce) {
+  .fui-navigation-view__header,
+  .fui-navigation-view__chevron {
+    transition: none;
+  }
+}

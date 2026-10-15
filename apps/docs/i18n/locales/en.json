@@ -36,7 +36,8 @@
       "toggle-button": "Three-state toggle button that fills with the accent color when checked (WinUI ToggleButton).",
       "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton.",
       "select": "A non-editable dropdown: shows the current option only, with no text input or search.",
-      "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling."
+      "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling.",
+      "navigation-view": "Collapsible left navigation pane: groups, selection indicator, built-in settings item; keys aligned with WinUI NavigationView."
     }
   },
   "theme": {
@@ -777,6 +778,64 @@
         "tabs": ["Closable (selected)", "Closable (unselected)", "Not closable", "Disabled"],
         "overlayLabel": "Close buttons only while hovered or selected",
         "hint": "Hover, pressed, selected and disabled values come straight from TabViewItem’s visual states. Among the overlay modes, Auto and Always behave identically (the same default branch upstream); only on-pointer-over hides the button until hover or selection."
+      }
+    },
+    "navigation-view": {
+      "basic": {
+        "label": "Navigation pane",
+        "sections": [
+          {
+            "title": "Quick access",
+            "items": [
+              {
+                "value": "home",
+                "content": "Home"
+              },
+              {
+                "value": "documents",
+                "content": "Documents"
+              }
+            ]
+          },
+          {
+            "title": "This PC",
+            "items": [
+              {
+                "value": "pictures",
+                "content": "Pictures"
+              },
+              {
+                "value": "music",
+                "content": "Music"
+              },
+              {
+                "value": "downloads",
+                "content": "Downloads"
+              }
+            ]
+          }
+        ],
+        "body": "Selected: {value}. The pane adapts to container width (Auto thresholds 1008 / 641).",
+        "settingsLabel": "Settings"
+      },
+      "hierarchy": {
+        "label": "Groups and hierarchy",
+        "labels": ["Group header", "Library", "Music", "Albums", "Artists"],
+        "body": "Selected: {value}. Selecting a child gives the parent is-child-selected and the indicator drills down."
+      },
+      "display-mode": {
+        "label": "Display mode",
+        "labels": ["Auto", "Left (expanded)", "LeftCompact", "Home", "Documents", "Pictures"],
+        "body": "Pane width follows the mode: 320px expanded, 48px compact (icon rail).",
+        "hint": "Auto switches by container width: >= 1008 expanded, 0 < width < 641 compact (upstream Minimal, downgraded here), otherwise compact."
+      },
+      "settings": {
+        "label": "Settings item and events",
+        "labels": ["Documents", "Media", "Archive", "Settings"],
+        "footer": "PaneFooter: custom area above the settings item",
+        "body": "Invoking any item emits itemInvoked; the settings item has isSettingsInvoked = true.",
+        "eventItem": "invoke: {content}",
+        "eventSettings": "invoke: settings item (isSettingsInvoked = true)"
       }
     }
   }

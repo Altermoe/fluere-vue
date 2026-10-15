@@ -4,6 +4,10 @@ import '@fluere-vue/designs/tokens.css'
 // 共享原语样式：WinUI 双层焦点矩形（非 scoped，理由见该文件头注释；0.4.3）
 // oxlint-disable-next-line import/no-unassigned-import
 import './src/focus-visual/focus-visual.css'
+// NavigationView 的行视觉（非 scoped，理由见该文件头注释；0.5.4）——
+// 同一套行由父组件（内置设置项）与递归列表组件分别渲染，两个 scopeId 不同
+// oxlint-disable-next-line import/no-unassigned-import
+import './src/navigation-view/navigation-view.css'
 import FluereAppWindow from './src/app-window/app-window.vue'
 import FluereCaptionButtons from './src/app-window/caption-buttons.vue'
 import FluereButton from './src/button/button.vue'
@@ -21,6 +25,12 @@ import { FOCUS_VISUAL_CLASS, useFocusVisual } from './src/focus-visual/use-focus
 import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
+// 内置「设置」项的保留哨兵值（消费方需要它来判断「选中的是不是设置项」，见 types.ts）
+import { FLUERE_NAVIGATION_SETTINGS_VALUE } from './src/navigation-view/context'
+import FluereNavigationViewItemHeader from './src/navigation-view/navigation-view-item-header.vue'
+import FluereNavigationViewItemSeparator from './src/navigation-view/navigation-view-item-separator.vue'
+import FluereNavigationViewItem from './src/navigation-view/navigation-view-item.vue'
+import FluereNavigationView from './src/navigation-view/navigation-view.vue'
 import FluereNumberBox from './src/number-box/number-box.vue'
 import FluereSmokeLayer from './src/overlay/smoke-layer.vue'
 import FluereProgressBar from './src/progress-bar/progress-bar.vue'
@@ -51,6 +61,10 @@ export {
   FluereInfoBadge,
   FluereInfoBar,
   FluereInput,
+  FluereNavigationView,
+  FluereNavigationViewItem,
+  FluereNavigationViewItemHeader,
+  FluereNavigationViewItemSeparator,
   FluereNumberBox,
   FluereProgressBar,
   FluereProgressRing,
@@ -69,6 +83,8 @@ export {
   FluereTooltip,
   FluereTooltipProvider,
   SCROLL_VIEW_AGENT_EVENTS,
+  // NavigationView 内置「设置」项的保留哨兵值（消费方据此判断「选中的是不是设置项」）
+  FLUERE_NAVIGATION_SETTINGS_VALUE,
   // 共享原语（0.4.0 基建）
   FOCUS_VISUAL_CLASS,
   useFocusVisual,
@@ -143,6 +159,17 @@ export type {
 } from './src/infobar/types'
 export type { FluereInputProps } from './src/input/input.vue'
 export type { FluerePasswordRevealMode } from './src/input/types'
+export type {
+  FluereNavigationDisplayMode,
+  FluereNavigationDisplayModeChangedEventArgs,
+  FluereNavigationItemInvokedEventArgs,
+  FluereNavigationPaneDisplayMode,
+  FluereNavigationSelectionChangedEventArgs,
+  FluereNavigationSelectionFollowsFocus,
+  FluereNavigationViewItemHeaderProps,
+  FluereNavigationViewItemProps,
+  FluereNavigationViewProps,
+} from './src/navigation-view/types'
 export type {
   FluereNumberBoxProps,
   FluereNumberBoxSpinButtonPlacementMode,

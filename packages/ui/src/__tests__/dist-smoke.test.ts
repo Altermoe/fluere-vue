@@ -55,13 +55,22 @@ describe('dist 构建产物冒烟', () => {
     async () => {
       expect(uiDistBuilt, 'REQUIRE_DIST=1 但未找到 ui 的 dist/index.js（先 pnpm build）').toBe(true)
       const mod = await importDist('../../dist/index.js')
-      const { FluereButton, FluereCheckbox, FluereProgressBar, FluereTabView, FluereTabViewItem } =
-        mod
+      const {
+        FluereButton,
+        FluereCheckbox,
+        FluereNavigationView,
+        FluereNavigationViewItem,
+        FluereProgressBar,
+        FluereTabView,
+        FluereTabViewItem,
+      } = mod
       expect(typeof FluereButton).toBe('object')
       expect(typeof FluereCheckbox).toBe('object')
       expect(typeof FluereProgressBar).toBe('object')
       expect(typeof FluereTabView).toBe('object')
       expect(typeof FluereTabViewItem).toBe('object')
+      expect(typeof FluereNavigationView).toBe('object')
+      expect(typeof FluereNavigationViewItem).toBe('object')
 
       const app = createSSRApp({
         render: () =>
@@ -80,6 +89,18 @@ describe('dist 构建产物冒烟', () => {
                 ],
               },
             ),
+            h(
+              FluereNavigationView as unknown as never,
+              { label: 'Nav' },
+              {
+                default: () => [
+                  h(FluereNavigationViewItem as unknown as never, {
+                    value: 'home',
+                    content: 'Home',
+                  }),
+                ],
+              },
+            ),
           ]),
       })
       const html = await renderToString(app)
@@ -88,6 +109,8 @@ describe('dist 构建产物冒烟', () => {
       expect(html).toMatch(/role="progressbar"|<progress/)
       expect(html).toContain('role="tablist"')
       expect(html).toContain('panel-one')
+      expect(html).toContain('fui-navigation-view__nav')
+      expect(html).toContain('data-value="home"')
     },
     30_000,
   )

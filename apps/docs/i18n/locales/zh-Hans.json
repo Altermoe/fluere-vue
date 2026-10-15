@@ -36,7 +36,8 @@
       "toggle-button": "三态切换按钮，选中时铺强调色（对应 WinUI ToggleButton）。",
       "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。",
       "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。",
-      "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。"
+      "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。",
+      "navigation-view": "左侧可折叠导航面板：分组、选中指示条、内置设置项，键位对齐 WinUI NavigationView。"
     }
   },
   "theme": {
@@ -767,6 +768,64 @@
         "tabs": ["可关闭（选中）", "可关闭（未选中）", "不可关闭", "禁用"],
         "overlayLabel": "关闭按钮只在悬停或选中时显示",
         "hint": "悬停 / 按下 / 选中 / 禁用四态的取值逐条来自 TabViewItem 的 VisualState；关闭按钮的叠加模式里 Auto 与 Always 行为相同（上游同一个 default 分支），只有 on-pointer-over 是「悬停或选中才显示」。"
+      }
+    },
+    "navigation-view": {
+      "basic": {
+        "label": "导航面板",
+        "sections": [
+          {
+            "title": "快速访问",
+            "items": [
+              {
+                "value": "home",
+                "content": "主页"
+              },
+              {
+                "value": "documents",
+                "content": "文档"
+              }
+            ]
+          },
+          {
+            "title": "此电脑",
+            "items": [
+              {
+                "value": "pictures",
+                "content": "图片"
+              },
+              {
+                "value": "music",
+                "content": "音乐"
+              },
+              {
+                "value": "downloads",
+                "content": "下载"
+              }
+            ]
+          }
+        ],
+        "body": "当前选中：{value}。面板宽度按容器宽度自适应（Auto 档阈值 1008 / 641）。",
+        "settingsLabel": "设置"
+      },
+      "hierarchy": {
+        "label": "分组与层级",
+        "labels": ["分组标题", "库", "音乐", "专辑", "艺术家"],
+        "body": "当前选中：{value}。选中子项时父项会拿到 is-child-selected，选中指示条下钻到子项。"
+      },
+      "display-mode": {
+        "label": "显示模式",
+        "labels": ["Auto 自适应", "Left 展开", "LeftCompact 紧凑", "主页", "文档", "图片"],
+        "body": "面板宽度随模式变化：展开 320px、紧凑 48px（图标轨道）。",
+        "hint": "Auto 档按容器宽度切换：≥ 1008 展开、0 < 宽 < 641 紧凑（上游是 Minimal，本库降级为紧凑）、其余紧凑。"
+      },
+      "settings": {
+        "label": "设置项与事件",
+        "labels": ["文档", "媒体", "归档", "设置"],
+        "footer": "PaneFooter：设置项上方的自定义区",
+        "body": "点任意项都会抛 itemInvoked；设置项的 isSettingsInvoked 为 true。",
+        "eventItem": "invoke：{content}",
+        "eventSettings": "invoke：设置项（isSettingsInvoked = true）"
       }
     }
   }

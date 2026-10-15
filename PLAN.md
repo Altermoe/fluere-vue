@@ -16,14 +16,14 @@
 
 ## 现状盘点（已核实）
 
-| 项 | 状态 |
-| --- | --- |
-| 0.5.1 `FluereAppWindow` / 0.5.2 `FluereCaptionButtons` | ✅ 已落地（`packages/ui/src/app-window/`，四件套齐） |
-| 0.4.x 基建 | ✅ `useFlyout`+层级栈（`packages/ui/src/flyout/`）、`useFocusVisual`（`focus-visual/`）、z-index 九档刻度、Mica/Acrylic 等 20 个材质令牌（`packages/designs/data/repo-tokens.json`） |
-| i18n 通道（0.3 目标 1.4） | ✅ `FluereConfigProvider` + 组件 `locale.ts` 切片；**新文案走 key 是 0.5.0 起的硬约束** |
-| 规格源快照 | ✅ `temp/winui-src` = `microsoft-ui-xaml` tag `winui3/release/2.5.1`（`ba3a8d5`）；稀疏检出只有 `CommonStyles/`+`ProgressBar/`+`ProgressRing/`，**TabView / NavigationView 源码用 `git -C temp/winui-src show winui3/release/2.5.1:<path>` 取**（与 0.4.7 Select 同做法）；连通性不稳时按「证据缺口」流程标注，不猜值 |
-| reka-ui 2.10.1 可用底座 | Tabs、RovingFocus、Collapsible、ScrollArea、NavigationMenu（语义不符，见阶段 2） |
-| 待做 | 0.5.3 / 0.5.4 / 0.5.5 / 0.5.6 / 0.5.7 五项（约 22 点） |
+| 项                                                     | 状态                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.5.1 `FluereAppWindow` / 0.5.2 `FluereCaptionButtons` | ✅ 已落地（`packages/ui/src/app-window/`，四件套齐）                                                                                                                                                                                                                                                                  |
+| 0.4.x 基建                                             | ✅ `useFlyout`+层级栈（`packages/ui/src/flyout/`）、`useFocusVisual`（`focus-visual/`）、z-index 九档刻度、Mica/Acrylic 等 20 个材质令牌（`packages/designs/data/repo-tokens.json`）                                                                                                                                  |
+| i18n 通道（0.3 目标 1.4）                              | ✅ `FluereConfigProvider` + 组件 `locale.ts` 切片；**新文案走 key 是 0.5.0 起的硬约束**                                                                                                                                                                                                                               |
+| 规格源快照                                             | ✅ `temp/winui-src` = `microsoft-ui-xaml` tag `winui3/release/2.5.1`（`ba3a8d5`）；稀疏检出只有 `CommonStyles/`+`ProgressBar/`+`ProgressRing/`，**TabView / NavigationView 源码用 `git -C temp/winui-src show winui3/release/2.5.1:<path>` 取**（与 0.4.7 Select 同做法）；连通性不稳时按「证据缺口」流程标注，不猜值 |
+| reka-ui 2.10.1 可用底座                                | Tabs、RovingFocus、Collapsible、ScrollArea、NavigationMenu（语义不符，见阶段 2）                                                                                                                                                                                                                                      |
+| 待做                                                   | 0.5.3 / 0.5.4 / 0.5.5 / 0.5.6 / 0.5.7 五项（约 22 点）                                                                                                                                                                                                                                                                |
 
 **规格源可取性已实测**（2026-10-14）：
 
@@ -117,11 +117,11 @@
 
 ## 风险与对策
 
-| 风险 | 影响 | 对策 |
-| --- | --- | --- |
-| NavigationView（XL 6）状态机被低估 | 进度滑坡 | 阶段 2 先做 DisplayMode 状态机 + 指示条最小闭环，Settings / 分组随后；估点内含键盘与折叠动画 |
-| 布局假设最后被推翻 | 外壳返工 | 阶段 0 先写 `docs/design/explorer-layout.md` 锁五项假设，改动须回写该文档 |
-| scoped / Teleport 样式静默失效 | 浮层样式全丢而测试全绿 | 浮层组件实机 `getComputedStyle` 复核（AGENTS.md 排查手法），面板样式走非 scoped + `.fui-` 私有前缀 |
-| github.com 连通性不稳取不到源码 blob | 规格证据缺口 | 按「证据缺口」流程显式标注取值来源与覆盖方式，不猜值 |
-| i18n 新增文案漏 key / 裸 `@` | SSR / 预渲染 500 | 全部走 key + `pnpm i18n:check` + 消息真实编译（dev 两语种 200 或 `docs:generate`） |
-| 发版撞已用版本号 | 同号两提交 | `<VERSION>` 必须未发布过；发布前 `pnpm release:manual --check` 预演（docs/release.md 红线） |
+| 风险                                 | 影响                   | 对策                                                                                               |
+| ------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------- |
+| NavigationView（XL 6）状态机被低估   | 进度滑坡               | 阶段 2 先做 DisplayMode 状态机 + 指示条最小闭环，Settings / 分组随后；估点内含键盘与折叠动画       |
+| 布局假设最后被推翻                   | 外壳返工               | 阶段 0 先写 `docs/design/explorer-layout.md` 锁五项假设，改动须回写该文档                          |
+| scoped / Teleport 样式静默失效       | 浮层样式全丢而测试全绿 | 浮层组件实机 `getComputedStyle` 复核（AGENTS.md 排查手法），面板样式走非 scoped + `.fui-` 私有前缀 |
+| github.com 连通性不稳取不到源码 blob | 规格证据缺口           | 按「证据缺口」流程显式标注取值来源与覆盖方式，不猜值                                               |
+| i18n 新增文案漏 key / 裸 `@`         | SSR / 预渲染 500       | 全部走 key + `pnpm i18n:check` + 消息真实编译（dev 两语种 200 或 `docs:generate`）                 |
+| 发版撞已用版本号                     | 同号两提交             | `<VERSION>` 必须未发布过；发布前 `pnpm release:manual --check` 预演（docs/release.md 红线）        |

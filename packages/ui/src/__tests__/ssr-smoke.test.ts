@@ -24,6 +24,8 @@ import FluereContentDialog from '../content-dialog/content-dialog.vue'
 import FluereInfoBadge from '../info-badge/info-badge.vue'
 import FluereInfoBar from '../infobar/infobar.vue'
 import FluereInput from '../input/input.vue'
+import FluereNavigationViewItem from '../navigation-view/navigation-view-item.vue'
+import FluereNavigationView from '../navigation-view/navigation-view.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
 import FluereSmokeLayer from '../overlay/smoke-layer.vue'
 import FluereProgressBar from '../progress-bar/progress-bar.vue'
@@ -418,6 +420,45 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     // 独立使用时同样取内建文案（scope=caption-buttons，无 Provider 时缺省 zh-Hans）
     const standalone = await renderUnder('en', () => h(FluereCaptionButtons, { maximized: true }))
     expect(standalone).toContain('aria-label="Restore Down"')
+  })
+
+  it('NavigationView 直出导航项，内建文案跟随 locale（含递归子项与设置项）', async () => {
+    const nav = (locale: string) =>
+      renderUnder(locale, () =>
+        h(
+          FluereNavigationView,
+          { label: 'Nav' },
+          {
+            default: () => [
+              h(FluereNavigationViewItem, { value: 'home', content: 'Home' }),
+              h(
+                FluereNavigationViewItem,
+                { value: 'music', content: 'Music' },
+                {
+                  children: () => [
+                    h(FluereNavigationViewItem, { value: 'albums', content: 'Albums' }),
+                  ],
+                },
+              ),
+            ],
+          },
+        ),
+      )
+
+    const en = await nav('en')
+    // 导航区有名字、项直出（SSR 不依赖 ResizeObserver 的实测宽度）
+    expect(en).toContain('class="fui-navigation-view__nav"')
+    expect(en).toContain('aria-label="Nav"')
+    expect(en).toContain('data-value="home"')
+    expect(en).toContain('data-value="music"')
+    // 未展开的父项：子项不直出
+    expect(en).not.toContain('data-value="albums"')
+    // 设置项文案来自 scope=navigation-view 的 slice
+    expect(en).toContain('aria-label="Settings"')
+
+    const zh = await nav('zh-Hans')
+    expect(zh).toContain('aria-label="设置"')
+    expect(zh).toContain('Home')
   })
 
   it('TabView 直出 tab 条与面板，内建文案跟随 locale（含 v-for 之外的手写子项）', async () => {
