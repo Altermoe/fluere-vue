@@ -770,7 +770,7 @@
       "overflow": {
         "label": "Overflowing tab strip",
         "prefix": "Tab {index}",
-        "hint": "When the strip overflows, two scroll buttons appear (50 px steps, disabled at either end). They stay out of the tab order and are hidden from screen readers, matching WinUI setting HorizontalScrollBarVisibility to Visible."
+        "hint": "When space runs out every tab is squeezed to the 100px floor first, then two scroll buttons appear (50 px steps, disabled at either end, continuous scrolling while held). They stay out of the tab order and are hidden from screen readers. No scrollbar is drawn while overflowing (the upstream template has no scrollbar part), so the strip height never changes."
       },
       "states": {
         "label": "States and closability",

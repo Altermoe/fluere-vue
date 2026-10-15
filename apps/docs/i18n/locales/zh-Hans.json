@@ -760,7 +760,7 @@
       "overflow": {
         "label": "溢出的选项卡条",
         "prefix": "选项卡 {index}",
-        "hint": "宽度不够时出现左右滚动按钮（步长 50px、贴边禁用）：它们不进 Tab 序、对读屏隐藏，对应 WinUI 把 HorizontalScrollBarVisibility 置为 Visible 的行为。"
+        "hint": "空间不够时先把每个 tab 压到下限 100px，再在两侧出现滚动按钮（步长 50px、贴边禁用、按住连续滚动）：它们不进 Tab 序、对读屏隐藏。溢出时不画滚动条（上游模板里没有滚动条部件），tab 条高度恒定。"
       },
       "states": {
         "label": "状态与可关闭性",

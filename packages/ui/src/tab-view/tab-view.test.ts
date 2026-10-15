@@ -97,6 +97,55 @@ const pressKey = (
   )
 }
 
+/* ------------------------------------------------------------------ */
+/* 滚动按钮 stub：jsdom 不实现滚动，长按重复只能靠调用次数断言           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 指针事件派发：jsdom 没有 `PointerEvent`，用 `MouseEvent` 带上 `button`
+ * （组件只读 `event.button`；VTU 的 `trigger('pointerdown', { button })` 会踩到
+ * MouseEvent 的只读 `button` 描述符）。
+ */
+const pressPointer = (target: Element | null | undefined, type: string, button = 0): void => {
+  target?.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button }))
+}
+
+const originalScrollBy = HTMLElement.prototype.scrollBy
+
+/**
+ * 给 scroller 打上「可横向滚动、贴左、不在右端」的几何并刷新贴边状态。
+ * jsdom 不做布局（`scrollWidth` / `clientWidth` 恒为 0 ⇒ 会被判成两端都贴边），
+ * 不撑开几何就量不到长按重复（第一拍就被「到端点自停」收掉）。
+ */
+const mockScrollableGeometry = async (host: VueWrapper): Promise<HTMLElement> => {
+  const scroller = host.find('.fui-tab-view__scroller').element as HTMLElement
+  Object.defineProperty(scroller, 'scrollWidth', { value: 1000, configurable: true })
+  Object.defineProperty(scroller, 'clientWidth', { value: 100, configurable: true })
+  Object.defineProperty(scroller, 'scrollLeft', { value: 0, writable: true, configurable: true })
+  scroller.dispatchEvent(new Event('scroll'))
+  await nextTick()
+  return scroller
+}
+
+/**
+ * `scrollBy` 的 stub：只关心「被调用几次」，参数签名放宽（原 API 是双重载，
+ * 直接照抄签名会与 `this: HTMLElement` 的临时实现冲突）。
+ */
+type ScrollByStub = (...args: never[]) => unknown
+
+const setScrollBy = (stub: ScrollByStub): void => {
+  HTMLElement.prototype.scrollBy = stub as unknown as typeof HTMLElement.prototype.scrollBy
+}
+
+/** 还原原型（jsdom 里该 API 可能本就不存在 ⇒ 还原成「没有」） */
+const restoreScrollBy = (): void => {
+  if (originalScrollBy === undefined) {
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollBy
+  } else {
+    HTMLElement.prototype.scrollBy = originalScrollBy
+  }
+}
+
 describe('FluereTabView 渲染与 a11y 契约', () => {
   it('渲染 tablist / tab / tabpanel，且只挂载选中面板的内容', () => {
     wrapper = makeHost()
@@ -444,6 +493,96 @@ describe('FluereTabView 键盘', () => {
   })
 })
 
+describe('FluereTabView 滚动按钮长按重复（RepeatButton 的 Delay=50 / Interval=100）', () => {
+  it('按下即滚一次，50ms 后每 100ms 重复，抬起 / 离开即停', async () => {
+    vi.useFakeTimers()
+    const scrollBy = vi.fn()
+    setScrollBy(scrollBy)
+    try {
+      wrapper = makeHost()
+      await mockScrollableGeometry(wrapper)
+      const increase = wrapper.find(
+        '.fui-tab-view__scroll-area--increase .fui-tab-view__scroll-button',
+      )
+      pressPointer(increase.element, 'pointerdown')
+      // RepeatButton：按下立刻触发一次 Click
+      expect(scrollBy).toHaveBeenCalledTimes(1)
+      // Delay 只负责「启动重复」，本身不再额外触发一次
+      vi.advanceTimersByTime(50)
+      expect(scrollBy).toHaveBeenCalledTimes(1)
+      vi.advanceTimersByTime(100)
+      expect(scrollBy).toHaveBeenCalledTimes(2)
+      vi.advanceTimersByTime(200)
+      expect(scrollBy).toHaveBeenCalledTimes(4)
+
+      pressPointer(increase.element, 'pointerup')
+      vi.advanceTimersByTime(500)
+      expect(scrollBy).toHaveBeenCalledTimes(4)
+
+      // pointerleave 与 pointerup 同效
+      pressPointer(increase.element, 'pointerdown')
+      vi.advanceTimersByTime(150)
+      const afterSecondPress = scrollBy.mock.calls.length
+      expect(afterSecondPress).toBeGreaterThan(0)
+      pressPointer(increase.element, 'pointerleave')
+      vi.advanceTimersByTime(500)
+      expect(scrollBy.mock.calls.length).toBe(afterSecondPress)
+    } finally {
+      restoreScrollBy()
+      vi.useRealTimers()
+    }
+  })
+
+  it('非主键按下不触发（RepeatButton 只响应主键 press）', async () => {
+    vi.useFakeTimers()
+    const scrollBy = vi.fn()
+    setScrollBy(scrollBy)
+    try {
+      wrapper = makeHost()
+      const decrease = wrapper.find(
+        '.fui-tab-view__scroll-area--decrease .fui-tab-view__scroll-button',
+      )
+      pressPointer(decrease.element, 'pointerdown', 2)
+      vi.advanceTimersByTime(500)
+      expect(scrollBy).not.toHaveBeenCalled()
+    } finally {
+      restoreScrollBy()
+      vi.useRealTimers()
+    }
+  })
+
+  it('按住滚到端点后自动停止（按钮转 disabled 后收不到 pointerup）', async () => {
+    vi.useFakeTimers()
+    try {
+      wrapper = makeHost()
+      // 可滚动区间只有 100px：50px 一拍 ⇒ 两拍就到右端
+      const scroller = await mockScrollableGeometry(wrapper)
+      Object.defineProperty(scroller, 'scrollWidth', { value: 200, configurable: true })
+      const scrollBy = vi.fn(function scrollByStub(
+        this: HTMLElement,
+        options?: ScrollToOptions,
+      ): void {
+        this.scrollLeft = Math.min(Math.max(this.scrollLeft + (options?.left ?? 0), 0), 100)
+        this.dispatchEvent(new Event('scroll'))
+      })
+      setScrollBy(scrollBy)
+
+      const increase = wrapper.find(
+        '.fui-tab-view__scroll-area--increase .fui-tab-view__scroll-button',
+      )
+      pressPointer(increase.element, 'pointerdown')
+      vi.advanceTimersByTime(50 + 100 * 10)
+
+      // 50px 一拍：0 → 50 → 100，到右端即自停，不再有多余调用
+      expect(scrollBy).toHaveBeenCalledTimes(2)
+      expect(scroller.scrollLeft).toBe(100)
+    } finally {
+      restoreScrollBy()
+      vi.useRealTimers()
+    }
+  })
+})
+
 describe('FluereTabView 样式契约（源码文本）', () => {
   it('视觉值全部走 token，禁用/选中/悬停各态都有明确 token', () => {
     for (const token of [
@@ -517,6 +656,23 @@ describe('FluereTabView 样式契约（源码文本）', () => {
     expect(sfc).toContain("import { useFocusVisual } from '../focus-visual/use-focus-visual'")
     expect(sfc).toContain(':class="focusVisual.class"')
     expect(sfc).toContain(':style="focusVisual.style"')
+  })
+
+  it('溢出时保留原生滚动但不画原生滚动条（tab 条高度不受滚动条影响）', () => {
+    // 上游 `TabScrollViewerStyle` 的模板里没有滚动条部件（TabView.xaml:133-173），
+    // `ComputedHorizontalScrollBarVisibility` 只驱动两个箭头 ⇒ Web 侧同样不画滚动条
+    expect(css).toMatch(/\.fui-tab-view__scroller\s*\{[^}]*overflow-x: auto/)
+    expect(css).toMatch(/\.fui-tab-view__scroller\s*\{[^}]*scrollbar-width: none/)
+    expect(css).toMatch(/\.fui-tab-view__scroller::-webkit-scrollbar\s*\{[^}]*display: none/)
+  })
+
+  it('滚动按钮走 pointerdown + 长按重复，而不是 click（RepeatButton 的按下次触发）', () => {
+    expect(sfc).toContain('@pointerdown="startScrollRepeat(-1, $event)"')
+    expect(sfc).toContain('@pointerdown="startScrollRepeat(1, $event)"')
+    expect(sfc).toContain('@pointerup="stopScrollRepeat"')
+    expect(sfc).toContain('@pointerleave="stopScrollRepeat"')
+    // 旧写法（抬起才滚一次）不能回潮
+    expect(sfc).not.toMatch(/@click="scrollTabList\(/)
   })
 
   it('子项组件不渲染任何 DOM（数据型子组件）', () => {

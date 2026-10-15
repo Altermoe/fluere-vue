@@ -4,8 +4,11 @@ import { computed } from 'vue'
 
 /**
  * 溢出滚动：把 tab 条放进一个固定宽度（480px）的容器里，
- * 放不下时两侧出现滚动按钮（步长 50px，贴左 / 贴右时各自禁用）。
+ * 空间不够时 tab 先被压到下限（100px），随后两侧出现滚动按钮
+ * （步长 50px，贴左 / 贴右时各自禁用，按住即连续滚动）。
  *
+ * 溢出时**不画原生滚动条**（上游 `TabScrollViewerStyle` 的模板里没有滚动条部件，
+ * `ComputedHorizontalScrollBarVisibility` 只驱动这两个按钮）⇒ tab 条高度恒定。
  * 这两个按钮不进 Tab 序、对读屏隐藏（`aria-hidden` + `tabindex="-1"`），
  * 与 WinUI 把 `AutomationProperties.AccessibilityView` 设为 `Raw` 的做法一致。
  */

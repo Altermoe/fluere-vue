@@ -38,6 +38,20 @@ export const TAB_VIEW_BRING_INTO_VIEW_PADDING = 2
 /**
  * 滚动按钮在前端的溢出判定容差（像素）：`scrollWidth - clientWidth` 小于它视为不溢出。
  * WinUI 侧用的是 `ComputedHorizontalScrollBarVisibility`（由 ScrollViewer 内部计算），
+ * 但 `TabScrollViewerStyle` 的模板里**没有滚动条部件**，该依赖属性只绑给两个箭头容器的
+ * `Visibility`（`TabView.xaml:157,163`）⇒ 它的语义就是「箭头显不显示」，不是「滚动条显不显示」。
  * Web 侧没有等价量，用 0.5px 的亚像素容差代替（浏览器在 DPR > 1 时会给出小数宽度）。
  */
 export const TAB_VIEW_OVERFLOW_EPSILON = 0.5
+
+/**
+ * 滚动按钮长按重复的启动延时（毫秒）—— 两个 `RepeatButton` 的 `Delay="50"`
+ * （`TabView.xaml:158,165`）：按下立刻触发一次 Click，50ms 后进入重复。
+ */
+export const TAB_VIEW_SCROLL_REPEAT_DELAY = 50
+
+/**
+ * 滚动按钮长按重复的间隔（毫秒）—— 同上两个 `RepeatButton` 的 `Interval="100"`
+ * （`TabView.xaml:158,165`）：启动延时之后每 100ms 触发一次 Click。
+ */
+export const TAB_VIEW_SCROLL_REPEAT_INTERVAL = 100

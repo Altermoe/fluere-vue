@@ -63,8 +63,12 @@
  *   （向后环形找第一个可用项），等价 WinUI 的 `SelectedItem` 行为。
  * - **溢出滚动**（`TabView.xaml:133-173`、`TabView.cpp:1103-1117,689-734`）：两个 `RepeatButton`
  *   的可见性绑 `ComputedHorizontalScrollBarVisibility`（溢出才出现），步长 `50px`，
- *   贴边判定阈值 `0.1`（贴左禁「向后」、贴右禁「向前」），并且 `IsTabStop=False` +
+ *   长按重复 `Delay="50" Interval="100"`（`:158,165`），贴边判定阈值 `0.1`
+ *   （贴左禁「向后」、贴右禁「向前」），并且 `IsTabStop=False` +
  *   `AutomationProperties.AccessibilityView="Raw"`（**不进 Tab 序、对 AT 隐藏**）。
+ *   **该 template 里没有滚动条部件**：3 列布局（`MinWidth=2` | `ScrollContentPresenter` | `Auto`）
+ *   只放了两个箭头容器，`ComputedHorizontalScrollBarVisibility` 仅驱动它们的 `Visibility`
+ *   ⇒ 溢出指示只有箭头，行高不受滚动条影响。
  *   `TabViewListView.cpp` 里**没有**任何拖着自动滚动的代码，也没有 `IsOverflowing` 之类的 API。
  * - **可访问性**：`TabViewAutomationPeer` = `ControlType.Tab` + `ISelectionProvider`
  *   （`CanSelectMultiple=false` / `IsSelectionRequired=true`），**没有重写 `GetNameCore`**
@@ -120,8 +124,16 @@
  *    本库按同值 `SolidColorBrush` 处理，并**沿用仓库既有映射** `--colorNeutralStrokeAlpha`
  *    （InfoBar / ContentDialog 对同一资源就是这么映射的），明暗差量为：亮 `0.05` vs `0.059`、
  *    暗 `rgba(255,255,255,.1)` vs `#19000000`（方向相反的 10% 黑）。需要严格对齐时覆写 `--fui-tab-view-strip-line`。
- * 10. **滚动条**：上游在溢出时把 `HorizontalScrollBarVisibility` 设成 `Visible`，本库用 `overflow-x: auto`
- *     （按需出现）等价；不做「溢出指示」。
+ * 10. **滚动条：不画（上游也没有）** —— 旧版本这里写的是「上游在溢出时把 `HorizontalScrollBarVisibility`
+ *     设成 `Visible`，本库用 `overflow-x: auto`（按需出现）等价」，属**误读**，已按模板证据推翻：
+ *     `TabScrollViewerStyle` 的 `ControlTemplate`（`TabView.xaml:133-173`）里**没有滚动条部件**，
+ *     只有 `ScrollContentPresenter` 与左右两个箭头容器；`ScrollViewer.ComputedHorizontalScrollBarVisibility`
+ *     只绑给这两个容器的 `Visibility`（`:157,163`）。因此 `UpdateTabWidths` 里的
+ *     `SetHorizontalScrollBarVisibility(Visible)`（`TabView.cpp:1240,1309`）只决定「箭头出不出现」。
+ *     本库对应做法：`overflow-x: auto` 保留原生滚动（滚轮 / Shift + 滚轮 / 触摸 / `scrollBy`），
+ *     再用 `scrollbar-width: none` + `::-webkit-scrollbar` **不画原生滚动条** ⇒ tab 高恒 `32`、
+ *     tab 条行高恒 `40`（8 + 32）。经典滚动条会给行加一条 ≈ 15px 的高度（**有头 Chromium 实测
+ *     `40 → 55`**，撑高 tab 条并挤压内容），这就是必须去掉它的原因；测量方法见文档页《浏览器实测》。
  * 11. **`Ctrl+Tab` 可能被浏览器吞掉**：Chrome / Edge 把它当作「切换浏览器标签页」的保留快捷键，
  *     页面收不到 keydown；`Ctrl+F4` 在部分环境同样被占用。本组件照实现，可用性取决于宿主环境。
  * 12. **`Alt` / `Ctrl` / `Meta` + 方向键一律不处理**：上游把 `Alt+Shift+方向键` 留给拖拽重排
@@ -206,6 +218,8 @@ import {
   TAB_VIEW_MIN_TAB_WIDTH,
   TAB_VIEW_OVERFLOW_EPSILON,
   TAB_VIEW_SCROLL_AMOUNT,
+  TAB_VIEW_SCROLL_REPEAT_DELAY,
+  TAB_VIEW_SCROLL_REPEAT_INTERVAL,
 } from './constants'
 import { tabViewLocale } from './locale'
 import FluereTabViewItem from './tab-view-item.vue'
@@ -668,6 +682,45 @@ const scrollTabList = (direction: -1 | 1): void => {
 }
 
 /**
+ * 滚动按钮的「按住连续滚动」—— 上游是 `RepeatButton`（`TabView.xaml:158,165`：
+ * `Delay="50" Interval="100"`）：**按下立刻滚一次**，50ms 后进入每 100ms 一次的重复；
+ * 指针抬起 / 离开 / 取消即停止（对应 RepeatButton 的 `IsPressed` 变 false）。
+ */
+let holdDelayTimer: ReturnType<typeof setTimeout> | undefined = undefined
+let holdIntervalTimer: ReturnType<typeof setInterval> | undefined = undefined
+
+const stopScrollRepeat = (): void => {
+  if (holdDelayTimer !== undefined) {
+    clearTimeout(holdDelayTimer)
+    holdDelayTimer = undefined
+  }
+  if (holdIntervalTimer !== undefined) {
+    clearInterval(holdIntervalTimer)
+    holdIntervalTimer = undefined
+  }
+}
+
+const startScrollRepeat = (direction: -1 | 1, event: PointerEvent): void => {
+  // 只响应主键（RepeatButton 的 press 语义）
+  if (event.button !== 0) {
+    return
+  }
+  stopScrollRepeat()
+  scrollTabList(direction)
+  holdDelayTimer = setTimeout(() => {
+    holdDelayTimer = undefined
+    holdIntervalTimer = setInterval(() => {
+      scrollTabList(direction)
+      // 到达该方向的端点后必须自己收尾：滚动按钮此时会被置为 `disabled`，
+      // 而禁用的表单控件收不到指针事件 ⇒ `pointerup` 永远不会再来
+      if (direction === 1 ? isAtEnd.value : isAtStart.value) {
+        stopScrollRepeat()
+      }
+    }, TAB_VIEW_SCROLL_REPEAT_INTERVAL)
+  }, TAB_VIEW_SCROLL_REPEAT_DELAY)
+}
+
+/**
  * 把选中的 tab 滚进可视区 —— 对应 `BringSelectedTabIntoView` /
  * `TabViewItem::StartBringTabIntoView`（后者给目标矩形左右各留 2px）。
  * 刻意不用 `scrollIntoView`（它会连带滚动页面容器），自己按 scroller 的矩形算。
@@ -768,6 +821,7 @@ onMounted(() => {
 onUpdated(afterRender)
 
 onBeforeUnmount(() => {
+  stopScrollRepeat()
   resizeObserver?.disconnect()
   resizeObserver = null
 })
@@ -801,7 +855,8 @@ onBeforeUnmount(() => {
         ref="stripRef"
         class="fui-tab-view__strip"
       >
-        <!-- 溢出才出现的两个滚动按钮：不进 Tab 序、对 AT 隐藏（AccessibilityView=Raw） -->
+        <!-- 溢出才出现的两个滚动按钮：不进 Tab 序、对 AT 隐藏（AccessibilityView=Raw）；
+             按下即滚一次并进入长按重复（上游 RepeatButton 的 Delay/Interval） -->
         <span
           v-show="isOverflowing"
           class="fui-tab-view__scroll-area fui-tab-view__scroll-area--decrease"
@@ -815,7 +870,10 @@ onBeforeUnmount(() => {
             aria-hidden="true"
             :disabled="isAtStart"
             :title="scrollDecreaseTooltip"
-            @click="scrollTabList(-1)"
+            @pointerdown="startScrollRepeat(-1, $event)"
+            @pointerup="stopScrollRepeat"
+            @pointerleave="stopScrollRepeat"
+            @pointercancel="stopScrollRepeat"
           >
             <FluentIconChevronLeft16Regular :size="12" />
           </button>
@@ -906,7 +964,10 @@ onBeforeUnmount(() => {
             aria-hidden="true"
             :disabled="isAtEnd"
             :title="scrollIncreaseTooltip"
-            @click="scrollTabList(1)"
+            @pointerdown="startScrollRepeat(1, $event)"
+            @pointerup="stopScrollRepeat"
+            @pointerleave="stopScrollRepeat"
+            @pointercancel="stopScrollRepeat"
           >
             <FluentIconChevronRight16Regular :size="12" />
           </button>
@@ -1100,13 +1161,23 @@ onBeforeUnmount(() => {
   min-inline-size: 0;
 }
 
-/* ScrollViewer：溢出才出滚动条（HorizontalScrollBarVisibility Visible|Hidden 的等价物） */
+/* ScrollViewer：`overflow-x: auto` 保留原生滚动（滚轮 / Shift + 滚轮 / 触摸 / `scrollBy`）；
+   原生滚动条**不画** —— 上游 `TabScrollViewerStyle` 的模板（`TabView.xaml:133-173`）里没有滚动条
+   部件，`ScrollViewer.ComputedHorizontalScrollBarVisibility` 只绑给两个箭头容器（`:157,163`）
+   ⇒ 溢出指示只有箭头、行高不受滚动条影响。经典滚动条会给行加一条 ≈ 15px
+   （有头 Chromium 实测 40 → 55，撑高并挤压高度），必须去掉。 */
 .fui-tab-view__scroller {
   display: flex;
   flex: 0 1 auto;
   min-inline-size: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  /* Chromium 121+ / Firefox；老 Chromium 与 Safari 走下面的伪元素 */
+  scrollbar-width: none;
+}
+
+.fui-tab-view__scroller::-webkit-scrollbar {
+  display: none;
 }
 
 .fui-tab-view__list {

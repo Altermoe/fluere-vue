@@ -139,7 +139,13 @@ nav:
 
 ## 溢出滚动
 
-tab 条溢出时两侧出现滚动按钮：步长 `50px`，贴左禁止「向后」、贴右禁止「向前」（判定阈值 `0.1`）。两个按钮 `tabindex="-1"` + `aria-hidden="true"` —— **不进 Tab 序、对读屏隐藏**，与 WinUI 的 `IsTabStop=False` + `AccessibilityView=Raw` 一致。tab 条本身用 `overflow-x: auto`（对应上游把 `HorizontalScrollBarVisibility` 置为 `Visible`），滚轮 / 触摸可直接滚动。
+放不下时 **tab 先被压到下限、再溢出**：`equal` 模式（缺省）的单 tab 宽是 `clamp(可用宽 / tab 数, 100, 240)`，所以空间不够时先压到 `TabViewItemMinWidth = 100`；一旦真的溢出（`scrollWidth - clientWidth > 0.5`），tab 条两侧出现滚动按钮，步长 `50px`，贴左禁止「向后」、贴右禁止「向前」（判定阈值 `0.1`），并且**按住即连续滚动**：按下立刻滚一次，`50ms` 后每 `100ms` 重复一次（对齐上游 `RepeatButton` 的 `Delay="50" Interval="100"`，`TabView.xaml:158,165`）。
+
+**溢出时不画滚动条**：上游 `TabScrollViewerStyle` 的模板（`TabView.xaml:133-173`）里**没有滚动条部件**，只有 `ScrollContentPresenter` 与左右两个箭头容器 —— `ScrollViewer.ComputedHorizontalScrollBarVisibility` 只绑给这两个容器的 `Visibility`（`:157,163`），也就是说它只决定「箭头出不出现」。本库照此实现：`overflow-x: auto` 保留原生滚动（滚轮 / Shift + 滚轮 / 触摸 / 横向滚轮增量），再用 `scrollbar-width: none` + `::-webkit-scrollbar` **不画原生滚动条**。于是 **tab 高恒为 `32`、tab 条行高恒为 `40`（8 + 32）**：经典滚动条会给行加一条 ≈ `15px` 的高度（有头 Chromium 实测 `40 → 55`），既撑高 tab 条又挤压内容。
+
+两个按钮 `tabindex="-1"` + `aria-hidden="true"` —— **不进 Tab 序、对读屏隐藏**，与 WinUI 的 `IsTabStop=False` + `AccessibilityView=Raw` 一致。隐藏滚动条后鼠标侧只剩箭头与滚轮（WinUI 的 tab 条本来就没有滚动条，因此这是对齐而不是让步）。
+
+> 已知注意事项：在 `FluereScrollView` 内部（如本文档站），竖向滚轮按「最近的可滚容器独占」规则会被外层接管 —— 指针停在 tab 条上时 Shift + 滚轮不会滚动 tab 条（横向滚轮增量 / 触摸板横向滑动不受影响）。独立的页面里 Shift + 滚轮可正常横向滚动 tab 条（最小复现已验证）。这是滚动链归属的既有行为，不是滚动条隐藏引入的。
 
 ::demo-block{title="十个 tab 挤在 480px 里"}
 #preview
@@ -247,23 +253,24 @@ tab 条溢出时两侧出现滚动按钮：步长 `50px`，贴左禁止「向后
 
 ## 浏览器实测（可复现）
 
-Playwright + 系统 Chrome（1280×900 / DPR 1，脚本 `temp/pw-tab-view.mjs`，共 53 条断言全绿）在文档站本页实测：
+Playwright + 系统 Chrome（1280×900 / DPR 1）在文档站本页实测：基础形态用 `temp/pw-tab-view.mjs`（53 条断言），溢出的滚动条 / 长按滚动专项用 `temp/pw-tab-view-overflow.mjs`（21 条断言，**必须有头** —— 无头 / overlay 滚动条环境复现不出那 15px）：
 
-| 量                        | 实测                                                                                                                                              |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| tab 条高 / 单 tab 高      | `40`（8px 顶部留白 + 32 + 行内 1px 底边线）/ `32`                                                                                                 |
-| tab padding / header 字号 | `3px 4px 3px 8px`（关闭按钮可见，见下）/ `12px`                                                                                                   |
-| Equal 单 tab 宽           | 行宽 718 − 左内容 2 − 新建按钮区 35 − 右内容 0 = 681 ⇒ `227`（3 项）；7 项时仍按可用宽均分，溢出时落到下限 `100`                                  |
-| 选中态                    | 伪元素填充 `rgb(249, 249, 249)`、顶角 `8px`、四边 `-1px -4px 0px -4px`、字重 `600`、`border-width: 1px 1px 0px`、`margin: 0px -1px`、`z-index: 1` |
-| 未选中 hover              | `rgba(0, 0, 0, 0.04)`（令牌 `rgba(0, 0, 0, 0.039)`，Chrome 序列化成 0.04）                                                                        |
-| 焦点矩形                  | tab 上 `outline: 2px solid rgb(0,0,0)` + `outline-offset: 1px` + `box-shadow: rgb(255,255,255) 0 0 0 1px`；roving 下聚焦项 `tabindex=0`           |
-| `Ctrl+Tab`                | 选中 `0 → 1`，焦点仍停在 tab 条（只改选中、不动焦点）                                                                                             |
-| 溢出（480px / 10 个 tab） | 单 tab `100`；两个滚动按钮可见且 `aria-hidden=true`；点「向前」`scrollLeft +50`；到右端后「向前」`disabled`、「向后」可用                         |
-| 宽度模式                  | `size-to-content` 宽度小于 Equal（按内容收紧）；`compact` 未选中项 header `display: none`、图标盒 `16`、选中项仍显示文本                          |
-| 可关闭性 / 叠加模式       | `isClosable=false` 无关闭按钮；`disabled` 项 `aria-disabled=true`；`on-pointer-over` 未悬停时无按钮、悬停后出现                                   |
-| 关闭链路                  | 点选中项后 `Ctrl+F4` ⇒ 消费方删掉该项（3 → 2），且仍有选中项（向后环形迁移）                                                                      |
-| 面板                      | 只有选中面板有内容，其余带 `hidden`                                                                                                               |
-| 暗色                      | 选中填充 `rgb(40, 40, 40)`、前景 `rgb(255, 255, 255)`、未选中透明                                                                                 |
+| 量                                            | 实测                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| tab 条高 / 单 tab 高                          | `40`（8px 顶部留白 + 32 + 行内 1px 底边线）/ `32`                                                                                                                                                                                                                                                                                                                              |
+| tab padding / header 字号                     | `3px 4px 3px 8px`（关闭按钮可见，见下）/ `12px`                                                                                                                                                                                                                                                                                                                                |
+| Equal 单 tab 宽                               | 行宽 718 − 左内容 2 − 新建按钮区 35 − 右内容 0 = 681 ⇒ `227`（3 项）；7 项时仍按可用宽均分，溢出时落到下限 `100`                                                                                                                                                                                                                                                               |
+| 选中态                                        | 伪元素填充 `rgb(249, 249, 249)`、顶角 `8px`、四边 `-1px -4px 0px -4px`、字重 `600`、`border-width: 1px 1px 0px`、`margin: 0px -1px`、`z-index: 1`                                                                                                                                                                                                                              |
+| 未选中 hover                                  | `rgba(0, 0, 0, 0.04)`（令牌 `rgba(0, 0, 0, 0.039)`，Chrome 序列化成 0.04）                                                                                                                                                                                                                                                                                                     |
+| 焦点矩形                                      | tab 上 `outline: 2px solid rgb(0,0,0)` + `outline-offset: 1px` + `box-shadow: rgb(255,255,255) 0 0 0 1px`；roving 下聚焦项 `tabindex=0`                                                                                                                                                                                                                                        |
+| `Ctrl+Tab`                                    | 选中 `0 → 1`，焦点仍停在 tab 条（只改选中、不动焦点）                                                                                                                                                                                                                                                                                                                          |
+| 溢出（480px / 10 个 tab）                     | 单 tab `100`；两个滚动按钮可见且 `aria-hidden=true`；点「向前」`scrollLeft +50`；到右端后「向前」`disabled`、「向后」可用；按住「向前」会连续滚动（按下即滚一次，`50ms` 后每 `100ms` 一次，到右端自停）                                                                                                                                                                        |
+| 溢出时不画滚动条（有头 Chromium，经典滚动条） | 修前 `scroller.offsetHeight - clientHeight = 15`、`.fui-tab-view__strip-row` **`55`**、单 tab 仍 `32`；隐藏原生滚动条后行高 **`40`**、`offsetHeight - clientHeight = 0`、tab `32`，且 `scrollWidth (998) > clientWidth (355)`、`scrollBy(50)` / Shift + 滚轮 仍生效 —— 测量方法：`chromium.launch({ headless: false })`（overlay 滚动条环境复现不出该 15px，必须用经典滚动条） |
+| 宽度模式                                      | `size-to-content` 宽度小于 Equal（按内容收紧）；`compact` 未选中项 header `display: none`、图标盒 `16`、选中项仍显示文本                                                                                                                                                                                                                                                       |
+| 可关闭性 / 叠加模式                           | `isClosable=false` 无关闭按钮；`disabled` 项 `aria-disabled=true`；`on-pointer-over` 未悬停时无按钮、悬停后出现                                                                                                                                                                                                                                                                |
+| 关闭链路                                      | 点选中项后 `Ctrl+F4` ⇒ 消费方删掉该项（3 → 2），且仍有选中项（向后环形迁移）                                                                                                                                                                                                                                                                                                   |
+| 面板                                          | 只有选中面板有内容，其余带 `hidden`                                                                                                                                                                                                                                                                                                                                            |
+| 暗色                                          | 选中填充 `rgb(40, 40, 40)`、前景 `rgb(255, 255, 255)`、未选中透明                                                                                                                                                                                                                                                                                                              |
 
 > **实测抓到的两个真 bug**（数值断言当时全绿，只有浏览器暴露）：
 > ① 模板里的 kebab-case 属性（`:is-closable="false"`）在**原始 vnode props** 里的键就是 `is-closable`，只认 camelCase 会把 `false` 当「没传」⇒ 关闭按钮照常渲染（见 `collection.ts#readProp`）；
