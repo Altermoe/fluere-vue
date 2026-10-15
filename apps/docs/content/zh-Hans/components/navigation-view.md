@@ -99,6 +99,20 @@ nav:
 
 面板收起时**不是归零**，而是 48px 的图标轨道（上游 `ListSizeCompact` 把 `PaneContentGrid.Width` 设为 `CompactPaneLength`，`NavigationView.xaml:83`），此时只显示图标、文本留在无障碍树里。
 
+### 折叠态（`ListSizeCompact`）的对齐规则
+
+收起后的 48px 轨道由三条规则决定，**与 `paneDisplayMode` 无关**，只看「紧凑且关闭」（上游 `m_isClosedCompact`，`NavigationViewItem.cpp:253-263`）：
+
+| 规则                                                                         | A 级依据                                                     |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| 面板标题与 `#paneHeader` 一并隐藏                                            | `ListSizeCompact` 置 `Collapsed`（`NavigationView.xaml:85`） |
+| 开关行**横向不留内边距**，视觉内缩由按钮自身的 `Padding = 4,2` 提供          | `NavigationViewButtonHolderGridMargin = 0,4`（`:232`）       |
+| 开关按钮的图标列与导航项同宽（`SmallerIconWidth` = `CompactPaneLength - 8`） | `:611-613`、`NavigationViewItemPresenter.cpp:289`            |
+
+因此**折叠态的汉堡图标与每个导航项图标严格同列**（都落在 24px 中线上），项背景到面板两侧的间隙也对称（左右各 4px = `NavigationViewItemButtonMargin` 的横向值）。
+
+> 这一带曾出现四处偏差（汉堡图标被压成 `7.41 × 20`、标题仍占位、行背景右侧被裁 3px、齿轮渲染成实心块）：前三处由上表的开关行 / 标题 / 分居线规则负责，最后一处是设置项图标的字形选错（应为线性齿轮，而不是只有外轮廓的截断路径）。根因与修法逐条记在 `packages/ui/src/navigation-view/navigation-view.vue` 的文件头《折叠态的四个 UI 修正》，契约测试见同目录 `navigation-view.test.ts` 的「折叠态（ListSizeCompact）UI 回归」。
+
 ## 键盘（逐条对齐源码）
 
 | 触发键         | 前置条件                 | 效果                                                                                         |
@@ -198,17 +212,17 @@ nav:
 
 ## 几何（逐条来自 `NavigationView_themeresources.xaml`）
 
-| 量                  | 值                                                         | 出处                                    |
-| ------------------- | ---------------------------------------------------------- | --------------------------------------- |
-| 项最小高度          | `36`                                                       | `:217`                                  |
-| 图标盒高 / 图标列宽 | `16` / `max(0, CompactPaneLength - 8)` = 40                | `:219`、`:611-613`                      |
-| 选中指示条          | `3 × 16`、圆角 `2`                                         | `:220-222`                              |
-| 分组标题行高 / 字号 | `40` / `14` SemiBold                                       | `NavigationView.xaml:564`、`:1081-1086` |
-| 分隔线              | `1px`、`Margin 0,3,0,4`                                    | `:223`、`:247`                          |
-| 层级缩进            | `Depth() × 31`                                             | `NavigationViewItemBase.h:63`           |
-| 开关按钮            | `40 × 36`                                                  | `:205-206`                              |
-| 圆角                | 项 `OverlayCornerRadius`(8)、按钮 `ControlCornerRadius`(4) | `:447`、`:283`                          |
-| 面板宽              | Expanded `320` / Compact `48`                              | `NavigationView.idl:195,198`            |
+| 量                  | 值                                                                              | 出处                                       |
+| ------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
+| 项最小高度          | `36`                                                                            | `:217`                                     |
+| 图标盒高 / 图标列宽 | `16` / `max(0, CompactPaneLength - 8)` = 40                                     | `:219`、`:611-613`                         |
+| 选中指示条          | `3 × 16`、圆角 `2`                                                              | `:220-222`                                 |
+| 分组标题行高 / 字号 | `40` / `14` SemiBold                                                            | `NavigationView.xaml:564`、`:1081-1086`    |
+| 分隔线              | `1px`、`Margin 0,3,0,4`                                                         | `:223`、`:247`                             |
+| 层级缩进            | `Depth() × 31`                                                                  | `NavigationViewItemBase.h:63`              |
+| 开关按钮            | `40 × 36`（`MinWidth × MinHeight`）；紧凑关闭时按钮宽 = `CompactPaneLength`(48) | `:205-206`、`NavigationView.cpp:1823-1829` |
+| 圆角                | 项 `OverlayCornerRadius`(8)、按钮 `ControlCornerRadius`(4)                      | `:447`、`:283`                             |
+| 面板宽              | Expanded `320` / Compact `48`                                                   | `NavigationView.idl:195,198`               |
 
 ## 面板开合动效
 

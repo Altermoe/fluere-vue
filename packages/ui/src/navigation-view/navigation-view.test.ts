@@ -410,6 +410,125 @@ describe('pane 开合状态机', () => {
 })
 
 /* ------------------------------------------------------------------ */
+/* ③b 折叠（ListSizeCompact）态的四个 UI 回归                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 这一组守的是**真实浏览器实测发现、单测当时看不出来**的四个偏差
+ * （jsdom 不做布局，只断言源码文本与结构；几何证据留在组件注释与文档页）：
+ *
+ * | 症状 | 根因 | A 级依据 |
+ * | --- | --- | --- |
+ * | 折叠后汉堡图标被压成 7.41 × 20 | 开关行多了一份 4px 横向 padding，与按钮自身 padding 叠加 | `NavigationViewButtonHolderGridMargin = 0,4`（`:232`） |
+ * | 折叠后 `paneTitle` 仍占位 | 条件写成 `displayMode === 'expanded'`，而 `left` 档是 expanded | `ListSizeCompact` 置 `Collapsed`（`NavigationView.xaml:85`） |
+ * | 行背景右侧被裁 3px、左右间隙 4 / -3 | 面板 `border-inline-end` 吃掉定宽 1px + 项 `inline-size: 100%` 再叠 margin | 上游分居线在 `RootSplitView`，`PaneContentGrid.Margin = -1,3` 抵回（`:233`） |
+ * | 设置项齿轮是一坨实心黑 | 内联 path 只有 576 字符（官方 regular 是 1022），丢了内圈描边 | `SymbolIconSource(Symbol::Setting)` 是**线性**齿轮（`NavigationView.cpp:1332-1337`） |
+ */
+describe('折叠态（ListSizeCompact）UI 回归', () => {
+  it('开关行横向不加 padding（NavigationViewButtonHolderGridMargin = 0,4）', () => {
+    // 原实现 `padding: var(--spacingVerticalXS) var(--spacingHorizontalXS)`：
+    // 横向那 4px 与按钮自身的 4px padding 叠加，48px 按钮只剩 40px 可用宽，
+    // 真实浏览器里汉堡图标被 flex 压成 7.41 × 20（见组件样式块注释）。
+    const rule = /\.fui-navigation-view__toggle-row\s*\{(?<body>[^}]*)\}/.exec(sfcStyle)?.groups
+      ?.body
+    expect(rule).toBeDefined()
+    expect(rule).toMatch(/padding:\s*var\(--spacingVerticalXS\)\s+0;/)
+    // 不得再出现横向的 spacingHorizontal*
+    expect(rule).not.toMatch(/spacingHorizontal/)
+  })
+
+  it('折叠且关闭时不渲染面板标题（上游 ListSizeCompact 把它 Collapsed）', () => {
+    // 判据必须是 `!iconOnly`（= m_isClosedCompact），不能是 `displayMode === 'expanded'`：
+    // `pane-display-mode="left"` 会算出 expanded，收起后仍占位（真实浏览器实测标题宽 24.59）
+    expect(sfc).toMatch(/v-if="paneTitle && !iconOnly"/)
+    expect(sfc).not.toMatch(/v-if="paneTitle && displayMode === 'expanded'"/)
+
+    wrapper = makeHost({
+      viewProps: { paneTitle: 'Explorer', paneDisplayMode: 'left', defaultIsPaneOpen: false },
+    })
+    expect(wrapper.find('.fui-navigation-view__pane-title').exists()).toBe(false)
+    wrapper.unmount()
+
+    wrapper = makeHost({
+      viewProps: { paneTitle: 'Explorer', paneDisplayMode: 'left', defaultIsPaneOpen: true },
+    })
+    expect(wrapper.find('.fui-navigation-view__pane-title').exists()).toBe(true)
+  })
+
+  it('折叠且关闭时不渲染 #paneHeader（上游同一条 ListSizeCompact 规则）', () => {
+    expect(sfc).toMatch(/v-if="\$slots\.paneHeader && !iconOnly"/)
+    wrapper = mount(
+      defineComponent({
+        components: { FluereNavigationView },
+        template: `
+          <FluereNavigationView label="导航" pane-display-mode="left" :default-is-pane-open="false">
+            <template #paneHeader><div class="custom-header">H</div></template>
+          </FluereNavigationView>
+        `,
+      }),
+    )
+    expect(wrapper.find('.custom-header').exists()).toBe(false)
+  })
+
+  it('导航项宽度是 auto 而不是 100%（避免 margin 叠加后溢出被裁）', () => {
+    // 原实现 `inline-size: 100%` + `margin: 0 4px` = 父宽 + 8px，右侧被面板
+    // `overflow: hidden` 裁掉；真实浏览器实测左右间隙 4 / -3、pill 右缘被切 3px。
+    const rule = /\.fui-navigation-view__item\s*\{(?<body>[^}]*)\}/.exec(cssStripped)?.groups?.body
+    expect(rule).toBeDefined()
+    expect(rule).toMatch(/inline-size:\s*auto;/)
+    expect(rule).not.toMatch(/inline-size:\s*100%;/)
+  })
+
+  it('面板分居线用绝对定位伪元素而非 border（border 会吃掉定宽里的 1px）', () => {
+    const rule = /\.fui-navigation-view__pane\s*\{(?<body>[^}]*)\}/.exec(sfcStyle)?.groups?.body
+    expect(rule).toBeDefined()
+    // 48px 面板若被 1px 边框吃掉，40px 图标列就放不进 47px 内容宽
+    expect(rule).not.toMatch(/border-inline-end:\s*var\(--strokeWidthThin\)/)
+    expect(rule).not.toMatch(/box-shadow:[^;]*inset/)
+    // 伪元素不占布局，且必须用**逻辑**方向（dir="rtl" 时面板镜像到内容区右侧）
+    const divider = /\.fui-navigation-view__pane::after\s*\{(?<body>[^}]*)\}/.exec(sfcStyle)?.groups
+      ?.body
+    expect(divider).toBeDefined()
+    expect(divider).toMatch(/position:\s*absolute;/)
+    expect(divider).toMatch(/inset-inline-end:\s*0;/)
+    expect(divider).toMatch(/inline-size:\s*var\(--strokeWidthThin\)/)
+    expect(divider).toMatch(/background-color:\s*var\(--dividerStrokeColorDefault\)/)
+    // 物理方向属性会画错边 —— 负面断言守住这条
+    expect(divider).not.toMatch(/(^|[^-])right:\s*0;/)
+    // 浮层态仍要有 --shadow16
+    expect(sfcStyle).toMatch(
+      /\.fui-navigation-view__pane\.is-overlaying\s*\{[^}]*var\(--shadow16\)/,
+    )
+  })
+
+  it('设置项齿轮复用 @fluere-vue/icons 的官方 regular 字形（不是截断的内联 path）', () => {
+    // 原内联 path 只有 576 字符 —— 官方 settings_20_regular 是 1022，缺了内圈描边，
+    // 渲染成实心黑块；官方 settings_20_filled 是 610（另一套字形，不是这个）
+    expect(sfc).toMatch(/import \{ FluentIconNavigation20Regular, FluentIconSettings20Regular \}/)
+    expect(sfc).toMatch(/<FluentIconSettings20Regular\s*\/>/)
+    // 不得再内联那两条手抄路径
+    expect(sfc).not.toMatch(/M1\.91 7\.38/)
+    expect(sfc).not.toMatch(/d="M2 4\.5c0-\.28/)
+  })
+
+  it('开关按钮与导航项的图标列同宽同列（展开/折叠两态都对得齐）', () => {
+    // 开关按钮的图标外套 `.fui-navigation-view__icon`，与导航项复用同一个 40px 图标列；
+    // 模板里还保留上游 `ContentPresenter Padding="4,0,0,0"` 的 4px gap
+    expect(sfc).toMatch(
+      /class="fui-navigation-view__toggle"[\s\S]{0,900}fui-navigation-view__icon[\s\S]{0,200}FluentIconNavigation20Regular/,
+    )
+    const toggleGap = /\.fui-navigation-view__toggle\s*\{(?<body>[^}]*)\}/.exec(sfcStyle)?.groups
+      ?.body
+    expect(toggleGap).toMatch(/gap:\s*var\(--spacingHorizontalXS\)/)
+    // 图标列 40 与项共用同一个局部变量（`SmallerIconWidth` = 48 - 8）；
+    // 行视觉在非 scoped 的 navigation-view.css 里，因此断言打在 cssStripped 上
+    expect(cssStripped).toMatch(
+      /\.fui-navigation-view__icon\s*\{[^}]*inline-size:\s*var\(--fui-navigation-view-icon-column-width\)/,
+    )
+  })
+})
+
+/* ------------------------------------------------------------------ */
 /* ④ 选择语义                                                          */
 /* ------------------------------------------------------------------ */
 

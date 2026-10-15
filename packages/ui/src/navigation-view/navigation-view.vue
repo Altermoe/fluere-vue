@@ -154,6 +154,23 @@
  *   源码树只给别名。本库沿用仓库既有映射 `--colorBrandBackground`。
  * - **高对比度**：HC 色板来自系统运行时（`themeresources:136-201` 全是 `SystemColor*`
  *   引用），本库不实现 HC 专项，只保留 `forced-colors` 下的焦点环（0.4.3 原语已处理）。
+ *
+ * ## 折叠态（`ListSizeCompact`）的四个 UI 修正（真实浏览器实测，2026-10-15）
+ *
+ * 这四处都是「单测全绿、浏览器里才是错的」的偏差，逐条记录根因与 A 级依据，
+ * 几何证据留在 `temp/pw-nv-ui-baseline.mjs`（过程产物，不进仓库）：
+ *
+ * | 症状（实测） | 根因 | A 级依据 |
+ * | --- | --- | --- |
+ * | 汉堡图标被压成 `7.41 × 20` | 开关行多给了 4px 横向 padding，与按钮自身 padding 叠加，48px 按钮只剩 40px 可用 | `NavigationViewButtonHolderGridMargin = 0,4`（`:232`）—— 横向是 **0** |
+ * | 收起后 `PaneTitle` 仍占位（宽 24.59） | 条件写成 `displayMode === 'expanded'`；`pane-display-mode="left"` 恒算 expanded | `ListSizeCompact` 把 `PaneTitleTextBlock.Visibility` 置 `Collapsed`（`NavigationView.xaml:85`），判据是 `m_isClosedCompact` |
+ * | 行背景右侧被裁 3px（左右间隙 4 / -3） | 面板 `border-inline-end` 吃掉定宽 1px；项又用 `inline-size: 100%` 叠加 4px 横向 margin | 上游分居线画在 `RootSplitView`，`PaneContentGrid.Margin = -1,3`（`:233`）把它抵回；项宽不含 margin |
+ * | 设置项齿轮渲染成实心黑块 | 内联 path 只有 576 字符（官方 `settings_20_regular` 是 1022），丢了内圈描边 | `UpdateSettingsItem` 的 fallback 是 `SymbolIconSource(Symbol::Setting)`，即**线性**齿轮（`NavigationView.cpp:1332-1337`） |
+ *
+ * 修法：开关行横向 padding 归 0、标题/`#paneHeader` 改用 `!iconOnly`、面板分居线改
+ * 绝对定位伪元素（不占布局，见 `.fui-navigation-view__pane::after`）、项宽改 `auto`、
+ * 齿轮改用 `@fluere-vue/icons` 的 `FluentIconSettings20Regular`（同一份 SVG 事实源，
+ * 避免手抄截断）。
  */
 export type {
   FluereNavigationDisplayMode,
@@ -168,6 +185,7 @@ export type {
 
 <script setup lang="ts">
 import { useReducedMotion, useScopeMessages } from '@fluere-vue/hooks'
+import { FluentIconNavigation20Regular, FluentIconSettings20Regular } from '@fluere-vue/icons'
 import { isClient, hasResizeObserver } from '@fluere-vue/utils'
 import { RovingFocusGroup } from 'reka-ui'
 import {
@@ -964,24 +982,24 @@ const rootClass = computed(() => ({
           :aria-controls="paneId"
           @click="onTogglePane"
         >
-          <!-- 上游用 `AnimatedIcon` + fallback 字形 E700（`themeresources:323-328`）；
-               本库用静态 SVG（三条横线 = `line_horizontal_3` 的官方路径），
-               动效归 0.9.x -->
-          <svg
-            viewBox="0 0 20 20"
-            width="20"
-            height="20"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M2 4.5c0-.28.22-.5.5-.5h15a.5.5 0 0 1 0 1h-15a.5.5 0 0 1-.5-.5Zm0 5c0-.28.22-.5.5-.5h15a.5.5 0 0 1 0 1h-15a.5.5 0 0 1-.5-.5Zm.5 4.5a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1h-15Z"
-              fill="currentColor"
-            />
-          </svg>
-          <!-- 面板标题：`PaneTitleTextBlock`，只有展开档且标题非空时显示（`NavigationView.xaml:198`） -->
+          <!-- 上游用 `AnimatedIcon`（16×16）+ fallback 字形 E700（`themeresources:323-334`）；
+               本库用静态图标（`line_horizontal_3` / `navigation` 的官方路径），动效归 0.9.x。
+               外层 `.fui-navigation-view__icon` 复刻模板里的 `Border Width = MinWidth`
+               （= `SmallerPaneToggleButtonWidth` 40）—— 图标列宽 40 与导航项的
+               `IconColumn` 同宽，两列因此严格对齐；`flex: 0 0 auto` 保证面板收起时
+               图标不被标题挤扁（真实浏览器实测：原实现被压到 7.41 × 20）。 -->
           <span
-            v-if="paneTitle && displayMode === 'expanded'"
+            class="fui-navigation-view__icon"
+            aria-hidden="true"
+          >
+            <FluentIconNavigation20Regular />
+          </span>
+          <!-- 面板标题：`PaneTitleTextBlock`（`NavigationView.xaml:198`）。
+               上游 `ListSizeCompact` 把它的 `Visibility` 置 `Collapsed`（`:85`），
+               即**紧凑且关闭时标题不显示** —— 判据是 `m_isClosedCompact`，不是 displayMode；
+               原实现写成「展开档就显示」，于是 `left` 档收起后标题仍留在 48px 轨道里。 -->
+          <span
+            v-if="paneTitle && !iconOnly"
             class="fui-navigation-view__pane-title"
           >
             {{ paneTitle }}
@@ -989,9 +1007,11 @@ const rootClass = computed(() => ({
         </button>
       </div>
 
-      <!-- 面板头部自定义内容：`PaneHeaderContentBorder`（`NavigationView.xaml:313`） -->
+      <!-- 面板头部自定义内容：`PaneHeaderContentBorder`（`NavigationView.xaml:313`）。
+           上游 `ListSizeCompact` 把它 `Collapsed`（`:85`，与 `PaneTitleTextBlock` 同一条
+           规则）—— 判据是 `m_isClosedCompact`，因此这里用 `!iconOnly` 而不是 displayMode。 -->
       <div
-        v-if="$slots.paneHeader && displayMode === 'expanded'"
+        v-if="$slots.paneHeader && !iconOnly"
         class="fui-navigation-view__pane-header"
       >
         <slot name="paneHeader" />
@@ -1059,17 +1079,12 @@ const rootClass = computed(() => ({
             class="fui-navigation-view__icon"
             aria-hidden="true"
           >
-            <svg
-              viewBox="0 0 20 20"
-              width="20"
-              height="20"
-              focusable="false"
-            >
-              <path
-                d="M1.91 7.38A8.5 8.5 0 0 1 3.7 4.3a.5.5 0 0 1 .54-.13l1.92.68a1 1 0 0 0 1.32-.76l.36-2a.5.5 0 0 1 .4-.4 8.53 8.53 0 0 1 3.55 0c.2.04.35.2.38.4l.37 2a1 1 0 0 0 1.32.76l1.92-.68a.5.5 0 0 1 .54.13 8.5 8.5 0 0 1 1.78 3.08c.06.2 0 .4-.15.54l-1.56 1.32a1 1 0 0 0 0 1.52l1.56 1.32a.5.5 0 0 1 .15.54 8.5 8.5 0 0 1-1.78 3.08.5.5 0 0 1-.54.13l-1.92-.68a1 1 0 0 0-1.32.76l-.37 2a.5.5 0 0 1-.38.4 8.53 8.53 0 0 1-3.56 0 .5.5 0 0 1-.39-.4l-.36-2a1 1 0 0 0-1.32-.76l-1.92.68a.5.5 0 0 1-.54-.13 8.5 8.5 0 0 1-1.78-3.08.5.5 0 0 1 .15-.54l1.56-1.32a1 1 0 0 0 0-1.52L2.06 7.92a.5.5 0 0 1-.15-.54Z"
-                fill="currentColor"
-              />
-            </svg>
+            <!-- 上游 `UpdateSettingsItem` 用 `AnimatedSettingsVisualSource`，fallback 是
+                 `SymbolIconSource(Symbol::Setting)`（`NavigationView.cpp:1332-1337`），
+                 即**线性齿轮**。原实现内联了一段只有外轮廓的截断路径（576 字符，
+                 官方 `settings_20_regular` 是 1022 字符），渲染成一坨实心黑块；
+                 这里改用 `@fluere-vue/icons` 的官方 regular 字形（同一份 SVG 事实源）。 -->
+            <FluentIconSettings20Regular />
           </span>
           <span class="fui-navigation-view__label">
             {{ i18n.t('settingsButtonName') }}
@@ -1127,6 +1142,8 @@ const rootClass = computed(() => ({
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
+  /* 分居线（`::after`）的定位上下文 */
+  position: relative;
   /* 宽 = `OpenPaneLength`（展开 320）或 `CompactPaneLength`（收起 48）——
      由 `paneWidth` 写进 `--fui-navigation-view-pane-width`。
      上游收起时是 48px 图标轨道，**不是归零**（NavigationView.xaml:83）。 */
@@ -1137,12 +1154,33 @@ const rootClass = computed(() => ({
      （themeresources:6，全透明）在 `PaneNotOverlaying` 时生效（NavigationView.xaml:129）
      ⇒ 展开档面板不画底色，由外壳（Mica / 壁纸）透出 */
   background-color: var(--colorTransparentBackground);
-  /* `RootSplitView.BorderBrush` ← `NavigationViewItemSeparatorForeground`（:289）
-     + `BorderThickness` = `NavigationViewBorderThickness`(1)（:238） */
-  border-inline-end: var(--strokeWidthThin) solid var(--dividerStrokeColorDefault);
   /* 开合时长来自 SplitView 模板（证据链见 constants.ts） */
   transition: inline-size var(--fui-navigation-view-pane-open-duration)
     var(--fui-navigation-view-pane-curve);
+}
+
+/* 面板与内容区之间的分居线 —— `RootSplitView.BorderBrush` ← `NavigationViewItemSeparatorForeground`
+   （`NavigationView.xaml:289`）+ `BorderThickness` = `NavigationViewBorderThickness`(1)（`:238`）。
+
+   ⚠️ 这里**刻意用绝对定位的伪元素，而不是 `border-inline-end`**：`box-sizing: border-box`
+   下 1px 边框会吃掉面板定宽里的一格（面板 48 → 内容 47），于是紧凑档的 40px 图标列
+   放不进 39px 的项背景、开关按钮的 48px 也溢出 1px —— 这正是真实浏览器实测到的
+   「折叠后行背景右侧被裁 3px、左右间隙 4 / -3 不对称」。伪元素不占布局空间，面板内容
+   因此是干净的 48 / 320，与上游 `PaneContentGrid` 的可用宽一致。
+   （上游那 1px 画在 `RootSplitView` 上，且 `PaneContentGrid.Margin = -1,3`（`:233`）
+   把它抵回来；本库分居线在面板 inline-end，若照抄 -1 反而制造新的 3 / 4 不对称。）
+
+   用 `inset-inline-end` 而不是物理方向的 `inset box-shadow`：`dir="rtl"` 时面板会镜像到
+   内容区右侧（上游 `FlowDirection` 同理），物理偏移会把线画到错误的一边。 */
+.fui-navigation-view__pane::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: var(--strokeWidthThin);
+  background-color: var(--dividerStrokeColorDefault);
+  /* 装饰性元素：不拦指针、不进无障碍树 */
+  pointer-events: none;
 }
 
 /* 浮层面板（上游 `PaneOverlaying`，NavigationView.cpp:5081-5083）：
@@ -1157,15 +1195,20 @@ const rootClass = computed(() => ({
 .fui-navigation-view__toggle-row {
   display: flex;
   align-items: center;
-  /* `NavigationViewButtonHolderGridMargin = 0,4`（:232） */
-  padding: var(--spacingVerticalXS) var(--spacingHorizontalXS);
+  /* `NavigationViewButtonHolderGridMargin = 0,4`（:232）—— **横向是 0**，
+     按钮的 4px 视觉内缩由它自己的 `Padding`（= `NavigationViewItemButtonMargin` 4,2，
+     `themeresources:282`）提供。原实现多加了一份 4px 横向内边距，与按钮 padding 叠加，
+     把 48px 的按钮挤成 44px 可用宽（真实浏览器实测图标被压到 7.41 × 20）。 */
+  padding: var(--spacingVerticalXS) 0;
   flex: 0 0 auto;
 }
 
 .fui-navigation-view__toggle {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacingHorizontalS);
+  /* 标题与图标列之间的间隙 —— 上游模板里是 `ContentPresenter Padding="4,0,0,0"`
+     （`themeresources:334`），即 4px。 */
+  gap: var(--spacingHorizontalXS);
   /* `PaneToggleButtonStyle` 的 MinHeight(36)（themeresources:273）；
      宽走上游 `UpdatePaneToggleSize` 算出的 `toggleButtonWidth`（见上面的 computed）——
      缺省 = `CompactPaneLength`(48)，有 `paneTitle` 且非紧凑关闭时被撑到面板宽 */
@@ -1250,10 +1293,13 @@ const rootClass = computed(() => ({
   padding-block-end: var(--spacingVerticalXS);
 }
 
-/* 设置项按钮复用全局 `.fui-navigation-view__item` 的全部行视觉（见 navigation-view.css），
-   这里只补一条：它在父组件里不是 `<li>` 的直接子元素，宽度算法不同 */
+/* 设置项按钮复用全局 `.fui-navigation-view__item` 的全部行视觉（见 navigation-view.css）。
+   它在本组件里是普通块级流（`FooterMenuItemsHost` 那一行），而菜单项在 `<li>` 的
+   纵向 flex 里靠 `align-items: stretch` 撑开 —— 两种上下文下 `inline-size: auto`
+   都会自动扣掉自身的 4px 横向 margin，因此这里**不需要**再补宽度规则。
+   （原实现基于旧的 `inline-size: 100%` 补了一条 `calc(100% - 8px)`，现随基类一并去掉。） */
 .fui-navigation-view__settings-button {
-  inline-size: calc(100% - 2 * var(--spacingHorizontalXS));
+  inline-size: auto;
 }
 
 /* ---- 内容区 ---- */

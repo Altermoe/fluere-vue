@@ -121,7 +121,12 @@
   position: relative;
   display: flex;
   align-items: center;
-  inline-size: 100%;
+  /* `inline-size: auto`（不是 100%）—— 项靠 `NavigationViewItemButtonMargin = 4,2`（:228）
+     的横向 margin 内缩，宽度由父容器的 stretch 减去 margin 得到。
+     原实现写 `100%` 后用 margin 再缩，等于「100% + 4 + 4」，右侧 8px 被面板的
+     `overflow: hidden` 裁掉（真实浏览器实测：折叠档左右间隙 4 / -3 不对称、pill 右缘
+     被切 3px）。上游没有这个问题：`LayoutRoot.Margin = 4,2` 之外没有再叠一层满宽。 */
+  inline-size: auto;
   /* 最小高 36（:217）；NavigationViewItemButtonMargin = 4,2（:228）折进 padding */
   min-block-size: var(--fui-navigation-view-item-min-height);
   /* 圆角 OverlayCornerRadius = 8（:447） */

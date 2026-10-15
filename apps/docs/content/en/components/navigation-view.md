@@ -99,6 +99,20 @@ The toggle button shares one code path across all modes (`:1662-1674`): open →
 
 A closed pane is **not zero-width**: it is the 48px icon rail (upstream `ListSizeCompact` sets `PaneContentGrid.Width` to `CompactPaneLength`, `NavigationView.xaml:83`), showing icons only while the text stays in the accessibility tree.
 
+### Alignment rules for the collapsed state (`ListSizeCompact`)
+
+The collapsed 48px rail follows three rules, driven **not by `paneDisplayMode`** but by "compact and closed" (upstream `m_isClosedCompact`, `NavigationViewItem.cpp:253-263`):
+
+| Rule                                                                                          | Level-A source                                                |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Pane title and `#paneHeader` are hidden together                                              | `ListSizeCompact` sets `Collapsed` (`NavigationView.xaml:85`) |
+| The toggle row keeps **no inline padding**; inset comes from the button's own `Padding = 4,2` | `NavigationViewButtonHolderGridMargin = 0,4` (`:232`)         |
+| The toggle button's icon column matches items (`SmallerIconWidth` = `CompactPaneLength - 8`)  | `:611-613`, `NavigationViewItemPresenter.cpp:289`             |
+
+So the hamburger icon in the collapsed state sits **in the same column as every item icon** (all centred on the 24px midline), and an item's background has symmetric gaps to both pane edges (4px each = the horizontal `NavigationViewItemButtonMargin`).
+
+> Four points previously drifted in this area (the hamburger was squeezed to `7.41 × 20`, the title still occupied space, an item background was clipped 3px on the right, and the gear rendered as a solid blob): the first three are covered by the toggle-row / title / divider rules above, while the last was a wrong glyph choice for the settings icon (it must be the linear gear, not an outline-only truncated path). Root causes and fixes are recorded one by one under "the four UI fixes for the collapsed state" in `packages/ui/src/navigation-view/navigation-view.vue`'s file header; the contract tests live in `navigation-view.test.ts` under "collapsed state (`ListSizeCompact`) UI regressions".
+
 ## Keyboard (item by item from the source)
 
 | Key            | Precondition                    | Effect                                                                                                                                                               |
@@ -198,17 +212,17 @@ When the built-in settings item is selected, `selectedValue` takes a **reserved 
 
 ## Geometry (item by item from `NavigationView_themeresources.xaml`)
 
-| Quantity                        | Value                                                          | Source                                  |
-| ------------------------------- | -------------------------------------------------------------- | --------------------------------------- |
-| Item min height                 | `36`                                                           | `:217`                                  |
-| Icon box height / icon column   | `16` / `max(0, CompactPaneLength - 8)` = 40                    | `:219`, `:611-613`                      |
-| Selection indicator             | `3 × 16`, radius `2`                                           | `:220-222`                              |
-| Group header height / font size | `40` / `14` SemiBold                                           | `NavigationView.xaml:564`, `:1081-1086` |
-| Separator                       | `1px`, `Margin 0,3,0,4`                                        | `:223`, `:247`                          |
-| Level indentation               | `Depth() × 31`                                                 | `NavigationViewItemBase.h:63`           |
-| Pane toggle button              | `40 × 36`                                                      | `:205-206`                              |
-| Corner radius                   | item `OverlayCornerRadius`(8), button `ControlCornerRadius`(4) | `:447`, `:283`                          |
-| Pane width                      | Expanded `320` / Compact `48`                                  | `NavigationView.idl:195,198`            |
+| Quantity                        | Value                                                                                | Source                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------ |
+| Item min height                 | `36`                                                                                 | `:217`                                     |
+| Icon box height / icon column   | `16` / `max(0, CompactPaneLength - 8)` = 40                                          | `:219`, `:611-613`                         |
+| Selection indicator             | `3 × 16`, radius `2`                                                                 | `:220-222`                                 |
+| Group header height / font size | `40` / `14` SemiBold                                                                 | `NavigationView.xaml:564`, `:1081-1086`    |
+| Separator                       | `1px`, `Margin 0,3,0,4`                                                              | `:223`, `:247`                             |
+| Level indentation               | `Depth() × 31`                                                                       | `NavigationViewItemBase.h:63`              |
+| Pane toggle button              | `40 × 36` (`MinWidth × MinHeight`); collapsed button width = `CompactPaneLength`(48) | `:205-206`, `NavigationView.cpp:1823-1829` |
+| Corner radius                   | item `OverlayCornerRadius`(8), button `ControlCornerRadius`(4)                       | `:447`, `:283`                             |
+| Pane width                      | Expanded `320` / Compact `48`                                                        | `NavigationView.idl:195,198`               |
 
 ## Pane open/close motion
 
