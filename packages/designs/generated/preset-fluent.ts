@@ -165,6 +165,8 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --navigationPaneExpandedWidth: 320;
   --navigationPaneCompactWidth: 48;
   --shellTaskbarHeight: 48;
+  --windowsAccentPrimary: #0078d4;
+  --windowsAccentLight2: #4cc2ff;
 }
 
 :root {
@@ -507,6 +509,9 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --acrylicTintLuminosityColorBase: light-dark(rgba(243, 243, 243, 0.9), rgba(32, 32, 32, 0.96));
   --micaBackgroundFillColorBase: light-dark(#f3f3f3, #202020);
   --micaBackgroundFillColorBaseAlt: light-dark(#dadada, #0a0a0a);
+  --controlFillColorSecondary: light-dark(rgba(249, 249, 249, 0.502), rgba(255, 255, 255, 0.082));
+  --controlFillColorTertiary: light-dark(rgba(249, 249, 249, 0.302), rgba(255, 255, 255, 0.031));
+  --controlStrokeColorDefault: light-dark(rgba(0, 0, 0, 0.059), rgba(255, 255, 255, 0.071));
 }
 `
 
@@ -902,6 +907,11 @@ const themeColors = {
     'acrylicTintLuminosityColorBase': 'var(--acrylicTintLuminosityColorBase)',
     'micaBackgroundFillColorBase': 'var(--micaBackgroundFillColorBase)',
     'micaBackgroundFillColorBaseAlt': 'var(--micaBackgroundFillColorBaseAlt)',
+    'windowsAccentPrimary': 'var(--windowsAccentPrimary)',
+    'windowsAccentLight2': 'var(--windowsAccentLight2)',
+    'controlFillColorSecondary': 'var(--controlFillColorSecondary)',
+    'controlFillColorTertiary': 'var(--controlFillColorTertiary)',
+    'controlStrokeColorDefault': 'var(--controlStrokeColorDefault)',
 }
 
 const themeFontFamily = {

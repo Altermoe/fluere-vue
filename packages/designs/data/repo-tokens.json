@@ -3,7 +3,8 @@
   "sources": {
     "zIndex": "本仓库自定的分层刻度（0.4.2）。对齐既有实现值（下拉 1000 / ToolTip 1100），并显式覆盖：窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 外壳（任务栏）< 开始菜单（0.5.7）；ToolTip 档 1400 夹在模态与外壳之间（见 packages/designs/src/repo-tokens.test.ts 的顺序断言）。刻度内留 10 的间隔，供 0.4.1 的层级栈做嵌套提升（zIndexStep）。",
     "shellGeometry": "桌面外壳（apps/docs 的 DesktopShell / Taskbar，0.5.x）与 NavigationView 的几何缺档。导航面板两档宽度取自 microsoft-ui-xaml tag winui3/release/2.5.1：src/controls/dev/NavigationView/NavigationView.idl（`OpenPaneLength` 320.0 / `CompactPaneLength` 48.0）与同目录 NavigationView.cpp:1457 的 DisplayMode 判据；任务栏高度**没有 A 级源码**（Windows 外壳不在 microsoft-ui-xaml 里），按 Windows 11 100% 缩放的实测值 48 记账，属证据缺口，消费方可一行覆写。",
-    "materials": "0.4.4 的 WinUI 材质画刷桥接值。取值来源：① src/controls/dev/CommonStyles/Common_themeresources_any.xaml（Layer*/Card*/Smoke*/Subtle* 与 Mica 纯色基准）；② src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml（Acrylic 的 TintColor / TintOpacity / TintLuminosityOpacity / FallbackColor）——均取自 microsoft-ui-xaml tag winui3/release/2.5.1。WinUI 里这些值是 AARRGGBB，这里的 light/dark 是等价的 CSS 写法（alpha 用 3 位小数），原值写在各自 note 里。WinUI 的 Mica **本体由系统 DWM 绘制**，公开源码树没有 Mica 的 Color 资源，故 mica* 取「Mica 不可用时的纯色基准」SolidBackgroundFillColor*；真正的 Mica Web 近似（渐变 + 半透明层）属 0.9.1。"
+    "materials": "0.4.4 的 WinUI 材质画刷桥接值。取值来源：① src/controls/dev/CommonStyles/Common_themeresources_any.xaml（Layer*/Card*/Smoke*/Subtle* 与 Mica 纯色基准）；② src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml（Acrylic 的 TintColor / TintOpacity / TintLuminosityOpacity / FallbackColor）——均取自 microsoft-ui-xaml tag winui3/release/2.5.1。WinUI 里这些值是 AARRGGBB，这里的 light/dark 是等价的 CSS 写法（alpha 用 3 位小数），原值写在各自 note 里。WinUI 的 Mica **本体由系统 DWM 绘制**，公开源码树没有 Mica 的 Color 资源，故 mica* 取「Mica 不可用时的纯色基准」SolidBackgroundFillColor*；真正的 Mica Web 近似（渐变 + 半透明层）属 0.9.1。",
+    "windowsShell": "0.5.7 补齐的 Windows 外壳（任务栏图标按钮 / 开始按钮徽标）用值。两类来源，逐条写在 token 的 note 里：① **控件状态色**（controlFillColor* / controlStrokeColorDefault）取自 A 级源码 microsoft-ui-xaml tag winui3/release/2.5.1 的 src/controls/dev/CommonStyles/Common_themeresources_any.xaml —— Fluent 2 Web token 表里没有这几档，而 WinUI 的 Button 模板正是用它们做 PointerOver / Pressed 填充（Button_themeresources.xaml#L30-31）；② **徽标两色**（windowsAccentPrimary / windowsAccentLight2）是 Windows 品牌常量，公开的 Windows 11 徽标资源与强调色调色板里各有一处定义，见各自 note。任务栏本身由 Windows 外壳自绘，microsoft-ui-xaml 里没有任何任务栏 XAML，故任务栏的几何 / 状态组合属**应用层构图**（依据 = 参考图逐像素实测，测量方法与结论写在 docs/design/explorer-layout.md §4）。"
   },
   "tokens": {
     "zIndexWindow": {
@@ -233,6 +234,36 @@
       "dark": "48",
       "kind": "number",
       "note": "任务栏高度（像素，100% 缩放）。**证据缺口**：Windows 任务栏由系统外壳绘制，microsoft-ui-xaml 里没有任何对应资源，48 为 Windows 11 100% 缩放实测值；DPI 缩放 / 小任务栏模式下需覆写（`--shellTaskbarHeight`，见 docs/design/explorer-layout.md「假设 4」）。消费方：0.5.5 DesktopShell / 0.5.6 Taskbar"
+    },
+    "windowsAccentPrimary": {
+      "light": "#0078d4",
+      "dark": "#0078d4",
+      "kind": "color",
+      "note": "Windows 11 默认强调色（accent normal），也是公开 Windows 徽标的填充色：Wikimedia Commons《Windows logo - 2021.svg》的 `path fill=\"#0078d4\"`（2026-10-16 取源核对）。**不随站内明暗主题切换**（实机强调色与明暗无关，故 light == dark，生成器输出单条全局声明）。消费方：apps/docs 开始按钮徽标的渐变深端 + 按下态单色（shell-start-menu.vue）"
+    },
+    "windowsAccentLight2": {
+      "light": "#4cc2ff",
+      "dark": "#4cc2ff",
+      "kind": "color",
+      "note": "Windows 强调色调色板的 Light2 档（#0078D4 的浅端）。来源：Microsoft Learn〈Color - Accent color palette〉与 winaccent 项目在 Windows 11 上实测的强调色表（accent_light_2 = #4CC2FF）。参考图交叉验证：徽标渐变浅端最小二乘外推 ≈ #48CCFC（残差 4.4/255，见 explorer-layout.md §4 的测量表）。消费方：开始按钮徽标渐变浅端"
+    },
+    "controlFillColorSecondary": {
+      "light": "rgba(249, 249, 249, 0.502)",
+      "dark": "rgba(255, 255, 255, 0.082)",
+      "kind": "color",
+      "note": "WinUI ControlFillColorSecondary（亮 #80F9F9F9 / 暗 #15FFFFFF）← Common_themeresources_any.xaml，tag winui3/release/2.5.1。WinUI 的 Button 模板用它做 PointerOver 填充（Button_themeresources.xaml#L31 `ButtonBackgroundPointerOver`）；Fluent 2 Web token 表没有同值档（colorSubtleBackgroundHover 是「深色叠加」语义，方向相反）。消费方：任务栏图标按钮 hover 底色"
+    },
+    "controlFillColorTertiary": {
+      "light": "rgba(249, 249, 249, 0.302)",
+      "dark": "rgba(255, 255, 255, 0.031)",
+      "kind": "color",
+      "note": "WinUI ControlFillColorTertiary（亮 #4DF9F9F9 / 暗 #08FFFFFF）← 同文件（Button_themeresources.xaml#L32 的 `ButtonBackgroundPressed`）。消费方：任务栏图标按钮 pressed 底色"
+    },
+    "controlStrokeColorDefault": {
+      "light": "rgba(0, 0, 0, 0.059)",
+      "dark": "rgba(255, 255, 255, 0.071)",
+      "kind": "color",
+      "note": "WinUI ControlStrokeColorDefault（亮 #0F000000 / 暗 #12FFFFFF）← Common_themeresources_any.xaml。亮色与既有 dividerStrokeColorDefault 同值、**暗色不同**（#12FFFFFF vs #15FFFFFF），故单列而不是复用。消费方：任务栏图标按钮 hover / pressed 的 1px 描边（对照图实测：描边叠在填充之上得 #E9E9E9，与 0.059 黑叠 #F3F3F3 的合成值一致）"
     }
   }
 }

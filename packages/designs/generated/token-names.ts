@@ -497,7 +497,12 @@ export const tokenNames = {
   "micaBackgroundFillColorBaseAlt": true,
   "navigationPaneExpandedWidth": true,
   "navigationPaneCompactWidth": true,
-  "shellTaskbarHeight": true
+  "shellTaskbarHeight": true,
+  "windowsAccentPrimary": true,
+  "windowsAccentLight2": true,
+  "controlFillColorSecondary": true,
+  "controlFillColorTertiary": true,
+  "controlStrokeColorDefault": true
 } as const
 
 export type FluereTokenName = keyof typeof tokenNames
