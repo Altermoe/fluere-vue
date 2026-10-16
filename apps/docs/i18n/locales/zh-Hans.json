@@ -2,6 +2,7 @@
   "nav": {
     "docs": "Docs",
     "components": "组件",
+    "desktopSimulation": "桌面仿真",
     "overview": "全部组件",
     "toggleNavOpen": "打开组件导航",
     "toggleNavClose": "关闭组件导航",
@@ -103,6 +104,10 @@
         "title": "Component reference",
         "desc": "查看已实现组件清单、示例与各组件的 API 表。"
       },
+      "os": {
+        "title": "Desktop simulation",
+        "desc": "在 Windows 11 + WinUI 3 的桌面仿真里打开一个由真实组件组装的 Explorer 窗口。"
+      },
       "themes": {
         "title": "Themes and design tokens",
         "desc": "设计令牌（tokens.css）、明暗主题与主题适配层 presetFluere。"
@@ -114,6 +119,35 @@
     "overviewLead": "已实现 {count} 个组件，点击卡片查看用法、示例与 API。",
     "notFound": "未找到内容：{path}",
     "missingEnglishNotice": "该页暂无英文版，当前显示中文内容。"
+  },
+  "shell": {
+    "desktopLabel": "Windows 桌面仿真",
+    "windowTitle": "FluereVue Explorer",
+    "windowSubtitle": "桌面外观仿真 · 非真实窗口管理器",
+    "windowLabel": "Explorer 窗口",
+    "navLabel": "导航",
+    "paneTitle": "Explorer",
+    "tabsLabel": "视图切换",
+    "tabs": {
+      "home": "首页",
+      "components": "组件",
+      "guide": "指南",
+      "blank": "空视图",
+      "blankHint": "没有打开的视图。从左侧导航打开一项，或点击标签栏的加号回到首页。"
+    },
+    "taskbarLabel": "任务栏",
+    "taskbarWindowMinimize": "最小化窗口",
+    "taskbarWindowRestore": "还原窗口",
+    "closed": {
+      "hint": "Explorer 窗口已关闭。",
+      "action": "重新打开窗口"
+    },
+    "boundary": {
+      "title": "WindowsOS 仿真边界",
+      "lead": "本站自 0.5.0 起按「Windows 11 + WinUI 3 Gallery 实机」方向做外观与交互仿真，用于展示组件组合后的真实观感。",
+      "scope": "仿真到什么程度：一个桌面承载一个应用窗口，窗口内有标题栏 / 导航 / 内容区；底部任务栏承载开始、搜索、语言、主题与时钟。菜单与下拉仿真到「能打开面板、能键盘走条目、能选中、能进子菜单」。",
+      "excluded": "明确不做：真实文件系统、真实拖放排序、真实窗口管理器（拖拽吸附、多窗口、系统级动画复刻）、动态壁纸，不接任何内部 Windows 能力。移动端不仿桌面，按断点降级为简洁响应式全屏。"
+    }
   },
   "demo": {
     "title": "示例",

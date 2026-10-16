@@ -54,8 +54,10 @@ defineOptions({ name: 'DocsRouteSkeleton' })
   inset: 0;
   overflow: hidden;
   background-color: var(--colorNeutralBackground1);
-  /* 进入时淡入：遮罩可能挂在「当前还挂着的旧页面」上（见 pages/index.vue），
-     没有 Vue Transition 包着，所以淡入由组件自己的动画负责；
+  /* 进入时淡入：遮罩可能挂在「当前还挂着的旧页面上」，而那份遮罩的
+     `Transition` 由**目标页**的布局 / 页面提供（见 components/home/home-route-overlay.vue
+     与 layouts/components.vue），当前这份没有 Vue Transition 包着，
+     所以淡入由组件自己的动画负责；
      离场仍由调用方的 Transition 处理（有则淡出，无则随页面一起卸载）。 */
   animation: docs-route-skeleton-fade-in var(--durationNormal) var(--curveDecelerateMid) both;
 }

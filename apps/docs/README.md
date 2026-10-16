@@ -29,3 +29,47 @@ pnpm generate     # 静态生成
 - **移动端不仿桌面**：按断点降级为简洁响应式全屏，不硬塞窗口与任务栏。
 - **构件归属**：窗口外壳 / 标题栏 caption 按钮组合 / 任务栏 / 开始菜单 / 系统托盘属**应用级组合**，落在 `apps/docs`（必要时 `apps/playground`）；只有通用 WinUI 控件才进 `@fluere-vue/ui`（如 `FluereAppWindow` / `FluereCaptionButtons` 的**组件本体**在组件库，桌面与任务栏的**组装**留在站点）。
 - **工作量口径**：文档站外壳的工作量与组件库**分开统计**（见 `docs/todo.md` 的 0.5.0 表：组件点 + 文档站点），避免 0.9.0 被双重低估。
+
+## 站点主页与桌面外壳的落点（0.5.6 起）
+
+**主页（`/`）是常规营销页**：走 `layouts/home.vue`（固定 header + 滚动视口 + 路由遮罩），
+正文是与桌面窗口共用的 `components/home/home-content.vue`（`variant` 缺省即 `page`）。
+
+**桌面仿真在独立路由 `/os`**：`pages/os/index.vue`（`layout: 'os'`）+ `layouts/os.vue`。
+0.5.5 时它整屏接管主页，0.5.6 迁出 —— 这样仿真可以作为独立章节继续演进
+（0.5.6 的任务栏图标组 / 0.5.7 的开始菜单 / 0.6+ 的地址栏），而不必让整站主页
+承担仿真的全部布局约束。主页 header 与 CTA 区各有一个入口指向它
+（i18n key `nav.desktopSimulation` / `home.ctaCards.os`）。
+
+外壳是应用级组合，实现只在 `components/shell/`、`components/home/` 与下表列出的文件里，
+**不进组件库**：
+
+| 文件                                     | 职责                                                                                                                                                           |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages/os/index.vue`                     | `/os` 页面：挂载桌面外壳 + 路由遮罩（`layout: 'os'`）                                                                                                          |
+| `layouts/os.vue`                         | `/os` 专用布局：只转发 slot（桌面自己接管视口，不能再包一层定位上下文）                                                                                        |
+| `layouts/home.vue`                       | 主页专用布局：固定 header（导航含 `/os` 入口）+ 滚动视口 + 遮罩；header 在滚动视口**之外**（ScrollView 用内容节点的 transform 平移，会把 sticky 祖先一起拖走） |
+| `components/home/home-content.vue`       | 营销内容（主页与桌面窗口共用；`variant="desktop"` 多渲染《仿真边界》）                                                                                         |
+| `components/home/home-route-overlay.vue` | 路由切换骨架遮罩（主页布局与 `/os` 共用）                                                                                                                      |
+| `components/shell/desktop-shell.vue`     | 外壳根：三层编排、窗口状态机持有者、关闭占位、桌面档断点                                                                                                       |
+| `components/shell/desktop-wallpaper.vue` | 壁纸层（Mica 纯色基准的令牌化渐变近似）                                                                                                                        |
+| `components/shell/explorer-window.vue`   | 窗口层：`FluereAppWindow` + `FluereNavigationView` + `FluereTabView`，并按标签渲染三个视图                                                                     |
+| `components/shell/shell-chrome.vue`      | 站点 chrome 控件组（版本 / GitHub / 语言 / 主题）；桌面标题栏、移动应用栏与主页 header 共用同一份清单                                                          |
+| `components/shell/shell-taskbar.vue`     | 任务栏（0.5.5 最小可用：高度占位 + 还原入口 + 激活指示条）                                                                                                     |
+| `utils/shell-window-state.ts`            | 窗口 / 标签**纯状态机**（在 vitest 里单测）                                                                                                                    |
+| `assets/docs-shell.css`                  | `--docs-header-h` 与 `--shell-*` 构图变量（全站唯一 `:root` 事实源）                                                                                           |
+
+几条约束（改动前先读，均已被 `utils/__tests__/shell-style-contract.test.ts` 守住）：
+
+- **外壳在页面里显式 `import`**，不依赖 Nuxt 自动导入 —— `components/shell/**` 走默认扫描会得到 `ShellDesktopShell` 这类前缀名，读起来像组件库的 `Fluere*`。
+- **窗口里的视图内容由窗口层渲染**（`explorer-window.vue` 按标签 id 分派：首页 = `home-content.vue`、组件 = 注册表卡片网格、指南 = 两个起步入口）。0.5.5 曾由页面经 `DesktopShell` 的 `#home` / `#guide` 插槽注入，迁移到 `/os` 时删掉了这条链路：知道「有哪些标签、当前激活哪个」的是窗口层，页面层只负责挂外壳。
+- **视口相关一律用 CSS 断点**（`@media (max-width: 63.999rem)`），不用 `useMediaQuery` 参与渲染：它在 SSR 下恒为 `false`，用来决定渲染什么会导致水合不匹配。`useMediaQuery` 只做副作用（退到移动档时复位拖拽位移、升到桌面档时收起导航下拉）。
+- **层级只引用 `--zIndex*` 刻度**，不写裸 `z-index`；`--zIndexShell`(1500) 是任务栏专用档，`--zIndexContent`(100) 用于主页 header 与移动下拉这一档应用层 chrome。
+- **色值 / 圆角 / 阴影一律走令牌**：窗口的圆角与阴影归 `FluereAppWindow`（`maximized` 时自行归零），外壳不得再写一份。
+- **不把 `h-[...]` 写在 `FluereNavigationView` 根上**：该组件根自带 `block-size: 100%`，特异性压过工具类 ⇒ 高度静默失效。给它一个确定高度的父容器 + `flex-1 min-h-0`。
+- **组件 ref 一律经 `$el` 取元素**：模板 ref 落在组件上拿到的是实例。已踩过一次：按 `HTMLElement` 声明并直接调 `getBoundingClientRect()`，SSR 正常但浏览器水合即抛 `TypeError`、整页被错误页替换（单测与 SSR 直出都发现不了）。
+- **站点 chrome 只有一份控件清单**（`shell-chrome.vue`）：桌面窗口有「标题栏 / 移动应用栏」两处按断点互斥的落点，主页 header 直接消费同一份。48px 定高的标题栏在窄视口装不下四个控件（390px 实测右头格只剩 43px、控件换行成 108px 高并压到标签条上），因此桌面档必须分两处，**不要**把控件清单抄成两份，也不要恢复 `flex-wrap`。
+
+仿真边界（上一节的五条）已作为**可见文案**落在 `/os` 窗口「首页」视图的滚动区末尾
+（i18n key `shell.boundary.*`，只在 `home-content.vue` 的 `variant="desktop"` 渲染），
+不再是只写在文档里的承诺 —— 它跟随仿真本身，因此不在主页上。

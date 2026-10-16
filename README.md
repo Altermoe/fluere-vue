@@ -130,6 +130,8 @@ pnpm dev          # 文档站 http://localhost:60727
 
 在线文档站：<https://fluere-vue.nahida.space>（英文：<https://fluere-vue.nahida.space/en>；源站代码在 [apps/docs](./apps/docs)）。
 
+- 首页自 **0.5.5** 起整屏接管为 Windows 桌面仿真（壁纸层 → Explorer 窗口 → 任务栏层；窗口内由 `FluereAppWindow` + `FluereNavigationView` + `FluereTabView` 组装）。外壳属**应用级组合**，实现全在 [apps/docs/components/shell](./apps/docs/components/shell) 与 `apps/docs/utils/shell-window-state.ts`，**不进 `@fluere-vue/ui`**（上表组件进度表因此不变）；布局假设、实测约束与偏离记录见 [docs/design/explorer-layout.md](./docs/design/explorer-layout.md) 与 [apps/docs/README.md](./apps/docs/README.md)，《WindowsOS 仿真边界》已作为可见文案落在首页窗口内。
+
 ## 持续集成与发布
 
 项目通过 GitHub Actions 与 OneDev 执行持续集成、发布与部署：GitHub Actions 负责 PR / `main` 上的验证，以及 npm 发布（Changesets + Trusted Publishing）；OneDev 负责同一套验证与文档站构建，并在推送 `v*` tag 时部署。具体 job 分工、本地复现方式与回滚步骤见 [docs/ci.md](./docs/ci.md)、[docs/deployment.md](./docs/deployment.md) 与 [docs/release.md](./docs/release.md)。

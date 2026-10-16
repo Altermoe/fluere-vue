@@ -14,7 +14,7 @@
  *    SSR 已经把这一页渲染进 HTML，若此时置位，客户端会多渲染一层骨架，
  *    与服务端产物不一致（Hydration node mismatch）。判据用 `from.matched.length === 0`
  *    （vue-router 的 START_LOCATION 没有匹配记录），**不能**用 `nuxtApp.isHydrating`：
- *    实测首页（`/`，无布局、同步 setup）在 `app:mounted` 之后 `isHydrating` 仍会持续
+ *    实测主页（`/`，同步 setup）在 `app:mounted` 之后 `isHydrating` 仍会持续
  *    一段时间（`app:suspense:resolve` 迟迟不触发），拿它当判据会把用户这段时间里的
  *    点击一并跳过，等于没有加载态。
  *
@@ -28,8 +28,8 @@
  *    是空操作。
  *
  *    另外在 `app:mounted` 后做一次空闲预热：可见性预取依赖 Nuxt 的 `onNuxtReady`，
- *    而它挂在 `app:suspense:resolve` 上——首页那条路径上它可能很久都不来，
- *    于是「首页 → 文档页」的首次跳转仍要现下载页面组件与布局。这里对所有路由记录
+ *    而它挂在 `app:suspense:resolve` 上——主页那条路径上它可能很久都不来，
+ *    于是「主页 → 文档页」的首次跳转仍要现下载页面组件与布局。这里对所有路由记录
  *    直接跑一遍 `link:prefetch`（Nuxt 自己的处理器负责目标布局与命名中间件）
  *    加页面组件预取，把这段补齐。
  */

@@ -2,8 +2,10 @@
 /**
  * 顶部导航 / 页脚的版本徽标（文档站专用，不属于组件库）。
  *
- * 为什么单独成组件：同一个徽标出现在 layouts/components.vue 与 pages/index.vue 两处，
- * 内联会随两处布局各自漂移（历史上首页与组件页的顶栏就是这样分叉的）。
+ * 为什么单独成组件：同一个徽标出现在 layouts/components.vue（文档内页 header）、
+ * layouts/home.vue（主页 header）与 components/shell/shell-chrome.vue（`/os` 桌面窗口
+ * 的标题栏 / 移动应用栏）三处，内联会随各处布局漂移（历史上首页与组件页的顶栏就是
+ * 这样分叉的）。
  *
  * 形态是「浅蓝 tag」而不是裸文本：窄视口下顶栏控件组空间不足时，裸文本会被 flex
  * 压成多行（版本号的连字符处折断，出现「v0.3.0- / alpha.1」）。因此这里

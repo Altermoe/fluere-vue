@@ -71,8 +71,9 @@ watch(
       路由骨架遮罩：覆盖 router-view 视口（header 之下；桌面端从侧边栏右缘 15rem 起），
       层级夹在内容之上、抽屉（z-30）与 header（z-40）之下——加载期间导航仍可操作。
       包裹层负责定位，DocsRouteSkeleton 自身负责铺满 + 淡入；这里的 Transition 只声明
-      离场淡出（新页面出现时遮罩柔和退去）。同为「router-view 视口」的首页遮罩见
-      pages/index.vue（那边没有布局，遮罩挂在页面自己身上）。
+      离场淡出（新页面出现时遮罩柔和退去）。
+      主页与 /os 各自的遮罩见 layouts/home.vue 与 pages/os/index.vue（它们不走本布局，
+      共用 components/home/home-route-overlay.vue）。
     -->
     <Transition name="docs-route-skeleton">
       <div
@@ -165,8 +166,8 @@ watch(
 /*
  * 路由骨架遮罩的离场：accelerate（内容「离场」）语汇，与抽屉同一套 Fluent 动效约定。
  * 只做透明度，不叠加位移，避免为一个临时遮罩多起一个合成层。
- * 进入淡入由 DocsRouteSkeleton 自身的 animation 负责（同一个组件也挂在没有
- * Transition 包裹的首页上，见 pages/index.vue）。
+ * 进入淡入由 DocsRouteSkeleton 自身的 animation 负责（主页 / `/os` 复用同一份
+ * Transition 写法，见 components/home/home-route-overlay.vue）。
  */
 .docs-route-skeleton-leave-active {
   transition-property: opacity;

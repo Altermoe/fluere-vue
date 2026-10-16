@@ -1,8 +1,11 @@
 /*
  * 文档站 shell 的布局常量（全站唯一事实源）。
  *
- * `--docs-header-h` = 悬浮 header 的「保留高度」：
- *  - header 自身高度锁到它（见 layouts/components.vue、pages/index.vue 的 `h-[var(--docs-header-h)]`）；
+ * `--docs-header-h` = 站点 header 的「保留高度」（悬浮叠加层或固定条带）：
+ *  - header 自身高度锁到它（见 layouts/components.vue、layouts/home.vue 的
+ *    `h-[var(--docs-header-h)]` 与 `block-size`）：文档内页的 header 是悬浮叠加层，
+ *    主页的 header 是「flex 纵向第一段」的固定条带（两种写法都读同一变量，
+ *    见 `layouts/home.vue` 文件头）；
  *  - 滚动内容首屏偏移（`pt-[var(--docs-header-h)]`）、路由骨架遮罩上缘、
  *    移动端导航抽屉上缘同样读它 —— 三处必须与 header 同值，否则会钻到毛玻璃下面。
  *
@@ -10,6 +13,10 @@
  * （header 内层是 `flex-wrap content-center`），两行 = 32px 按钮 + 8px 行距 + 32px 控件
  * = 72px，5rem(80px) 可容纳并留出居中余量。因此 40rem 以下即使某档宽度刚好没触发换行，
  * header 也保持 5rem —— 宁可多留一点，也不让「换行与否」变成不可预测的高度。
+ *
+ * ⚠️ 桌面仿真外壳（0.5.5 `DesktopShell`，现挂 `/os`）**不使用 `--docs-header-h`**：
+ * 它的站点 chrome 落在窗口标题栏 / 窗口内应用栏上，没有站点 header；该变量只服务
+ * 两个站点布局（layouts/components.vue 与 layouts/home.vue）。
  */
 :root {
   --docs-header-h: 3.5rem;
@@ -19,4 +26,55 @@
   :root {
     --docs-header-h: 5rem;
   }
+}
+
+/*
+ * ------------------------------------------------------------------ *
+ * 桌面外壳（0.5.5 DesktopShell）的构图变量                              *
+ * ------------------------------------------------------------------ *
+ *
+ * 事实源与裁决顺序见 docs/design/explorer-layout.md（0.5.0 已锁定的五项布局假设）。
+ * 本文件只放「外壳自有的构图参数」；色值 / 圆角 / 阴影 / 层级一律引用 designs 令牌，
+ * 不在这里复制第二份。
+ *
+ * 为什么落应用层而不是 packages/designs：
+ *  这些值**没有 A 级 WinUI 来源**（Windows 桌面外壳不在 microsoft-ui-xaml 里），
+ *  属于「我们的演示桌面长什么样」的构图决定，不是控件规格。按 apps/docs/README.md
+ *  〈构件归属〉，应用级组合连同它的构图参数一起留在站点。
+ */
+:root {
+  /*
+   * 任务栏高度（px）。**单位换算的唯一入口** —— designs 的 `--shellTaskbarHeight`
+   * 是无单位裸数字（`48`），直接写进 `block-size` 这类长度属性是无效 CSS。
+   *
+   * 令牌出处：packages/designs/data/repo-tokens.json 的 `shellTaskbarHeight`，那里已记录
+   * **证据缺口**（Windows 任务栏由系统外壳绘制，48 = Windows 11 100% 缩放实测值）。
+   * 覆写方式：消费方在根节点写 `--shellTaskbarHeight: <num>`（裸数字）改高度，
+   * 或直接覆盖本变量为带单位值。
+   */
+  --shell-taskbar-h: calc(var(--shellTaskbarHeight) * 1px);
+
+  /*
+   * 窗口基准尺寸（构图参数，无 WinUI 来源）。
+   * 只作**上限**使用：实际尺寸取 `min(基准值, 视口可用区)`，见 explorer-window.vue。
+   * 基准值存在的意义是让窗口在超宽屏上不至于无限拉伸，与实机窗口观感保持一致。
+   */
+  --shell-window-w: 1120px;
+  --shell-window-h: 720px;
+
+  /* 窗口与桌面边缘的留白（构图参数）；最大化时归零 */
+  --shell-desktop-margin: 24px;
+
+  /*
+   * 壁纸渐变的**构图参数**（角度与停靠点）。色值一律引用 Mica 纯色基准令牌：
+   *   --micaBackgroundFillColorBase / --micaBackgroundFillColorBaseAlt
+   * （取值来源与换算见 packages/designs/data/repo-tokens.json 的 sources.materials）
+   *
+   * 角度 / 停靠点没有 A 级来源（真实 Mica 由 DWM 合成，公开源码树只给 FallbackColor），
+   * 故可覆写：消费方写同名的 `--shell-wallpaper-*` 即可换构图，不必改组件。
+   * 禁止用 `backdrop-filter` / `filter: blur()` 造「更真实的 Mica」——那是猜值
+   * （explorer-layout.md §5 明文禁止）。
+   */
+  --shell-wallpaper-angle: 160deg;
+  --shell-wallpaper-stop: 60%;
 }

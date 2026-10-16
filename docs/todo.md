@@ -175,10 +175,10 @@
 
 #### 2.1 桌面外壳（Shell）
 
-- [ ] `DesktopShell` 布局：壁纸层（令牌化的渐变 / Mica 近似）→ 窗口层 → 任务栏层；层级、圆角、阴影一律用 designs 令牌，禁止魔法值
-- [ ] `FluereAppWindow`：圆角窗口、标题栏（应用图标 + 标题 + 可拖拽区）、caption 按钮（最小化 / 最大化 / 关闭，含关闭键红底 hover）、窗口内独立滚动区
-- [ ] caption 按钮**真实可用**：最小化 / 最大化 / 还原窗口视口；「关闭」不伪装成坏按钮（跳回首页或收起到任务栏），全部键盘可达（Tab + Enter）且 `aria-label` 双语
-- [ ] 窗口尺寸与位置在桌面尺寸变化时的响应式策略；移动端断点降级为全屏无边框
+- [x] `DesktopShell` 布局：壁纸层（令牌化的渐变 / Mica 近似）→ 窗口层 → 任务栏层；层级、圆角、阴影一律用 designs 令牌，禁止魔法值 —— **2026-10-16 随 0.5.5 落地**，实现与约束见 [apps/docs/README.md](../apps/docs/README.md#站点主页与桌面外壳的落点056-起) 与 [docs/design/explorer-layout.md](./design/explorer-layout.md)；裸 `z-index` / `#RRGGBB` / 魔法尺寸由 `apps/docs/utils/__tests__/shell-style-contract.test.ts` 守住
+- [x] `FluereAppWindow`：圆角窗口、标题栏（应用图标 + 标题 + 可拖拽区）、caption 按钮（最小化 / 最大化 / 关闭，含关闭键红底 hover）、窗口内独立滚动区 —— **组件本体 2026-10-13 随 0.5.1 / 0.5.2 进 `packages/ui`**（规格 `Microsoft.UI.Xaml.Controls.TitleBar`，tag `winui3/release/2.5.1`）；窗口内独立滚动由外壳的 `FluereScrollView` 提供（`explorer-layout.md` §2）
+- [x] caption 按钮**真实可用**：最小化 / 最大化 / 还原窗口视口；「关闭」不伪装成坏按钮（跳回首页或收起到任务栏），全部键盘可达（Tab + Enter）且 `aria-label` 双语 —— **0.5.5 接通状态机**：最小化 / 关闭后由任务栏入口或桌面中央占位卡片还原（`utils/shell-window-state.ts`），文案走 `shell.taskbarWindow{Minimize,Restore}` / `shell.closed.*` 双语 key
+- [x] 窗口尺寸与位置在桌面尺寸变化时的响应式策略；移动端断点降级为全屏无边框 —— 常规档 1120×720 按视口 `min()` 收缩后居中 + 拖拽经 `clampWindowOffset` 收敛在桌面内；< 1024px（`lg`）降级为全屏无边框、任务栏不渲染。**降级时保留窗口内滚动**（不改为页面滚动），偏离与理由记录在 `explorer-layout.md` §2
 
 #### 2.2 任务栏 / 开始菜单 / 系统托盘
 
@@ -325,7 +325,7 @@
 
 > 本节是**当前生效的排期**；0.3 版本的「文档站 WindowsOS 仿真化」即本节的布局基建前置。
 >
-> **北极星与终点**：**Explorer 仿真是 0.9.0-rc.1 的最终目标，也是生产版发布前的最后一块拼图**。它承担两个职责：① 文档站首页的第一眼呈现；② 跨组件组合的唯一验收场景——焦点管理、浮层层级、嵌套弹出、键盘可达、明暗与材质，这些只有把组件拼成一个真实窗口才能验证。
+> **北极星与终点**：**Explorer 仿真是 0.9.0-rc.1 的最终目标，也是生产版发布前的最后一块拼图**。它承担两个职责：① 桌面仿真的呈现（0.5.6 起落在独立路由 `/os`，站点主页是常规营销页并各有入口指向它，见 [design/explorer-layout.md](./design/explorer-layout.md) §0）；② 跨组件组合的唯一验收场景——焦点管理、浮层层级、嵌套弹出、键盘可达、明暗与材质，这些只有把组件拼成一个真实窗口才能验证。
 >
 > **仿真边界（必须标注在文档站，与 README「不夸大承诺」一致）**：菜单 / 下拉只仿真到**能打开面板、能键盘走条目、能选中、能进子菜单**，不接内部 Windows 能力；不实现真实文件系统、真实拖放排序、真实窗口管理器；移动端不仿桌面，降级为简洁响应式全屏。
 
@@ -410,7 +410,11 @@
 
 > - **0.5.4 `NavigationView`（已落地，2026-10-15）**：`packages/ui/src/navigation-view/`（`navigation-view.vue` + `navigation-view-items.vue` + `navigation-view-item/-item-header/-item-separator.vue` + `types/constants/locale/collection/context` + 非 scoped 的 `navigation-view.css`）—— **70 条契约测试** + 中英文档页 + 4 个示例 + 组件索引/导航条目（`components-nav.ts` 新增 `navigation-view`）。规格逐条对齐 `Microsoft.UI.Xaml.Controls.NavigationView`（tag `winui3/release/2.5.1`：模板与几何 `NavigationView.xaml` / `NavigationView_themeresources.xaml`、行为 `NavigationView.cpp` / `NavigationViewItem.cpp` / `NavigationViewItemPresenter.cpp`、默认值 `Generated/*.properties.cpp`、面板开合关键帧 `SplitView_themeresources.xaml`、chevron `AnimatedChevronUpDownSmallVisualSource.cpp`、文案 `Strings/{en-us,zh-CN}/Resources.resw`）：DisplayMode 状态机逐字照抄（`width >= 1008` Expanded / `0 < width < 641` Minimal / 其余含 0 与 NaN 落 Compact，`NavigationView.cpp:1452-1465`）；pane 开合语义照抄（进入 Expanded 需 `!m_wasForceClosed`、`Expanded → Compact` 与进入 Minimal 无条件关、**不存在 per-mode 开合记忆**、切换 `paneDisplayMode` 清标志）；收起时保留 **48px 图标轨道**而非归零（`ListSizeCompact`）；键盘照源码（`Enter` / `Space`（**Alt+Space 不处理**）/ `Home` / `End` / `Alt+←`；`→` 与 `Esc` 在 NV 里**零命中**，属负面证据）；选中与展开**同时发生**（`:1067`）、`selectsOnInvoked=false` 只展开不改选中、`isChildSelected` 沿祖先链回写、指示条下钻到最低可见层；面板关闭时**顶层项强制折叠但记忆状态**。**底部设置项用保留哨兵值** `FLUERE_NAVIGATION_SETTINGS_VALUE`（消费方不得用作菜单项 `value`）。**真实浏览器实测 55 条断言全绿**（`temp/pw-navigation-view.mjs`，明暗对照截图在 `temp/visual-navigation-view/`），并抓到四个单测抓不到的真 bug：① **哨兵常量没从 `packages/ui/index.ts` 导出**，文档示例 import 到 `undefined` ⇒ SSR / 水合整页 500（已导出并加「包入口导出契约」断言）；② 单根组件上写了 `inheritAttrs: false`，**静默丢掉消费方的 `class` / `style`**（demo 的 `h-[320px]` 完全没生效，组件高度塌成 0）—— 已移除并加回归用例；③ 根节点 class 声明两遍（`class="fui-navigation-view fui-navigation-view …"`）；④ 开关按钮宽原先恒 40，未实现上游 `UpdatePaneToggleSize` 的「有 `PaneTitle` 时撑到 `OpenPaneLength`」分支，标题被挤扁（已按三分支实现 + 4 条契约断言）。**Minimal 档降级为 Compact**（浮层焦点陷阱属 0.5.7 `useFocusTrap`，与 `docs/design/explorer-layout.md` 假设 3 一致）；`Top` 顶部导航形态、子项 flyout、指示条滑动位置动画、`perf2026` 均为非目标（逐条写进组件差异表）。证据缺口：chevron 完整路径插值在 LottieGen 的 JSON 源里（只做静态两端 + 50ms 过渡）、`ExpandCollapseRotate{Expanded,Collapsed}Storyboard` 默认模板不存在故无时长可引、系统强调色与 HC 色板来自运行时。
 
-**里程碑**：能打开一个空 Explorer 窗口，导航可折叠、视图可切换，文档站首页可挂载。
+> - **0.5.5 文档站 `DesktopShell`（已落地，2026-10-16）**：首页首屏整屏接管为桌面仿真（壁纸层 → 窗口层 → 任务栏层），窗口内用 `FluereAppWindow` + `FluereNavigationView` + `FluereTabView` 组装 Explorer。**全部落 `apps/docs`，不动 `packages/ui` / `packages/designs`**（构件归属见 [apps/docs/README.md](../apps/docs/README.md#站点主页与桌面外壳的落点056-起)）：`components/shell/{desktop-shell,desktop-wallpaper,explorer-window,shell-chrome,shell-taskbar}.vue` + `utils/shell-window-state.ts`（纯状态机，**23 条单测**）+ `utils/__tests__/shell-style-contract.test.ts`（**18 条源码契约**：禁裸 `z-index` / 禁 `#RRGGBB` / 禁 `backdrop-filter` / 任务栏高度只经 `--shell-taskbar-h` / NV 根不得写 `h-*` / chrome 两处落点互斥且清单只有一份）+ `assets/docs-shell.css` 的 `--shell-*` 构图变量。**真实浏览器实测 72 条断言全绿**（`temp/pw-desktop-shell.mjs`，1280 / 1440 / 1920 + 390 移动档，明暗对照截图在 `temp/visual-desktop-shell/`）：任务栏 z=1500 / 窗口层 z=0、窗口 1120×720 居中、最大化铺满且底部留 48px、圆角 8→0、拖拽被收敛在桌面内、页面 `scrollY` 恒 0（滚动在窗口内）、最小化 / 关闭 / 重开三条路径可用、水合告警 0、移动档标题栏子格越界 0。四条**实测得出、单测抓不到**的结论已写进组件注释与 README：① `FluereNavigationView` 根自带 `block-size: 100%`（特异性 0,2,0）⇒ 根上 `h-[...]` 静默失效，必须「确定高度父容器 + `flex-1 min-h-0`」；② 组件 ref 不取 `$el` 直接当 `HTMLElement` 用，SSR 直出正常但浏览器一水合即 `TypeError` 整页被错误页替换；③ 任务栏入口若用 `FluereButton` 的 `selected` 做 toggle，会在 `selected=false` 时丢掉 `aria-pressed`（时而带时而不带），故本期做成「动作按钮 + 视觉指示条」；④ **48px 定高标题栏装不下四个站点 chrome 控件**——390px 实测右头格只剩 43px、控件换行成 108px 高压住标签条，故 chrome 改为「≥64rem 在标题栏 / <64rem 在窗口内容区应用栏」两处互斥落点（同一份清单，`explorer-layout.md` §6.3 记录了数据与推理）。**0.5.5 的最小任务栏只含高度占位 + 还原入口 + 激活指示条**，图标组 / hover 指示条 / 开始按钮 / 系统托盘归 0.5.6；任务栏 ToolTip 因 `--zIndexTooltip`(1400) < `--zIndexShell`(1500) 自遮挡，本期只用原生 `title`，冲突裁决留给 0.5.6（`explorer-layout.md` §4）。《WindowsOS 仿真边界》已作为**可见文案**落进首页窗口的滚动区（i18n key `shell.boundary.*`，中英同构）。另跑了两语种 SSR / 水合实测（`temp/pw-shell-i18n-hydration.mjs`，17 条断言）：`/` 与 `/en` 各 200、水合告警 0、控制台错误 0、`shell.*` 消息按语种取到、边界文案可见。
+>
+> - **0.5.6 主页与仿真落点拆分（已落地，2026-10-16）**：站点主页（`/`）回到常规营销页（`layouts/home.vue`：sticky header + 整页滚动视口 + `components/home/home-route-overlay.vue`），桌面仿真迁到独立路由 **`/os`**（`pages/os/index.vue` + `layouts/os.vue`：布局只转发 slot，桌面自己接管视口）。营销内容抽成 `components/home/home-content.vue`，主页与窗口「首页」视图**共用同一份**，`variant="desktop"` 决定是否附上《WindowsOS 仿真边界》三段（该段跟随仿真本身，因此只在 `/os` 出现）。窗口内的三个视图改由 `explorer-window.vue` 按标签 id 直接渲染，删掉了 0.5.5 从页面经 `DesktopShell` 透传 `#home` / `#guide` 插槽的那条链路（知道「有哪些标签、当前激活哪个」的是窗口层）。主页 header 与 CTA 区各有入口指向 `/os`（i18n key `nav.desktopSimulation` / `home.ctaCards.os`，中英同构）。落点口径与理由见 [design/explorer-layout.md](./design/explorer-layout.md) §0 的「0.5.6 落点变更」。
+
+**里程碑**：能打开一个空 Explorer 窗口，导航可折叠、视图可切换，`/os` 可挂载桌面外壳。
 
 ### 0.6.0 · 地址栏 + 命令层（≈ 17 点）
 
@@ -462,9 +466,9 @@
 | 0.9.4 | 动效逐帧核对：菜单展开收起、窗口打开关闭、导航折叠、视图切换                                               | L 4  | 全部走 `curve*` / `duration*` 令牌；关键帧对照 LottieGen 产物 |
 | 0.9.5 | 明暗 + 高对比度对比度复核                                                                                  | M 2  | HC 若暂不实现必须明确标注                                     |
 | 0.9.6 | 性能预算复核：`backdrop-filter` 覆盖面积、首屏 JS / CSS                                                    | M 2  | 低端设备滚动流畅                                              |
-| 0.9.7 | Explorer 完成版组装 + 首页呈现（含移动端降级为全屏无边框）                                                 | L 4  | 1280 / 1440 / 1920 与移动端均不溢出、不重叠                   |
+| 0.9.7 | Explorer 完成版组装 + `/os` 呈现（含移动端降级为全屏无边框）                                               | L 4  | 1280 / 1440 / 1920 与移动端均不溢出、不重叠                   |
 
-**里程碑**：文档站首页第一眼即是可交互的 Explorer 仿真窗口（仿真边界已标注）。
+**里程碑**：`/os` 即是可交互的 Explorer 仿真窗口（仿真边界已标注）；站点主页（`/`）是常规营销页，header 与 CTA 区各有入口指向 `/os`。
 
 ### 人工校验闸门（0.4.0 起生效）
 
@@ -502,7 +506,7 @@
 - [ ] `pnpm lint:ssr`
 - [ ] 文档站示例 + API 表已更新；过时注释与旧结论已清理
 - [ ] 组件进度表（README）与 `packages/ui/README.md` 与该版本实际实现一致
-- [ ] 仿真边界文案在文档站可见（不把「仿真」写成「还原系统能力」）
+- [x] 仿真边界文案在文档站可见（不把「仿真」写成「还原系统能力」）—— **2026-10-16 随 0.5.5 达成**，**0.5.6 落点随仿真迁移**：`/os` 桌面窗口的「首页」视图末尾可见《WindowsOS 仿真边界》三段（仿真到什么程度 / 明确不做 / 移动端降级），文案事实源是 [apps/docs/README.md](../apps/docs/README.md)〈WindowsOS 仿真边界〉，i18n key `shell.boundary.{title,lead,scope,excluded}` 中英同构；渲染条件为 `components/home/home-content.vue` 的 `variant="desktop"`（主页那份不带该段），断言见 `apps/docs/utils/__tests__/shell-style-contract.test.ts`
 - [ ] 未把 `temp/` 下的快照、脚本、截图提交进仓库
 
 ---

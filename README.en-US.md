@@ -129,6 +129,8 @@ Before changing a component, read [CONTRIBUTING.md](./CONTRIBUTING.md) (developm
 
 Online documentation site: <https://fluere-vue.nahida.space> (English: <https://fluere-vue.nahida.space/en>; source in [apps/docs](./apps/docs)).
 
+- Since **0.5.5** the home page is taken over full-screen by a Windows desktop simulation (wallpaper → Explorer window → taskbar; the window assembles `FluereAppWindow` + `FluereNavigationView` + `FluereTabView`). The shell is an **application-level composition**: it lives entirely in [apps/docs/components/shell](./apps/docs/components/shell) and `apps/docs/utils/shell-window-state.ts`, and is **not** part of `@fluere-vue/ui` (so the component table above is unchanged). Layout assumptions, measured constraints, and the recorded deviation are in [docs/design/explorer-layout.md](./docs/design/explorer-layout.md) and [apps/docs/README.md](./apps/docs/README.md); the "WindowsOS simulation boundaries" text is now visible content inside the home-page window.
+
 ## Continuous integration & release
 
 The project uses GitHub Actions and OneDev for continuous integration, releases, and deployment: GitHub Actions runs verification on pull requests / `main` and publishes to npm (Changesets + Trusted Publishing); OneDev runs the same verification and the documentation-site build, and deploys when a `v*` tag is pushed. See [docs/ci.md](./docs/ci.md), [docs/deployment.md](./docs/deployment.md), and [docs/release.md](./docs/release.md) for the job breakdown, local reproduction, and rollback steps.

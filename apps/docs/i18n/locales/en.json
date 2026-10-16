@@ -2,6 +2,7 @@
   "nav": {
     "docs": "Docs",
     "components": "Components",
+    "desktopSimulation": "Desktop simulation",
     "overview": "All components",
     "toggleNavOpen": "Open component navigation",
     "toggleNavClose": "Close component navigation",
@@ -108,6 +109,10 @@
         "title": "Component reference",
         "desc": "Browse the implemented component inventory, examples and API tables."
       },
+      "os": {
+        "title": "Desktop simulation",
+        "desc": "Open an Explorer window assembled from real components in a Windows 11 + WinUI 3 desktop simulation."
+      },
       "themes": {
         "title": "Themes and design tokens",
         "desc": "Design tokens (tokens.css), light / dark themes and the presetFluere theme adapter."
@@ -119,6 +124,35 @@
     "overviewLead": "{count} components implemented — click a card to see usage, examples and API.",
     "notFound": "No content found: {path}",
     "missingEnglishNotice": "This page has no English version yet; showing the Chinese content."
+  },
+  "shell": {
+    "desktopLabel": "Windows desktop simulation",
+    "windowTitle": "FluereVue Explorer",
+    "windowSubtitle": "Desktop appearance simulation · not a real window manager",
+    "windowLabel": "Explorer window",
+    "navLabel": "Navigation",
+    "paneTitle": "Explorer",
+    "tabsLabel": "View switcher",
+    "tabs": {
+      "home": "Home",
+      "components": "Components",
+      "guide": "Guide",
+      "blank": "Empty view",
+      "blankHint": "No open views. Open one from the navigation pane, or click the plus button on the tab strip to go back home."
+    },
+    "taskbarLabel": "Taskbar",
+    "taskbarWindowMinimize": "Minimize window",
+    "taskbarWindowRestore": "Restore window",
+    "closed": {
+      "hint": "The Explorer window is closed.",
+      "action": "Reopen window"
+    },
+    "boundary": {
+      "title": "WindowsOS simulation boundaries",
+      "lead": "Since 0.5.0 this site simulates the look and interaction of Windows 11 + WinUI 3 Gallery, to show how the components look once assembled.",
+      "scope": "What is simulated: one desktop holding one application window, with a title bar, navigation and content area; a taskbar at the bottom holding Start, Search, language, theme and clock. Menus and dropdowns are simulated to the point of opening a panel, walking the items by keyboard, selecting, and entering a submenu.",
+      "excluded": "What is explicitly out of scope: a real file system, real drag-and-drop reordering, a real window manager (snapping, multiple windows, system-level animation reproduction), live wallpapers, and any internal Windows capability. Mobile does not imitate the desktop — it degrades to a simple responsive full-screen layout at the breakpoint."
+    }
   },
   "demo": {
     "title": "Example",

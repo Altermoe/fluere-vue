@@ -15,7 +15,18 @@
 | 导航面板                 | `packages/ui/src/navigation-view/`                 | 0.5.4       | 左侧可折叠导航                                                             |
 | 壁纸 / 任务栏 / 开始菜单 | `apps/docs/components/shell/` + `apps/docs/data`   | 0.5.5–0.5.7 | **应用级组合**，不进 `packages/ui`（见 `apps/docs/README.md`〈构件归属〉） |
 
-> 「Explorer 窗口」= 壁纸层 → 窗口层（`FluereAppWindow` = 标题栏 + 内容区）→ 任务栏层。窗口内容本期只挂首页 hero（`pages/index.vue`），文档内页布局不动。
+> 「Explorer 窗口」= 壁纸层 → 窗口层（`FluereAppWindow` = 标题栏 + 内容区）→ 任务栏层。窗口内容本期挂三个视图：首页（与站点主页共用的营销内容）、组件（注册表卡片网格）、指南（两个起步入口），由 `explorer-window.vue` 按标签 id 分派；文档内页布局不动。
+
+> **0.5.6 落点变更（2026-10-16）**：仿真从站点主页迁到**独立路由 `/os`**（`pages/os/index.vue` + `layouts/os.vue`），站点主页（`/`）回到常规营销页（`layouts/home.vue` + `components/home/home-content.vue`）。
+>
+> 变更理由与影响：
+>
+> 1. **仿真是独立章节，不是主页的装饰**。0.5.5 让主页整屏承担仿真的全部布局约束（视口锁定、无悬浮 header、窗口内滚动），此后每加一层仿真（0.5.6 任务栏图标组 / 0.5.7 开始菜单 / 0.6+ 地址栏）都要先说服「主页也适用」。独立路由后仿真可以在自己的布局里自由演进，主页按营销页的常规口径排版。
+> 2. **营销内容不重复**：`components/home/home-content.vue` 同时服务主页与窗口「首页」视图，`variant="desktop"` 决定是否附上《WindowsOS 仿真边界》三段 —— 这段口径**跟随仿真本身**，因此只在 `/os` 出现（`apps/docs/README.md`〈WindowsOS 仿真边界〉仍是文案事实源）。
+> 3. **本文件 §1–§5 的五项布局假设不变**：它们约束的是窗口层与桌面层本身，与「挂在哪条路由」无关。§6.3 的站点 chrome 两处落点也不变，只是控件清单（`shell-chrome.vue`）多了一个消费方（主页 header）。
+> 4. **仿真边界仍是可见文案**（docs/todo.md《发布检查》）：落点从「首页窗口内」改为「`/os` 窗口内」，断言随之更新（`apps/docs/utils/__tests__/shell-style-contract.test.ts`）。
+>
+> ⚠️ 与 `docs/todo.md` 的关系：该文件把「文档站首页第一眼即 Explorer 仿真窗口」写成 0.9.7 的呈现目标。本次迁移**改变了这个呈现口径**（第一眼是常规营销主页，仿真在 `/os`，主页 header 与 CTA 区各有入口）—— 已同步回写该文件的对应表述，验收要点（不溢出 / 不重叠 / 移动端降级 / 边界可见）不变。
 
 ## 1. 窗口圆角与阴影
 
@@ -49,9 +60,18 @@ viewport
 
 1. `FluereAppWindow` 的内容区**只控制可视区域**（`overflow: clip` + `min-block-size: 0`），源码注释明确「滚动交给消费方」；窗口尺寸由消费方给 ⇒ 只有内容区有确定高度，才谈得上内部滚动。
 2. 真实 Explorer 的滚动条属于窗口内容，不属于桌面；把整页做成滚动会让任务栏 / 壁纸跟着走，仿真边界立刻破。
-3. 与文档站现状的关系：`apps/docs/layouts/components.vue` 的 **`FluereScrollView` 整页滚动口径只适用于文档内页**，本期不动；首页 hero 的窗口内容另起一个 `FluereScrollView`（窗口内滚动）。
+3. 与文档站现状的关系：`apps/docs/layouts/components.vue`（文档内页）与 `apps/docs/layouts/home.vue`（站点主页）的 **`FluereScrollView` 整页滚动口径适用于站点页面**；`/os` 窗口「首页」视图的内容另起一个 `FluereScrollView`（窗口内滚动，见 `explorer-window.vue` 的 `__panel-scroll`）。
 
 **降级**：视口 < `lg`（1024px）时外壳降级为「全屏无边框窗口 + 页面滚动」（移动端不仿桌面，见 todo〈仿真边界〉）；此时窗口内容不再单独滚动，交给页面滚动。降级判据用 `useMediaQuery` / 能力探测，**不在 `setup()` 里直接读 `window`**（[docs/ssr-guide.md](../ssr-guide.md)）。
+
+> **0.5.5 落地时的偏离记录（2026-10-16）**：降级为「移动档」时，实际实现**保留窗口内滚动**，未改为页面滚动；同时降级判据改用 **CSS 断点**（`@media (max-width: 63.999rem)`）而不是 `useMediaQuery` 参与渲染。
+>
+> 偏离原因是一条硬约束与一条水合约束：
+>
+> 1. `FluereScrollView` 的 presenter 是**绝对定位**，宿主必须有**确定高度**才滚得动（`packages/ui/src/scrollview` 与 `layouts/components.vue` 的同款注释）。若移动档改为页面滚动，就得把内容渲染器换成非 ScrollView 的实现 ⇒ 服务端与客户端会渲染出**不同的 DOM 结构**，除非再做一层同构的高度测量，收益不抵复杂度。
+> 2. 视口判据在 SSR 下拿不到真实值（`useMediaQuery` 恒返回 `false`），若用它决定渲染什么，首帧必然与水合结果不一致 ⇒ 水合不匹配告警。用 CSS 断点则结构一致。
+>
+> 用户可见结果与本节原意一致（都能滚动看到全部内容），且 0.5.0 的验收要点「移动端不溢出不重叠 / 降级为全屏无边框」完全满足：实测 390px 视口下窗口铺满视口宽、任务栏 `display: none`、无横向溢出。`useMediaQuery` 仍在使用，但**只做副作用**（退到移动档时复位窗口拖拽位移），不参与渲染。
 
 ## 3. 导航面板折叠宽度
 
@@ -111,6 +131,51 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 | `--shellTaskbarHeight`          | 48  | **证据缺口**：Windows 外壳不在 `microsoft-ui-xaml` 里；48 = Windows 11 100% 缩放实测值 |
 
 `--zIndexStartMenu` 不预先造（还不知道开始菜单与任务栏的确切叠放需求），0.5.7 需要时按 §4 补，并同时更新顺序断言。
+
+### 6.1 应用层构图参数（0.5.5 落地，**不进 `packages/designs`**）
+
+以下值**没有 A 级 WinUI 来源**（Windows 桌面外壳不在 `microsoft-ui-xaml` 里），属于「我们的演示桌面长什么样」的构图决定，不是控件规格。按 [apps/docs/README.md](../../apps/docs/README.md)〈构件归属〉，它们连同应用级组合一起留在站点，落在 `apps/docs/assets/docs-shell.css` 的 `:root`：
+
+| 变量                      | 值                                      | 说明                                                                              |
+| ------------------------- | --------------------------------------- | --------------------------------------------------------------------------------- |
+| `--shell-taskbar-h`       | `calc(var(--shellTaskbarHeight) * 1px)` | **单位换算的唯一入口**：令牌是无单位裸数字 `48`，直接写进 `block-size` 是无效 CSS |
+| `--shell-window-w` / `-h` | `1120px` / `720px`                      | 窗口基准尺寸；只作**上限**用，实际取 `min(基准值, 视口可用区)`                    |
+| `--shell-desktop-margin`  | `24px`                                  | 窗口与桌面边缘留白（最大化时归零）                                                |
+| `--shell-wallpaper-angle` | `160deg`                                | 壁纸渐变角度（§5 提到的构图参数）                                                 |
+| `--shell-wallpaper-stop`  | `60%`                                   | 壁纸渐变停靠点                                                                    |
+
+覆写方式：消费方在任意祖先节点写同名变量即可（任务栏高度也可改 `--shellTaskbarHeight`，只写裸数字）。**不允许**把这些值散落到组件的样式里当魔法数字 —— `apps/docs/utils/__tests__/shell-style-contract.test.ts` 会扫描外壳源码，禁止裸 `z-index` 与 `#RRGGBB` 字面量。
+
+### 6.2 任务栏的最小任务栏取舍（0.5.5）
+
+0.5.5 只落地**最小可用**任务栏：高度占位 + 窗口还原入口 + 激活指示条。完整的居中图标组（开始 / 搜索 / 已固定入口）与 hover 指示条属 0.5.6。
+
+两条落地结论（实测得出，记在这里防回归）：
+
+1. **任务栏里的 ToolTip 会自遮挡**：`--zIndexTooltip`(1400) < `--zIndexShell`(1500)，挂 `FluereTooltip` 的提示会被任务栏自己盖住。§4 已把两种合法解法留给 0.5.6 裁决；0.5.5 只用原生 `title` 属性，**不写裸 z-index 绕过**。
+2. **任务栏入口用「动作按钮」而不是 toggle**：`FluereButton` 的 `:aria-pressed="selected || undefined"` 在 `selected=false` 时会把属性整个丢掉，做成 toggle 会导致同一按钮**时而带 `aria-pressed` 时而不带**（比"没有 toggle 语义"更糟）。因此入口的可访问名说明点击后果（「最小化窗口」/「还原窗口」），窗口显示状态由激活指示条用视觉表达。
+
+### 6.3 站点 chrome 的两处落点（0.5.5，**新增**，不改 §1–§5 的假设）
+
+0.5.5 起初把站点 chrome 控件（版本 tag / GitHub / 语言 / 主题）全部放进 `FluereAppWindow` 的 `#right-header`（标题栏右头格），并在窄视口给控件组加 `flex-wrap: wrap`。**真实浏览器实测证明这条路走不通**：
+
+| 视口 | 标题栏右头格宽 | 控件组高  | 结果                                    |
+| ---- | -------------- | --------- | --------------------------------------- |
+| 1440 | 足够           | 32        | 正常（一行，标题栏 48）                 |
+| 390  | **43px**       | **108px** | 换行成 4 行，越过 48px 标题栏压住标签条 |
+
+根因：标题栏是 12 列 grid，右头格是 `auto` 轨；整行放不下时所有 `auto` 轨收缩到 min-content，而四个控件在 `wrap` 下的 min-content 只有最宽一项的宽度 ⇒ 高度换行膨胀。改成 `nowrap` 也不成立：四控件 min-content 合计约 123px，加 caption 区 138px、最小拖拽区 48px（`TitleBarMinDragRegionWidth`）、图标与左右内间距后超出 390px 视口，只会把 grid 挤成横向溢出。**48px 定高标题栏装不下四个站点控件**，属外壳构图问题，按 §1「外壳负责几何、组件只管圆角 / 阴影归零」不应靠改组件几何解决。
+
+**落地决定**：站点 chrome 改为**两处互斥落点**，共用同一份控件清单（`apps/docs/components/shell/shell-chrome.vue`）：
+
+| 视口              | 落点                                      | 可见性                |
+| ----------------- | ----------------------------------------- | --------------------- |
+| ≥ 64rem（1024px） | 标题栏 `#right-header`（标题栏保持 48px） | 显示 / 应用栏隐藏     |
+| < 64rem           | 窗口内容区顶部的应用栏（app-bar）         | 显示 / 标题栏那份隐藏 |
+
+两处**都渲染**、由 CSS 断点互斥 `display`，因此服务端与客户端 DOM 结构一致（无 `v-if`、无水合不匹配）。实测复核（`temp/pw-desktop-shell.mjs`）：移动档标题栏子格越界数 = 0、右头格宽 = 0、应用栏 4 个控件同一行；桌面档标题栏控件组高 ≤ 48 且应用栏 `display: none`；1440 桌面截图与改动前**逐字节一致**（同一 SHA-256）。
+
+> 证据等级说明：本条**没有 A 级 WinUI 来源**（站点 chrome 不属于 `microsoft-ui-xaml` 的控件规格），属实测驱动的构图决定；写成 A 级口径会夸大。数值（43px / 108px / 123px / 138px / 48px）均为 Chromium `getBoundingClientRect` 实测，断言固化在 `apps/docs/utils/__tests__/shell-style-contract.test.ts` 与 `temp/pw-desktop-shell.mjs`。
 
 ## 7. 验证口径（每项交付时执行）
 

@@ -65,7 +65,7 @@
 
 - **归属**：应用级组合，落 `apps/docs/components/shell/`（按 `apps/docs/README.md`《构件归属》）；只用 UnoCSS 工具类 + designs 令牌，**不进 `packages/ui`**。
 - **结构**：壁纸层（token 渐变 / Mica 基准）→ 窗口层（`FluereAppWindow` + `FluereCaptionButtons` + 窗口状态管理：最小化 / 最大化 / 还原；「关闭」收起到任务栏或跳回首页，不做成坏按钮）→ 任务栏层；层级引用 `--zIndex*` 刻度。
-- **挂载点**：首页 hero（`pages/index.vue`），窗口内容用阶段 1/2 的 `TabView` + `NavigationView` 搭「空 Explorer 窗口」；文档内页布局本期不动。
+- **挂载点**：0.5.5 落在首页 hero（`pages/index.vue`）；**0.5.6 起迁到独立路由 `/os`**（`pages/os/index.vue` + `layouts/os.vue`），站点主页同时回到常规营销页。窗口内容用阶段 1/2 的 `TabView` + `NavigationView` 搭「空 Explorer 窗口」；文档内页布局不动。落点口径见 `docs/design/explorer-layout.md` §0。
 - **响应式**：1280 / 1440 / 1920 与移动端不溢出不重叠；移动端降级为全屏无边框（todo 非目标：不仿桌面）；SSR 安全（视口相关用 `useMediaQuery` / 能力探测，不引入水合不匹配）。
 
 ## 阶段 4 · 0.5.6 `Taskbar` + `SystemTray`（apps/docs，L 4）
