@@ -75,6 +75,8 @@ pnpm generate     # 静态生成
 - **组件 ref 一律经 `$el` 取元素**：模板 ref 落在组件上拿到的是实例。已踩过一次：按 `HTMLElement` 声明并直接调 `getBoundingClientRect()`，SSR 正常但浏览器水合即抛 `TypeError`、整页被错误页替换（单测与 SSR 直出都发现不了）。
 - **站点 chrome 只有一份控件清单**（`shell-chrome.vue` = 版本 / 语言 / 主题）：0.5.7 起它的落点是「任务栏托盘内联（≥ 64rem）/ 托盘弹出菜单（< 64rem）/ 主页 header」，三处共用；GitHub 按语义拆出清单（入口类控件 → 任务栏中间固定入口 + 主页 header 的 `GithubLink`），**不要**把清单抄成两份，也不要恢复 `flex-wrap`。历史证据（48px 标题栏装不下四个控件的实测）见 `docs/design/explorer-layout.md` §6.3。
 - **外壳里的浮层一律走 `useFocusTrap`**（`@fluere-vue/hooks`，0.5.7 下沉）：开始菜单与托盘弹出菜单的 Tab 陷阱 / Esc / 点击外部 / 焦点归还都在这个原语里，组件只翻开关 —— 不要在外壳里手写第二份焦点管理。
+- **任务栏图标按钮的几何与状态只有一份**：命中区 40×40 / 图标 24px / 槽距 4px / 任务栏左右内边距 12px（托盘右端再留 8px = 「显示桌面」条占位），hover / pressed 用 WinUI 控件填充阶梯 + 1px 内描边。规则在 `assets/docs-shell.css` 的 `.docs-shell-taskbar-icon`（开始按钮与固定入口共用），**不要**在某个 SFC 里再写一套：库的 `FluereButton` scoped 规则特异性更高，站点直接覆盖同名属性会被静默吃掉，故那里改的是库读取的自定义属性（`--colorSubtleBackgroundHover/Pressed`）+ `outline-offset: -1px` 描边。逐项实测值与来源见 `docs/design/explorer-layout.md` §4。
+- **外壳内不用原生 `title`，提示一律 `FluereTooltip`**：`--zIndexTooltip`(1400) 低于任务栏的 `--zIndexShell`(1500)，所以外壳在挂载时把自己登记进浮层层级栈（`acquireLayer('--zIndexShell')`，见 `desktop-shell.vue`），外壳内打开的浮层按 `--zIndexStep` 抬到 1510。**不要**试图覆写 `--fui-tooltip-z`（提示面的 z 由 `useFlyout` 内联下发，覆写无效，实测记录在 §4）。
 
 仿真边界（上一节的五条）已作为**可见文案**落在 `/os` 窗口「首页」视图的滚动区末尾
 （i18n key `shell.boundary.*`，只在 `home-content.vue` 的 `variant="desktop"` 渲染），

@@ -111,9 +111,29 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 | 开始菜单（0.5.7） | `--zIndexStartMenu`   | 1600 | 必须盖过任务栏与窗口；面板挂在任务栏子树内（由 `--zIndexShell` 的叠放上下文承载），令牌同时锁定档位、防未来独立成层时回退裸值 |
 
 - **高度令牌**：`--shellTaskbarHeight` = `48`（本节新增，`repo-tokens.json` 的 `sources.shellGeometry` 记录）。**证据缺口**：Windows 任务栏由系统外壳绘制，`microsoft-ui-xaml` 无任何对应资源，48 为 Windows 11 100% 缩放的实测值；DPI 缩放 / 小任务栏模式下需覆写。覆写方式：外壳在根节点写 `--shellTaskbarHeight: <px>`（任务栏与为它预留的 `padding-block-end` 都读同一个变量）。
-- **与 ToolTip 档的关系（已知冲突，0.5.6 裁决 = 方案①，2026-10-16 回写）**：`--zIndexTooltip` = 1400 **低于** `--zIndexShell` = 1500（顺序断言见 `packages/designs/src/repo-tokens.test.ts`）。**裁决**：保留刻度不动；**外壳（任务栏 / 开始菜单 / 托盘弹层）内一律不挂 `FluereTooltip`，只用原生 `title` 属性**（0.5.6–0.5.7 落地时已照此实现）。将来确需在外壳里挂 ToolTip，按方案① 由该处覆写 `--fui-tooltip-z: calc(var(--zIndexShell) + var(--zIndexStep))`；方案②（抬高 `--zIndexTooltip` 全局档位）仍属备选，动它必须同步改 `repo-tokens.json`、AGENTS.md 的刻度描述与顺序断言。**不得**在应用里写裸 z-index 绕过。
-- **任务栏布局（0.5.6 定稿，三段式）**：`grid-template-columns: auto minmax(0, 1fr) auto` —— 最左开始按钮、中间图标区（可收缩、箭头滚动）、最右托盘；窄视口只压中间段。图标命中区 40×32（`FluereButton medium` + `min-inline-size: 40`）、激活指示条 16×3（`--borderRadiusCircular` + `--colorBrandBackground`）、滚动箭头 32×32。**证据缺口**：Windows 任务栏几何由系统外壳绘制，`microsoft-ui-xaml` 无对应资源 —— 以上均为应用层构图，覆写口 = 组件类名下的 token 引用（无硬编码数值进样式）。
-- **移动端压缩布局（0.5.7）**：箭头仅在图标区**实测溢出**时可见（`visibility` 切换、占位不变，测量前提稳定）；图标区滚动条全部隐藏（`scrollbar-width: none` + `::-webkit-scrollbar { display: none }`，避免 48px 定高被挤压）；托盘 `< 64rem` 收起内联控件组、保留时钟与展开按钮。
+- **与 ToolTip 档的关系（0.5.6 曾裁决「不挂 ToolTip」，0.5.7 改为方案① 的正解）**：`--zIndexTooltip` = 1400 **低于** `--zIndexShell` = 1500（顺序断言见 `packages/designs/src/repo-tokens.test.ts`）。0.5.6 的临时裁决是「外壳内只用原生 `title`」；**0.5.7 起改为**：外壳把自己作为**宿主层**登记进层级栈（`acquireLayer('--zIndexShell')`，客户端 `onMounted` 登记 / 卸载出栈，见 `desktop-shell.vue`），于是外壳内打开的浮层命中层级栈的**嵌套提升**分支，z = `calc(var(--zIndexShell) + var(--zIndexStep))` = **1510** > 1500，全程引用刻度。外壳内的图标按钮 / 链接一律用 `FluereTooltip`，不再有原生 `title`（契约测试反向断言）。
+  - ⚠️ **实测更正**：本节原文写的「覆写 `--fui-tooltip-z`」**不可行** —— 提示面的 z 由 `useFlyout` 以**内联样式**下发（`tooltip-fixture.vue` 的 `:style="layerStyle"`），内联优先于组件样式表里的 `z-index: var(--fui-tooltip-z)`。浏览器实测：外壳登记后 `.fui-tooltip` 的计算 `z-index` = 1510，而未登记时恒为 1400。方案②（抬高 `--zIndexTooltip` 全局档位）仍是备选，动它必须同步改 `repo-tokens.json`、AGENTS.md 的刻度描述与顺序断言。**不得**在应用里写裸 z-index 绕过。
+- **任务栏布局（0.5.7 按参考图重定，三段式不变）**：`grid-template-columns: auto minmax(0, 1fr) auto` —— 最左开始按钮、中间图标区（**左对齐**、可收缩、箭头滚动）、最右托盘；窄视口只压中间段。
+
+  **参考图**：用户在 Windows 11（2560×48 任务栏，100% 缩放）截的整条任务栏 + 开始按钮 hover / pressed 特写（三张 PNG）。**测量方法**：`temp/shell-ref/` 下的 `png.mjs`（自写 PNG 解码）+ `measure-start.mjs` / `measure-taskbar.mjs` / `fit-gradient.mjs`（最小二乘拟合徽标渐变）+ `pw-verify.mjs`（改动后实测同一批量），逐像素取值；**证据缺口**：Windows 任务栏由系统外壳绘制，`microsoft-ui-xaml` 里没有任何任务栏 XAML，故以下均为「参考图实测 + 站内令牌映射」，不是 A 级控件规格。
+
+  | 量                 | 参考图实测                                          | 本实现                                                  |
+  | ------------------ | --------------------------------------------------- | ------------------------------------------------------- |
+  | 图标命中区         | 40×40（首个热区 x 12..52 / y 4..43）                | `size="large"` + `icon-only`（`aspect-ratio: 1`）       |
+  | 图标               | 24×24（应用图标 bbox 24 宽）                        | `:size="24"` + 徽标 `24×24`                             |
+  | 热区间距           | 4px（槽 pitch 44 = 40 + 4）                         | 根 grid `column-gap` + 图标区 / 视口 `gap` = 4px        |
+  | 任务栏内边距       | 左 12（首个热区）/ 右 20（时钟文本右缘）            | `padding-inline: 12` + 托盘 `padding-inline-end: 8`     |
+  | 圆角               | ≈4（首行内缩 3px、次行 1px，r=4 的圆角轮廓）        | `--borderRadiusMedium`                                  |
+  | hover 填充         | 合成 #F7F7F7（底 #EEEEEE）                          | `--controlFillColorSecondary`（合成 #F3F3F3，Δ3.5/255） |
+  | pressed 填充       | 合成 #F3F3F3                                        | `--controlFillColorTertiary`（合成 #F1F1F1，Δ2/255）    |
+  | hover/pressed 描边 | 1px，叠在填充之上得 #E9E9E9（= 0.059 黑叠 #F3F3F3） | `--controlStrokeColorDefault` + `outline-offset: -1px`  |
+  | 时钟               | 两行，行距 16px，12px 字号；时钟块右缘距屏幕 20px   | `--fontSizeBase200` / `--lineHeightBase200` + 右缘 20px |
+  - 填充阶梯取 **A 级 WinUI 控件填充**（`Common_themeresources_any.xaml`，tag `winui3/release/2.5.1`；`Button_themeresources.xaml#L31-32` 正是拿它们做 PointerOver / Pressed 填充），而不是「照截图取色」：参考图合成值与 Control 阶梯相差 3.5 / 2 个灰阶（截图重编码噪声量级），而**暗色**下 Control 阶梯的两个状态有明显区分、`Layer*` 家族的暗值几乎重合（#252525 vs #242424）—— 后者不可用。合成依据与 ΔE 记在 `repo-tokens.json` 的 note 里。
+  - 开始徽标：**几何**取官方 Windows 11 徽标（Wikimedia Commons《Windows logo - 2021.svg》`viewBox 0 0 4875 4875`，方块 2311 / 缝 253），在 24px 图标位下**整像素对齐**为「方块 11 / 缝 1 / 总 23」（官方比例原样渲染时缝隙被抗锯齿糊成两个半透明像素，而参考图的缝隙像素是**纯背景色**）；**配色**取强调色渐变 —— 浅端 `--windowsAccentLight2`（#4CC2FF，强调色 Light2）、深端 `--windowsAccentPrimary`（#0078D4，强调色本体，也是官方徽标文件的填充色），方向 `(14,21)`（dy/dx = 1.5，最小二乘拟合 56°）；**按下态**转单色 + `scale(0.75)`（实测方块 11px → 8px、总宽 23px → 17.25px），无过渡（关键帧取不到，不猜时长 ⇒ 证据缺口，归 0.9.x）。
+  - 启动图标的两色来自公开资料而非截图：`#4CC2FF` = Windows 强调色调色板 Light2（Microsoft Learn〈Color - Accent color palette〉/ winaccent 的 Win11 实测表），`#0078D4` = 官方徽标填充色。参考图交叉验证：浅端最小二乘外推 ≈ #48CCFC、深端 ≈ #027BD4；把本站渲染与参考图的徽标**逐像素对齐后求差**：23×23 区域内平均绝对差 **R 5.6 / G 6.2 / B 2.8**（≤2.5%），差值集中在四角 —— 参考图的角像素被抗锯齿混入背景（半像素偏移），本站按整像素对齐故四角更「实」，属预期差异。
+  - 激活指示条 16×3（`--borderRadiusCircular` + `--colorBrandBackground`）、滚动箭头 32×32（应用自有 affordance，参考图里没有对应物）。覆写口 = 组件类名下的 token 引用，样式里无硬编码数值。
+
+- **移动端压缩布局（0.5.7）**：箭头仅在图标区**实测溢出**时出现 —— 0.5.7 起由 `visibility`（永久占位）改为 `display` 切换：永久占位会让开始按钮与第一个应用热区之间凭空多出 32px，与参考图的「紧贴」冲突；死锁风险由「箭头出现只让视口更窄 ⇒ 溢出单调」+ 翻转后 `nextTick` 补量一次化解（实现与断言见 `shell-taskbar.vue`）。图标区滚动条全部隐藏（`scrollbar-width: none` + `::-webkit-scrollbar { display: none }`，避免 48px 定高被挤压）；托盘 `< 64rem` 收起内联控件组、保留时钟与展开按钮。
 
 ## 5. 桌面壁纸层的令牌化方案
 
@@ -164,10 +184,10 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 
 四条落地结论（实测 / 源码得出，记在这里防回归）：
 
-1. **任务栏里的 ToolTip 会自遮挡**：`--zIndexTooltip`(1400) < `--zIndexShell`(1500)，挂 `FluereTooltip` 的提示会被任务栏自己盖住。**0.5.6 裁决 = 方案①**（外壳内不挂 ToolTip、只用原生 `title`；需要时由该处覆写 `--fui-tooltip-z`），已回写 §4 并照此实现，**不写裸 z-index 绕过**。
+1. **任务栏里的 ToolTip 会自遮挡**：`--zIndexTooltip`(1400) < `--zIndexShell`(1500)，挂 `FluereTooltip` 的提示会被任务栏自己盖住。**0.5.6 临时裁决**是外壳内只用原生 `title`；**0.5.7 改为方案① 的正解** —— 外壳登记进层级栈（`acquireLayer('--zIndexShell')`），外壳内的浮层按 `--zIndexStep` 抬到 1510；实测 `.fui-tooltip` 计算 z-index = 1510（未登记时 1400）。同时更正：**覆写 `--fui-tooltip-z` 无效**（提示面的 z 是 `useFlyout` 的内联样式）。详见 §4，**不写裸 z-index 绕过**。
 2. **任务栏入口用「动作按钮」而不是 toggle**：`FluereButton` 的 `:aria-pressed="selected || undefined"` 在 `selected=false` 时会把属性整个丢掉，做成 toggle 会导致同一按钮**时而带 `aria-pressed` 时而不带**（比"没有 toggle 语义"更糟）。因此窗口入口的可访问名说明点击后果（「最小化窗口」/「还原窗口」），窗口显示状态由激活指示条用视觉表达；固定入口与开始按钮同口径（开始按钮的开合状态由 `aria-expanded` 承载，那是另一套合法语义）。
 3. **不放搜索按钮**（0.5.7）：判定基准里的「搜索」依赖站内搜索（docs/todo.md 2.3 的 `Ctrl+K`，0.6+）。没有可搜的东西时放搜索入口 = 坏按钮（AGENTS.md 红线），故任务栏 / 开始菜单都不放，边界文案已同步去掉「搜索」（i18n `shell.boundary.scope`）。
-4. **箭头代替原生滚动条**（0.5.7）：图标区若露出原生滚动条，会在 48px 定高里把图标挤扁（移动端验收「不能出现原生滚动条挤压高度」）。做法：两套滚动条隐藏（标准 + webkit 伪元素）+ 两个箭头按钮编程 `scrollBy`；箭头只在实测溢出时可见，且**始终占位**（`visibility` 切换）—— 否则会出现「隐藏箭头 → 变宽 → 放得下 → 仍隐藏」的测量死锁。
+4. **箭头代替原生滚动条**（0.5.7）：图标区若露出原生滚动条，会在 48px 定高里把图标挤扁（移动端验收「不能出现原生滚动条挤压高度」）。做法：两套滚动条隐藏（标准 + webkit 伪元素）+ 两个箭头按钮编程 `scrollBy`。箭头只在实测溢出时出现：0.5.7 起用 `display` 切换而不是 `visibility` 占位 —— 永久占位会让开始按钮与第一个应用热区之间多出 32px，与参考图的「紧贴」冲突；「隐藏箭头 → 变宽 → 放得下 → 仍隐藏」的抖动由「箭头出现只让视口更窄 ⇒ 溢出单调 + 翻转后补量一次」化解（断言见 `shell-style-contract.test.ts`）。
 
 ### 6.3 站点 chrome 的落点（0.5.5 两处互斥 → 0.5.7 收进任务栏托盘，**不改 §1–§5 的假设**）
 
