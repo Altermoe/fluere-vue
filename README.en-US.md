@@ -24,7 +24,7 @@ FluereVue is built against real Windows behavior and the matching Windows App SD
 
 ## Project status & component coverage
 
-Current version **0.4.1-alpha.1** (pre-release); all six packages are published to npm and ready to install. Component coverage:
+Current version **0.5.0-alpha.1** (pre-release); all six packages are published to npm and ready to install. Component coverage:
 
 | Component                                     | WinUI 3 control                                 | Status | Version    |
 | --------------------------------------------- | ----------------------------------------------- | ------ | ---------- |
@@ -52,7 +52,7 @@ Current version **0.4.1-alpha.1** (pre-release); all six packages are published 
 | `FluereTabView` / `FluereTabViewItem`         | TabView                                         | Done   | 0.5.0      |
 
 - See the component pages on the [documentation site](https://fluere-vue.nahida.space) for each component's Props / events / examples.
-- The **Version** column marks the milestone at which a component landed in the repository: `0.1.0-rc.1` is the general control batch, `0.3.0-rc.1` is the i18n / configuration batch, `0.4.0` closes out the primitives plus ToggleButton / ToggleGroup / Select, and `0.5.0` is the Explorer-skeleton batch (window chrome, caption buttons, tabs); the currently published `0.4.1-alpha.1` already includes the `0.4.0` and `0.5.0` batches.
+- The **Version** column marks the milestone at which a component landed in the repository: `0.1.0-rc.1` is the general control batch, `0.3.0-rc.1` is the i18n / configuration batch, `0.4.0` closes out the primitives plus ToggleButton / ToggleGroup / Select, and `0.5.0` is the Explorer-skeleton batch (window chrome, caption buttons, tabs); the currently published `0.5.0-alpha.1` already includes the `0.4.0` and `0.5.0` batches.
 - Per-version implementation order, acceptance criteria, and the 0.4.0 – 0.9.0-rc.1 schedule are in [docs/todo.md](./docs/todo.md).
 - Live playground (components under development are updated continuously): <https://fluere-vue.nahida.space>
 
@@ -84,7 +84,7 @@ import { FluereButton } from '@fluere-vue/ui'
 
 - `vue` (`^3.5`) is a peer dependency provided by the consumer; the packages are pure ESM, JS is tree-shakable on demand, and the stylesheet must be imported once as a whole.
 - See [packages/ui/README.md](./packages/ui/README.md) for locale packs and `FluereConfigProvider` usage.
-- This version is a pre-release, so `pnpm add` resolves `latest` (pre-releases do not move it: `latest` is still `0.3.0-alpha.2`); pin this pre-release with `@fluere-vue/ui@0.4.1-alpha.1`, or use the `@alpha` dist-tag.
+- This version is a pre-release, so `pnpm add` resolves `latest` (pre-releases do not move it: `latest` is still `0.3.0-alpha.2`); pin this pre-release with `@fluere-vue/ui@0.5.0-alpha.1`, or use the `@alpha` dist-tag.
 
 > The packages have not reached a stable release (`0.3.0`), so breaking changes may still occur during the pre-release period; see [docs/release.md](./docs/release.md) for the release process and known caveats.
 
