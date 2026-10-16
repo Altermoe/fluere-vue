@@ -224,7 +224,7 @@ onScopeDispose(() => {
 
 /*
  * 滚动视口：吃掉 header 之下的剩余高度（`min-block-size: 0` 让 flex 子项可收缩，
- * 否则内部滚动区会撑破视口 —— 与 explorer-window.vue 的 `__body` 同款约束）。
+ * 否则内部滚动区会撑破视口 —— 与 ui-gallery-window.vue 的 `__body` 同款约束）。
  */
 .docs-home-shell__viewport {
   flex: 1 1 auto;

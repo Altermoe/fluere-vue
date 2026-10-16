@@ -1,28 +1,48 @@
 /**
- * 桌面外壳窗口 / 标签状态机契约测试（0.5.5）。
+ * 桌面外壳窗口 / 标签状态机契约测试（0.5.5；0.5.9 增补窗口管理器）。
  *
  * 这些逻辑为何必须被测试守住：窗口状态是外壳里**唯一跨组件共享的可变数据**
  * （标题栏抛意图 → 外壳改状态 → 任务栏 / 窗口层读状态）。它的正确性无法靠
- * 「浏览器里点一遍看着对」保证——尤其是两条容易被忽略的规则：
+ * 「浏览器里点一遍看着对」保证——尤其是三条容易被忽略的规则：
  *   ① 最小化要**保留**最大化与位移（实机语义），而关闭要**复位**（重新打开回到居中常规窗口）；
  *   ② 关闭激活标签时按上游 `OnItemsChanged` 的**向后环形迁移**选新激活项
- *      （这是 `FluereTabView` 组件注释明确交给消费方实现的那半条规则）。
+ *      （这是 `FluereTabView` 组件注释明确交给消费方实现的那半条规则）；
+ *   ③ 多窗口下**焦点回退**：最小化 / 关闭焦点窗口后，焦点交给下一个最上层可见窗口
+ *      （全部收起则为 `null`）；每扇窗口的位移 / 标签 / 形态互不串扰。
  */
 import { describe, expect, it } from 'vitest'
+import type { ShellAppId } from '../shell-apps'
 import {
   SHELL_BLANK_TAB_ID,
   SHELL_DEFAULT_TAB_ID,
+  SHELL_MAX_WINDOWS,
+  activateApp,
+  closeApp,
   closeTab,
+  closeTabInApp,
   closeWindow,
   containWindowOffset,
   createShellWindowState,
+  createWindowManagerState,
+  focusApp,
   isBlankTab,
   maximize,
+  maximizeApp,
   minimize,
+  minimizeApp,
   openTab,
+  openTabInApp,
   reopenWindow,
   restore,
+  restoreApp,
   selectTab,
+  selectTabInApp,
+  setAppOffset,
+  toggleAppFromShell,
+  topMostVisibleApp,
+  windowOf,
+  windowZIndex,
+  windowZIndexRank,
 } from '../shell-window-state'
 import type { ShellWindowGeometry } from '../shell-window-state'
 
@@ -278,5 +298,196 @@ describe('标签状态', () => {
   it('isBlankTab 只对兜底视图成立（消费方据此给 isClosable: false）', () => {
     expect(isBlankTab(SHELL_BLANK_TAB_ID)).toBe(true)
     expect(isBlankTab(SHELL_DEFAULT_TAB_ID)).toBe(false)
+  })
+})
+
+/* ------------------------------------------------------------------ */
+/* 窗口管理器（0.5.9 多窗口：层级 + 焦点）                                */
+/* ------------------------------------------------------------------ */
+
+/** 测试用应用 id（与注册表解耦：窗口管理器不认识具体应用，只认 id） */
+const APP_A = 'app-a' as ShellAppId
+const APP_B = 'app-b' as ShellAppId
+const APP_C = 'app-c' as ShellAppId
+const APP_IDS = [APP_A, APP_B, APP_C] as const
+
+describe('窗口管理器：初始状态', () => {
+  it('只有默认应用是「已打开」，其余为「未运行」，z 序 = 注册表顺序', () => {
+    const state = createWindowManagerState(APP_IDS, APP_B)
+    expect(windowOf(state, APP_B).status).toBe('normal')
+    expect(windowOf(state, APP_A).status).toBe('closed')
+    expect(windowOf(state, APP_C).status).toBe('closed')
+    expect(state.zOrder).toEqual([APP_A, APP_B, APP_C])
+    expect(state.activeAppId).toBe(APP_B)
+  })
+
+  it('不给默认应用时全部未运行、焦点为空', () => {
+    const state = createWindowManagerState(APP_IDS)
+    expect(state.activeAppId).toBeNull()
+    expect(APP_IDS.every((id) => windowOf(state, id).status === 'closed')).toBe(true)
+  })
+})
+
+describe('窗口管理器：层级与焦点', () => {
+  it('focusApp 把它移到层序末尾并设为焦点（已可见窗口的 pointerdown 路径）', () => {
+    const state = focusApp(createWindowManagerState(APP_IDS, APP_A), APP_C)
+    expect(state.zOrder).toEqual([APP_A, APP_B, APP_C])
+    expect(state.activeAppId).toBe(APP_C)
+    // 再聚焦 B：它排到末尾，C 让位
+    const again = focusApp(state, APP_B)
+    expect(again.zOrder).toEqual([APP_A, APP_C, APP_B])
+    expect(again.activeAppId).toBe(APP_B)
+  })
+
+  it('focusApp 不改变可见性（未运行的窗口不会被「点」出来）', () => {
+    const state = focusApp(createWindowManagerState(APP_IDS, APP_A), APP_B)
+    expect(windowOf(state, APP_B).status).toBe('closed')
+    expect(state.activeAppId).toBe(APP_B)
+  })
+
+  it('activateApp 会打开 / 还原窗口并置顶、聚焦', () => {
+    const state = activateApp(createWindowManagerState(APP_IDS, APP_A), APP_C)
+    expect(windowOf(state, APP_C).status).toBe('normal')
+    expect(state.zOrder.at(-1)).toBe(APP_C)
+    expect(state.activeAppId).toBe(APP_C)
+  })
+
+  it('activateApp 还原已最小化的窗口时保留形态（不回到居中常规窗口）', () => {
+    const base = createWindowManagerState(APP_IDS, APP_A)
+    const moved = setAppOffset(maximizeApp(base, APP_A), APP_A, { x: 40, y: 20 })
+    const minimized = minimizeApp(moved, APP_A)
+    const restored = activateApp(minimized, APP_A)
+    expect(windowOf(restored, APP_A).status).toBe('normal')
+    expect(windowOf(restored, APP_A).maximized).toBe(true)
+    expect(windowOf(restored, APP_A).offset).toEqual({ x: 40, y: 20 })
+  })
+
+  it('toggleAppFromShell：焦点窗口 → 最小化；已收起 → 还原；已打开非焦点 → 切换', () => {
+    const initial = createWindowManagerState(APP_IDS, APP_A)
+    // 焦点且显示 ⇒ 最小化
+    const minimized = toggleAppFromShell(initial, APP_A)
+    expect(windowOf(minimized, APP_A).status).toBe('minimized')
+    // 已最小化 ⇒ 还原（并置顶 / 聚焦）
+    const restored = toggleAppFromShell(minimized, APP_A)
+    expect(windowOf(restored, APP_A).status).toBe('normal')
+    expect(restored.activeAppId).toBe(APP_A)
+    // 已打开但非焦点 ⇒ 只置顶聚焦，不最小化
+    const other = activateApp(restored, APP_B)
+    const switched = toggleAppFromShell(other, APP_A)
+    expect(windowOf(switched, APP_A).status).toBe('normal')
+    expect(windowOf(switched, APP_B).status).toBe('normal')
+    expect(switched.activeAppId).toBe(APP_A)
+  })
+})
+
+describe('窗口管理器：焦点回退与关闭', () => {
+  it('最小化焦点窗口后，焦点交给下一个最上层可见窗口', () => {
+    const both = activateApp(createWindowManagerState(APP_IDS, APP_A), APP_B)
+    expect(both.activeAppId).toBe(APP_B)
+    const minimized = minimizeApp(both, APP_B)
+    expect(windowOf(minimized, APP_B).status).toBe('minimized')
+    expect(minimized.activeAppId).toBe(APP_A)
+  })
+
+  it('全部收起后焦点为 null，任务栏入口因此一律呈「还原 / 打开」语义', () => {
+    let state = createWindowManagerState(APP_IDS, APP_A)
+    state = minimizeApp(state, APP_A)
+    expect(state.activeAppId).toBeNull()
+    expect(topMostVisibleApp(state)).toBeNull()
+  })
+
+  it('最小化**非焦点**窗口不改变焦点（焦点仍在本来那扇窗上）', () => {
+    const both = activateApp(createWindowManagerState(APP_IDS, APP_A), APP_B)
+    const minimized = minimizeApp(both, APP_A)
+    expect(minimized.activeAppId).toBe(APP_B)
+  })
+
+  it('closeApp 复位形态（与最小化刻意不同），关闭焦点窗口后焦点回退', () => {
+    const base = createWindowManagerState(APP_IDS, APP_A)
+    const maximized = maximizeApp(base, APP_A)
+    const closed = closeApp(maximized, APP_A)
+    expect(windowOf(closed, APP_A).status).toBe('closed')
+    expect(windowOf(closed, APP_A).maximized).toBe(false)
+    expect(windowOf(closed, APP_A).offset).toEqual({ x: 0, y: 0 })
+    expect(closed.activeAppId).toBeNull()
+  })
+
+  it('关闭后重新激活 = 全新窗口语义（居中常规），但保留已打开的标签', () => {
+    let state = createWindowManagerState(APP_IDS, APP_A)
+    state = openTabInApp(state, APP_A, 'components')
+    state = maximizeApp(state, APP_A)
+    state = closeApp(state, APP_A)
+    const reopened = activateApp(state, APP_A)
+    expect(windowOf(reopened, APP_A).maximized).toBe(false)
+    expect(windowOf(reopened, APP_A).offset).toEqual({ x: 0, y: 0 })
+    expect(windowOf(reopened, APP_A).openTabs).toEqual([SHELL_DEFAULT_TAB_ID, 'components'])
+  })
+})
+
+describe('窗口管理器：逐窗口状态互不串扰', () => {
+  it('位移 / 标签 / 最大化都只作用于目标应用', () => {
+    let state = createWindowManagerState(APP_IDS, APP_A)
+    state = activateApp(state, APP_B)
+    state = openTabInApp(state, APP_B, 'components')
+    state = maximizeApp(state, APP_B)
+    // 最大化会把该窗口的位移归零（既有语义），所以先最大化再写位移
+    state = setAppOffset(state, APP_B, { x: 10, y: -20 })
+
+    expect(windowOf(state, APP_B).offset).toEqual({ x: 10, y: -20 })
+    expect(windowOf(state, APP_B).openTabs).toEqual([SHELL_DEFAULT_TAB_ID, 'components'])
+    expect(windowOf(state, APP_B).maximized).toBe(true)
+
+    expect(windowOf(state, APP_A).offset).toEqual({ x: 0, y: 0 })
+    expect(windowOf(state, APP_A).openTabs).toEqual([SHELL_DEFAULT_TAB_ID])
+    expect(windowOf(state, APP_A).maximized).toBe(false)
+  })
+
+  it('标签操作（打开 / 关闭 / 选中）走与应用绑定的入口', () => {
+    let state = createWindowManagerState(APP_IDS, APP_A)
+    state = openTabInApp(state, APP_A, 'components')
+    state = openTabInApp(state, APP_A, 'guide')
+    state = selectTabInApp(state, APP_A, 'components')
+    expect(windowOf(state, APP_A).activeTab).toBe('components')
+    state = closeTabInApp(state, APP_A, 'components')
+    expect(windowOf(state, APP_A).openTabs).toEqual([SHELL_DEFAULT_TAB_ID, 'guide'])
+  })
+
+  it('restoreApp 取消最大化但不改变位移（还原回拖拽过的位置）', () => {
+    let state = createWindowManagerState(APP_IDS, APP_A)
+    state = setAppOffset(state, APP_A, { x: 30, y: 30 })
+    state = maximizeApp(state, APP_A)
+    // 最大化会把位移归零（既有语义）
+    expect(windowOf(state, APP_A).offset).toEqual({ x: 0, y: 0 })
+    const restored = restoreApp(state, APP_A)
+    expect(windowOf(restored, APP_A).maximized).toBe(false)
+  })
+
+  it('未登记的应用 id 不抛错：给一份全新窗口、置顶操作退化为 no-op', () => {
+    const state = createWindowManagerState(APP_IDS, APP_A)
+    const missing = 'missing' as ShellAppId
+    expect(windowOf(state, missing).status).toBe('normal')
+    expect(activateApp(state, missing).zOrder).toEqual([...APP_IDS])
+  })
+})
+
+describe('窗口管理器：z 序表达式（全程引用刻度）', () => {
+  it('最底层用 --zIndexWindow 本身，其余按 --zIndexStep 递增', () => {
+    const state = createWindowManagerState(APP_IDS, APP_A)
+    expect(windowZIndex(state, APP_A)).toBe('var(--zIndexWindow)')
+    expect(windowZIndex(state, APP_B)).toBe('calc(var(--zIndexWindow) + 1 * var(--zIndexStep))')
+    expect(windowZIndex(state, APP_C)).toBe('calc(var(--zIndexWindow) + 2 * var(--zIndexStep))')
+    // 置顶后 rank 变化，表达式跟着变（层级是「谁在最前」，不是固定编号）
+    const raised = focusApp(state, APP_A)
+    expect(windowZIndexRank(raised, APP_A)).toBe(2)
+    expect(windowZIndex(raised, APP_A)).toBe('calc(var(--zIndexWindow) + 2 * var(--zIndexStep))')
+  })
+
+  it('超过 SHELL_MAX_WINDOWS 时夹取（不会把窗口抬到 --zIndexContent 之上）', () => {
+    const many = Array.from({ length: SHELL_MAX_WINDOWS + 3 }, (_, index) => `app-${index}`)
+    const state = createWindowManagerState(many as ShellAppId[], many[0] as ShellAppId)
+    const top = many.at(-1) as ShellAppId
+    expect(windowZIndex(state, top)).toBe(
+      `calc(var(--zIndexWindow) + ${SHELL_MAX_WINDOWS - 1} * var(--zIndexStep))`,
+    )
   })
 })

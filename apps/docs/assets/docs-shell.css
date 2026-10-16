@@ -36,10 +36,12 @@
 
 /*
  * ------------------------------------------------------------------ *
- * 桌面外壳（0.5.5 DesktopShell）的构图变量                              *
+ * 桌面外壳（0.5.5 DesktopShell / 0.5.9 多窗口）的构图变量                 *
  * ------------------------------------------------------------------ *
  *
- * 事实源与裁决顺序见 docs/design/explorer-layout.md（0.5.0 已锁定的五项布局假设）。
+ * 事实源与裁决顺序见 docs/design/explorer-layout.md（0.5.0 已锁定的五项布局假设）；
+ * 多窗口的层级 / 焦点口径见该文件 §8。
+ *
  * 本文件只放「外壳自有的构图参数」；色值 / 圆角 / 阴影 / 层级一律引用 designs 令牌，
  * 不在这里复制第二份。
  *
@@ -54,15 +56,16 @@
    * 是无单位裸数字（`48`），直接写进 `block-size` 这类长度属性是无效 CSS。
    *
    * 令牌出处：packages/designs/data/repo-tokens.json 的 `shellTaskbarHeight`，那里已记录
-   * **证据缺口**（Windows 任务栏由系统外壳绘制，48 = Windows 11 100% 缩放实测值）。
+   * **证据缺口**：Windows 任务栏由系统外壳绘制，48 = Windows 11 100% 缩放实测值。
    * 覆写方式：消费方在根节点写 `--shellTaskbarHeight: <num>`（裸数字）改高度，
    * 或直接覆盖本变量为带单位值。
    */
   --shell-taskbar-h: calc(var(--shellTaskbarHeight) * 1px);
 
   /*
-   * 窗口基准尺寸（构图参数，无 WinUI 来源）。
-   * 只作**上限**使用：实际尺寸取 `min(基准值, 视口可用区)`，见 explorer-window.vue。
+   * 窗口基准尺寸（构图参数，无 WinUI 来源）。**默认档**，由每个应用在自己的
+   * `.docs-shell-window--<appId>` 里覆写（见文件末尾的窗口几何段）。
+   * 只作**上限**使用：实际尺寸取 `min(基准值, 视口可用区)`。
    * 基准值存在的意义是让窗口在超宽屏上不至于无限拉伸，与实机窗口观感保持一致。
    */
   --shell-window-w: 1120px;
@@ -82,9 +85,8 @@
 
   /*
    * 托盘时钟的预留宽度（构图参数，0.5.7）。
-   * 时钟挂载前是空文本（水合口径，见 shell-taskbar.vue 的 `now` 注释），
-   * 不预留宽度的话时钟一出现，中间图标区会整体平移一帧。
-   * 64px 按两语种日期的较宽者（`2026/10/16` / `10/16/2026`，12px 字号实测 ≈ 60px）取整。
+   * 时钟文本随分钟 / 日期进位变化（`2026/10/16` / `10/16/2026`，12px 字号实测 ≈ 60px），
+   * 不预留宽度的话中间图标区会随时钟变宽窄而平移。64px 按两语种日期的较宽者取整。
    */
   --shell-tray-clock-w: 64px;
 
@@ -151,4 +153,104 @@
 .docs-shell-taskbar-icon:active:not(:focus-visible) {
   outline: var(--strokeWidthThin) solid var(--controlStrokeColorDefault);
   outline-offset: calc(-1 * var(--strokeWidthThin));
+}
+
+/*
+ * ------------------------------------------------------------------ *
+ * 窗口几何（0.5.5 起，0.5.9 从 explorer-window.vue 迁到这里并支持按应用档位）*
+ * ------------------------------------------------------------------ *
+ *
+ * 为什么是全局样式而不是某个 SFC 的 scoped 样式：
+ *  窗口的**框体**（位置 / 尺寸 / 最大化 / 移动档降级）由 `shell-window-host.vue`
+ *  写在宿主包装元素上，而**内容**由各应用的窗口组件写在子元素上 —— 几何是宿主与
+ *  应用共享的契约（`shell-window-host.vue` 只管挂 `docs-shell-window--<appId>`）。
+ *  写在全局样式里，两者都拿得到，且不会因 scoped 编译出匹配不上的选择器。
+ *
+ * 层级：窗口层容器（desktop-shell.vue 的 `__window-layer`）整体在 `--zIndexWindow`(0)
+ *  档，**层内**的兄弟窗口按 `--zIndexStep`(10) 逐档递增，z 表达式由
+ *  `utils/shell-window-state.ts#windowZIndex` 生成内联样式 —— 全程引用刻度，没有裸值。
+ *  上限 `SHELL_MAX_WINDOWS`(8) 保证窗口不会抬到 `--zIndexContent`(100) 之上。
+ *
+ * 位置：`inset-inline-start: 50%` + 负 `margin-inline-start`（= 半个窗口宽）是**居中基准**，
+ *  拖拽位移只叠加在 `transform` 上 —— 居中基准必须与位移解耦，否则位移会参与居中计算、
+ *  越拖越偏。每个应用可用 `--shell-window-x-offset` / `--shell-window-y-offset`
+ *  在自己的落位基础上错开（多窗口默认不完全重叠）。
+ */
+.docs-shell-window {
+  inline-size: min(var(--shell-window-w), calc(100% - 2 * var(--shell-desktop-margin)));
+  block-size: min(
+    var(--shell-window-h),
+    calc(100% - var(--shell-taskbar-h) - 2 * var(--shell-desktop-margin))
+  );
+
+  position: absolute;
+  inset-block-start: calc(var(--shell-desktop-margin) + var(--shell-window-y-offset, 0px));
+  inset-inline-start: 50%;
+  margin-inline-start: calc(
+    min(var(--shell-window-w), calc(100% - 2 * var(--shell-desktop-margin))) / -2 +
+      var(--shell-window-x-offset, 0px)
+  );
+
+  display: flex;
+  flex-direction: column;
+  /* 窗口层容器是 pointer-events: none（桌面空白区点击不被整屏层吞掉），窗口自己要收回来 */
+  pointer-events: auto;
+  /* 不使用时会显示窗口内容，避免拖拽期间出现选中文本的蓝底 */
+  user-select: none;
+}
+
+/* 最大化：铺满可视区、顶部不留白，底部仍给任务栏留出高度（圆角 / 阴影由组件归零） */
+.docs-shell-window.is-maximized {
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  margin-inline-start: 0;
+  inline-size: 100%;
+  block-size: calc(100% - var(--shell-taskbar-h));
+}
+
+/* 撑满宿主包装：宿主给出确定尺寸，窗口本体只需要吃掉它 */
+.docs-shell-window__frame {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
+/* 每个应用的落位档位（构图参数，无 WinUI 来源；消费方可覆写同名变量） */
+.docs-shell-window--ui-gallery {
+  --shell-window-w: 1120px;
+  --shell-window-h: 720px;
+}
+
+/*
+ * Render Lab：略小的窗口 + 右下错开（多窗口默认不完全重叠）。
+ *
+ * 错开量取 48 / 48 而不是更大：桌面档的最窄视口是 1024px（`lg` 断点），
+ * 此时右缘 = 512 + 880/2 + 48 = 1000 < 1024 仍不出界；再大就会在 1024–1040 区间
+ * 顶出桌面右缘（窗口初始位置越界要等第一次拖拽 / resize 才会被收敛回来）。
+ */
+.docs-shell-window--render-lab {
+  --shell-window-w: 880px;
+  --shell-window-h: 600px;
+  --shell-window-x-offset: 48px;
+  --shell-window-y-offset: 48px;
+}
+
+/*
+ * 移动档（< 64rem = 1024px）：窗口降级为「全屏无边框 + 为常驻任务栏让出高度」。
+ *
+ * **位移不在这里归零**：位移是内联 `transform`（`shell-window-host.vue` 的 `:style`），
+ * 内联样式永远压过样式表里的 `transform: none`（0.5.5–0.5.8 曾写过那条规则，实际是死代码）。
+ * 归零改由 `desktop-shell.vue` 的 `useMediaQuery` 监听完成（退档时遍历所有应用复位 offset）——
+ * 结构上仍不依赖视口判据，只是「谁来清零」这件事挪到了唯一能真正生效的地方。
+ *
+ * 多窗口在移动档不需要额外规则：所有窗口几何相同（铺满可视区），**最上层覆盖其余**，
+ * 切换应用由任务栏入口完成（层级语义与桌面档一致）。
+ */
+@media (max-width: 63.999rem) {
+  .docs-shell-window {
+    inline-size: 100%;
+    block-size: calc(100% - var(--shell-taskbar-h));
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    margin-inline-start: 0;
+  }
 }

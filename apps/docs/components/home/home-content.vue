@@ -30,7 +30,7 @@
  * `var(--fontFamilyBase)` / `var(--durationFaster)` 后两者都生效。
  *
  * 容器宽度（`max-inline-size` / 左右留白）**由消费方给**：主页在布局的通栏内容区里，
- * 桌面窗口在 `explorer-window.vue` 的 `__panel-inner` 里 —— 本组件不写外层宽度，
+ * 桌面窗口在 `ui-gallery-window.vue` 的 `__panel-inner` 里 —— 本组件不写外层宽度，
  * 避免两处都被套上一层 64rem 的收窄。
  */
 import { FluereButton } from '@fluere-vue/ui'

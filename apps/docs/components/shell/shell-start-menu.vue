@@ -105,9 +105,18 @@
  *
  * ## 条目口径
  *
- * 只放**真实可达**的条目（2026-10-16 评审确认）：首页 / 指南 / 组件 = 打开（或切换）
- * 窗口标签；GitHub = 外链。设计令牌页与路线图页尚不存在（docs/todo.md 2.4 未做），
- * 不放占位死链 —— 页面存在后再补（组件注释留痕，防"看起来少了一项"被当成回归）。
+ * 只放**真实可达**的条目：两个**仿真应用**（UI Gallery / Render Lab，数据源
+ * `~/utils/shell-apps`）+ GitHub 外链。0.5.9 起任务栏与开始菜单都按「应用」组织 ——
+ * 窗口内部的视图（首页 / 组件 / 指南）切换只留在窗口的导航面板与标签条。
+ *
+ * 设计令牌页与路线图页尚不存在（docs/todo.md 2.4 未做），不放占位死链 —— 页面存在后再补
+ * （组件注释留痕，防"看起来少了一项"被当成回归）。
+ *
+ * ## SSR：本组件处于 ClientOnly 边界之内
+ *
+ * 挂载点是 `/os` 的 `<ClientOnly>`（原则见 docs/ssr-guide.md
+ * 〈文档站桌面仿真的 ClientOnly 边界〉），因此**不做 SSR 检查**。
+ * `useId()` 仍照用：它保证同一棵客户端树里的 id 稳定唯一（与 SSR 无关的收益）。
  *
  * ## 已知缺口：高对比度（HC）未适配
  *
@@ -120,23 +129,22 @@ import { FluereButton, FluereTooltip, useFocusVisual } from '@fluere-vue/ui'
 import { computed, ref, useId } from 'vue'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import { REPOSITORY_URL } from '~/utils/docs-repo'
-import { SHELL_VIEWS } from '~/utils/shell-views'
-import type { ShellTabId } from '~/utils/shell-window-state'
+import { SHELL_APPS } from '~/utils/shell-apps'
+import type { ShellAppId } from '~/utils/shell-apps'
 
 const emit = defineEmits<{
-  /** 请求打开（或切换到）窗口标签 —— 由外壳统一改状态并还原窗口 */
-  (event: 'openTab', tab: ShellTabId): void
+  /** 请求打开 / 还原 / 置顶某个应用的窗口 —— 由外壳统一改状态（切换语义） */
+  (event: 'activateApp', appId: ShellAppId): void
 }>()
 
 const { t } = useDocsI18n()
 
-/** 面板 id（aria-controls 用；`useId()` 保证 SSR / 水合一致） */
+/** 面板 id（aria-controls 用；`useId()` 保证同树内唯一且稳定） */
 const panelId = useId()
 
 /**
- * 徽标渐变 id。用 `useId()` 而不是写死字符串：① SSR / 水合一致；
- * ② 万一页面上挂了第二个外壳，两个 `linearGradient` 也不会互相引用错
- * （`url(#id)` 只按文档内第一个同名 id 解析）。
+ * 徽标渐变 id。用 `useId()` 而不是写死字符串：万一页面上挂了第二个外壳，
+ * 两个 `linearGradient` 也不会互相引用错（`url(#id)` 只按文档内第一个同名 id 解析）。
  */
 const logoGradientId = useId()
 
@@ -149,7 +157,7 @@ const panelRef = ref<HTMLElement | null>(null)
 /**
  * 触发器是 `FluereButton` **组件**，模板 ref 拿到的是实例不是元素 ——
  * 必须经 `$el` 取根节点（同 desktop-shell.vue 的 elementOf 踩坑记录：
- * 按 HTMLElement 声明 SSR 无感、水合即 TypeError）。
+ * 按 HTMLElement 声明会静默拿到组件实例，运行时一调 DOM 方法就 TypeError）。
  */
 const triggerRef = ref<{ $el?: unknown } | null>(null)
 
@@ -182,21 +190,22 @@ useFocusTrap({
 const sectionId = useId()
 
 /**
- * 「已固定」条目 = 窗口视图清单（数据源与窗口导航 / 任务栏固定入口共用，
- * 见 `~/utils/shell-views` —— 改清单只改一处）。
+ * 「已固定」条目 = **仿真应用清单**（0.5.9 改口径：任务栏与开始菜单都承载「应用」，
+ * 视图（首页 / 组件 / 指南）的切换只在窗口内的导航面板与标签条）。
+ * 数据源 = `~/utils/shell-apps`，与窗口标题 / 任务栏入口共用同一份注册表。
  */
-const pinnedTabs = computed(() =>
-  SHELL_VIEWS.map((view) => ({ tab: view.id, label: t(view.titleKey), icon: view.icon })),
+const pinnedApps = computed(() =>
+  SHELL_APPS.map((app) => ({ app, label: t(app.titleKey), icon: app.icon })),
 )
 
 const toggle = (): void => {
   open.value = !open.value
 }
 
-/** 选中标签条目：先关面板（焦点归还触发器），再把意图抛给外壳 */
-const onSelectTab = (tab: ShellTabId): void => {
+/** 选中应用条目：先关面板（焦点归还触发器），再把意图抛给外壳 */
+const onSelectApp = (appId: ShellAppId): void => {
   open.value = false
-  emit('openTab', tab)
+  emit('activateApp', appId)
 }
 
 /** GitHub 外链：当前页不导航（新标签打开），只需收起面板 */
@@ -318,7 +327,7 @@ const onMenuKeydown = (event: KeyboardEvent): void => {
     </FluereTooltip>
 
     <!--
-      面板：`v-if` 让关闭态不占 DOM（SSR 首屏为关闭，两端结构一致）。
+      面板：`v-if` 让关闭态不占 DOM（关闭是初始态，面板只在交互后出现）。
       `role="menu"` + `role="menuitem"` 承载方向键导航的语义；
       点击 / Esc / Tab 的行为全部来自 useFocusTrap（见 script 注释）。
     -->
@@ -344,8 +353,8 @@ const onMenuKeydown = (event: KeyboardEvent): void => {
         </p>
         <ul class="docs-start-menu__list">
           <li
-            v-for="item in pinnedTabs"
-            :key="item.tab"
+            v-for="item in pinnedApps"
+            :key="item.app.id"
             class="docs-start-menu__item"
           >
             <button
@@ -353,7 +362,7 @@ const onMenuKeydown = (event: KeyboardEvent): void => {
               class="docs-start-menu__entry"
               role="menuitem"
               :class="focusVisual.class"
-              @click="onSelectTab(item.tab)"
+              @click="onSelectApp(item.app.id)"
             >
               <component
                 :is="item.icon"

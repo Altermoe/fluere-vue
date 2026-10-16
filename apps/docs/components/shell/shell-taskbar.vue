@@ -1,14 +1,31 @@
 <script setup lang="ts">
 /**
- * 任务栏（0.5.6 `Taskbar` + 0.5.7 移动端压缩布局的完整形态）。
+ * 任务栏（0.5.6 `Taskbar` + 0.5.7 移动端压缩布局 + 0.5.9 应用级入口）。
  *
  * 0.5.5 的最小版（只有高度占位 + 窗口还原入口）已在 0.5.6 扩成三段式：
  *
  * ```
- * ┌ 最左：开始按钮（全宽度常驻） ┬ 中间：图标区（可横向滚动） ──────┬ 最右：系统托盘 ┐
- * │ ShellStartMenu              │ [◀] 窗口入口 · 固定入口×3 · GitHub [▶] │ 内联控件 / 时钟  │
+ * ┌ 最左：开始按钮（全宽度常驻） ┬ 中间：图标区（可横向滚动） ──────────┬ 最右：系统托盘 ┐
+ * │ ShellStartMenu              │ [◀] 应用入口（SHELL_APPS）+ GitHub [▶] │ 内联控件 / 时钟  │
  * └─────────────────────────────┴──────────────────────────────────────┴────────────────┘
  * ```
+ *
+ * ## 入口语义：**应用级**（0.5.9 改口径）
+ *
+ * 0.5.5–0.5.8 的中间图标区是「窗口入口 + 首页/组件/指南三个**视图**固定入口 + GitHub」。
+ * 0.5.9 引入仿真应用系统后改为**每个应用一个入口**（`SHELL_APPS`，顺序 = 注册表顺序）：
+ * 点入口 = 打开 / 还原 / 置顶该应用的窗口；焦点应用且窗口在显示时 = 最小化
+ * （与实机任务栏一致，逻辑在 `desktop-shell.vue#onActivateApp`）。
+ * 视图（首页 / 组件 / 指南）之间的切换只留在窗口内的导航面板与标签条 ——
+ * 任务栏承载的是「应用」，不是「应用内部的页面」。
+ *
+ * 可访问名 / 提示**随入口状态变化**（说的是「点击会发生什么」，与实机读屏口径一致）：
+ * 焦点且显示 → 最小化；已最小化 → 还原；已关闭 → 打开；已打开但非焦点 → 切换。
+ * 四句话各自是一个 key（`shell.taskbarApp*`），提示与可访问名共用同一句，避免两套说法打架。
+ *
+ * 激活指示条 = 「该应用窗口在桌面显示」。**不做** Win11「焦点窗口的指示条更长」的差异：
+ * 那需要一条没有 A 级来源的宽度值（Windows 任务栏由系统外壳绘制），
+ * 已记入 0.9.x 的缺口清单（explorer-layout.md §8）。
  *
  * ## 布局与移动端口径（2026-10-16 评审确认，替代 0.5.5「移动档整条隐藏」）
  *
@@ -20,24 +37,20 @@
  *   `::-webkit-scrollbar { display: none }` —— 48px 定高里任何方向的滚动条都会把
  *   图标区挤扁（移动端验收「不能挤压高度」）；滚动改由两个箭头按钮驱动
  *   （`scrollLeft` 编程滚动，`scroll-behavior: smooth` 且尊重 reduced-motion）；
- * - 箭头**何时可见**：图标区真的放不下（`scrollWidth > clientWidth`）才显示，
- *   否则 `visibility: hidden`。两个箭头**始终占据布局空间**（`flex: none` 不参与
- *   收缩），因此「箭头在不在」这件事在测量上是稳定的（否则出现
- *   「隐藏箭头 → 变宽 → 放得下 → 仍隐藏」的死锁或抖动）；桌面宽视口恒不溢出 ⇒
- *   恒不可见，等同于纯内边距，不影响居中（两侧对称预留）；
+ * - 箭头**何时可见**：图标区真的放不下（`scrollWidth > clientWidth`）才显示；
  * - **托盘压缩但时间保留**：< 64rem 时内联控件组（ShellChrome：版本 / 语言 / 主题）
  *   `display: none`，换成一个展开按钮，控件收进展开按钮弹出的菜单 —— 时钟两行
- *   （时间 / 日期）在所有宽度可见。桌面档（≥ 64rem）相反：内联组可见、展开按钮隐藏。
- *   两处都渲染、只靠 CSS 互斥 ⇒ SSR / 水合结构一致（无 v-if 视口分支）。
+ *   （时间 / 日期）在所有宽度可见。两处都渲染、只靠 CSS 互斥。
  *
- * 断点 64rem = 1024px，与 explorer-window / desktop-shell 的 `lg:` 三处同值。
+ * 断点 64rem = 1024px，与 docs-shell.css 的窗口移动档规则、desktop-shell 的
+ * `useMediaQuery` 同值。
  *
  * ## 结构归属
  *
  * - 开始按钮 + 开始菜单面板 = `ShellStartMenu`（自包含，见其文件头的焦点 / 键盘口径）；
  * - 托盘内联与弹出菜单共用 `ShellChrome`（站点 chrome 清单**只有一份**），
  *   弹出菜单的开合 / 焦点陷阱在本组件（与 StartMenu 同一套 useFocusTrap 口径）；
- * - GitHub 是「入口类」控件，落中间固定入口（与版本 / 语言 / 主题这类「系统状控件」
+ * - GitHub 是「入口类」控件，落中间图标区（与版本 / 语言 / 主题这类「系统状控件」
  *   分开 —— 这是 0.5.7 把站点 chrome 从窗口标题栏收进托盘时的划分依据）。
  *
  * ## 搜索按钮不做
@@ -51,6 +64,14 @@
  * `--zIndexShell`(1500) 是任务栏的档位（全站唯一允许出现在该档的层）；
  * 托盘弹出菜单引用 `--zIndexMenu`（菜单语义档）—— 它在任务栏已建立的叠放上下文内
  * 生效，仍属「引用刻度」，不写裸值。开始菜单面板的档位见 ShellStartMenu。
+ *
+ * ## 时钟（0.5.9：不再需要「挂载前渲染空文本」）
+ *
+ * 0.5.7–0.5.8 为了让 SSR 与首帧一致，时钟初值是 `null`（渲染空文本）再在 `onMounted`
+ * 写入真实时间。外壳现在处于 `ClientOnly` 边界之内（原则见 docs/ssr-guide.md
+ * 〈文档站桌面仿真的 ClientOnly 边界〉），**不存在服务端 / 客户端首帧的差异**，
+ * 因此直接以 `new Date()` 起步；`--shell-tray-clock-w` 的预留宽度仍然需要
+ * （分钟 / 日期进位会让文本宽度变化，不预留则图标区左右抖动）。
  *
  * ## 图标按钮的几何与状态（0.5.7 按参考图还原，2026-10-16）
  *
@@ -88,12 +109,9 @@
  * （`tooltip-fixture.vue` 的 `:style="layerStyle"`），内联优先于组件样式表里的
  * `z-index: var(--fui-tooltip-z)`。该结论已回写 explorer-layout.md §4。
  *
- * 提示文案一律复用既有可访问名（不放第二份文案）：窗口入口随状态给「最小化 / 还原」，
- * 固定入口给视图名，箭头 / 托盘展开给操作名。
- *
  * ## 入口按钮的可访问性口径（0.5.5 结论沿用）
  *
- * 窗口入口刻意**不用** `FluereButton` 的 `selected`（也就没有 `aria-pressed`）：
+ * 应用入口刻意**不用** `FluereButton` 的 `selected`（也就没有 `aria-pressed`）：
  * `selected=false` 时组件把 `aria-pressed` 整个丢掉（`button.vue:140`），同一按钮会
  * 时而带时而不带 —— 比没有 toggle 语义更糟。故入口是「动作按钮」（可访问名说明
  * 点击后果），窗口状态由激活指示条视觉表达。
@@ -102,7 +120,7 @@
  *
  * 任务栏在移动端**保留**（0.5.7 起；0.5.5 曾按「不仿桌面」整条隐藏，评审后改为
  * 压缩常驻 —— 回写见 explorer-layout.md §2 / §4 与 README〈仿真边界〉）。
- * 窗口因此在移动档为它让出高度（explorer-window.vue 的 `calc(100% - var(--shell-taskbar-h))`）。
+ * 窗口因此在移动档为它让出高度（docs-shell.css 的窗口移动档规则）。
  *
  * ## 已知缺口：高对比度（HC）未适配
  *
@@ -117,15 +135,15 @@ import {
   FluentIconChevronLeft24Regular,
   FluentIconChevronRight24Regular,
   FluentIconChevronUp24Regular,
-  FluentIconWindow24Regular,
 } from '@fluere-vue/icons'
 import { FluereButton, FluereTooltip } from '@fluere-vue/ui'
 import { computed, nextTick, onMounted, onScopeDispose, ref, useId, watch } from 'vue'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import { REPOSITORY_URL } from '~/utils/docs-repo'
+import { SHELL_APPS } from '~/utils/shell-apps'
+import type { ShellAppId } from '~/utils/shell-apps'
 import { formatTrayClock } from '~/utils/shell-clock'
-import { SHELL_VIEWS } from '~/utils/shell-views'
-import type { ShellTabId, ShellWindowStatus } from '~/utils/shell-window-state'
+import type { ShellWindowStatus } from '~/utils/shell-window-state'
 import ShellChrome from './shell-chrome.vue'
 import ShellStartMenu from './shell-start-menu.vue'
 
@@ -136,51 +154,74 @@ const CLOCK_REFRESH_MS = 15_000
 const SCROLL_EPSILON = 1
 
 const props = defineProps<{
-  /** 当前窗口状态档位（决定入口是"激活"还是"可还原"） */
-  status: ShellWindowStatus
-  /** 当前激活标签（固定入口的激活指示条用） */
-  activeTab: ShellTabId
+  /** 每应用的窗口档位（决定入口是「打开 / 还原 / 切换 / 最小化」哪一种语义） */
+  windows: Record<ShellAppId, ShellWindowStatus>
+  /** 当前焦点应用（决定「最小化」还是「切换」）；全部收起时为 null */
+  activeAppId: ShellAppId | null
 }>()
 
 const emit = defineEmits<{
   /**
-   * 点击窗口入口。
-   * 语义是**切换**（与实机任务栏一致：窗口在显示 → 最小化；已收起 → 还原）。
+   * 点击应用入口。
+   * 语义是**切换**（与实机任务栏一致：焦点应用在显示 → 最小化；已收起 → 还原；
+   * 其余 → 打开 / 置顶）。具体状态迁移由窗口管理器负责，任务栏只抛意图。
    */
-  (event: 'toggleWindow'): void
-  /** 固定入口 / 开始菜单条目请求打开（或切换到）窗口标签（外壳负责还原窗口） */
-  (event: 'openTab', tab: ShellTabId): void
+  (event: 'activateApp', appId: ShellAppId): void
 }>()
 
 const { t, locale } = useDocsI18n()
 
 /* ------------------------------------------------------------------ */
-/* 窗口入口与固定入口                                                    */
+/* 应用入口（SHELL_APPS 顺序 = 任务栏固定顺序）                          */
 /* ------------------------------------------------------------------ */
 
-/** 窗口是否处于「已收起」（最小化 / 关闭）—— 此时入口点击会还原 */
-const isWindowHidden = computed(() => props.status !== 'normal')
+/** 入口状态四态：决定可访问名 / 提示文案，也决定激活指示条 */
+type ShellAppEntryState = 'minimize' | 'restore' | 'open' | 'focus'
+
+/** 入口状态 → 消息 key（四句话各自独立，提示与可访问名共用同一句） */
+const ENTRY_LABEL_KEYS: Record<
+  ShellAppEntryState,
+  | 'shell.taskbarAppMinimize'
+  | 'shell.taskbarAppRestore'
+  | 'shell.taskbarAppOpen'
+  | 'shell.taskbarAppFocus'
+> = {
+  minimize: 'shell.taskbarAppMinimize',
+  restore: 'shell.taskbarAppRestore',
+  open: 'shell.taskbarAppOpen',
+  focus: 'shell.taskbarAppFocus',
+}
 
 /**
- * 入口的可访问名随状态变化：收起时说「还原」，显示时说「最小化」。
- * 与实机任务栏的读屏口径一致 —— 说的是**点击会发生什么**，而不是「当前是什么状态」。
- * `FluereTooltip` 的提示文案就是这同一条（单一文案，避免悬停提示与读屏说法打架）。
+ * 一个入口当前处于哪一态（与 `toggleAppFromShell` 的状态迁移**同源**：
+ * 焦点且显示 → 最小化；已最小化 → 还原；已关闭 → 打开；其余（已打开但非焦点）→ 切换）。
  */
-const entryLabel = computed(() =>
-  isWindowHidden.value ? t('shell.taskbarWindowRestore') : t('shell.taskbarWindowMinimize'),
-)
-
-/** 固定入口 = 窗口视图清单（数据源与窗口导航 / 开始菜单共用，见 utils/shell-views） */
-const pinnedViews = computed(() =>
-  SHELL_VIEWS.map((view) => ({ id: view.id, label: t(view.titleKey), icon: view.icon })),
-)
+const entryStateOf = (appId: ShellAppId): ShellAppEntryState => {
+  const status = props.windows[appId] ?? 'closed'
+  if (status === 'normal') {
+    return props.activeAppId === appId ? 'minimize' : 'focus'
+  }
+  return status === 'minimized' ? 'restore' : 'open'
+}
 
 /**
- * 固定入口的激活指示条：窗口可见 **且** 该视图是当前激活标签。
- * 与窗口入口同一套视觉语言（有下划线 = 正在显示这个视图），AT 侧不加额外属性 ——
- * 按钮的可访问名是视图名，状态由所在窗口的语义承载（避免半吊子 aria-current）。
+ * 入口清单（图标 / 标题取自注册表单一事实源；文案随状态变化）。
+ *
+ * 提示与可访问名共用同一句：说的是**点击会发生什么**（与实机任务栏的读屏口径一致），
+ * 而不是「当前是什么状态」—— 两套说法只会互相打架。
  */
-const isPinActive = (id: ShellTabId): boolean => !isWindowHidden.value && props.activeTab === id
+const appEntries = computed(() =>
+  SHELL_APPS.map((app) => {
+    const title = t(app.titleKey)
+    return {
+      id: app.id,
+      icon: app.icon,
+      label: t(ENTRY_LABEL_KEYS[entryStateOf(app.id)], { app: title }),
+      isRunning: props.windows[app.id] === 'normal',
+      isFocused: props.activeAppId === app.id,
+    }
+  }),
+)
 
 /* ------------------------------------------------------------------ */
 /* 中间图标区：横向滚动（无原生滚动条）+ 箭头                              */
@@ -188,7 +229,10 @@ const isPinActive = (id: ShellTabId): boolean => !isWindowHidden.value && props.
 
 /** 图标区视口（`overflow-x: auto` 但滚动条被隐藏；箭头对它做编程滚动） */
 const viewportRef = ref<HTMLElement | null>(null)
-/** 是否放不下（决定箭头可见性；初始 false = SSR 与客户端首帧一致） */
+
+/** 图标区视口的尺寸观察器（挂载时建、卸载时断开） */
+let scrollResizeObserver: ResizeObserver | null = null
+/** 是否放不下（决定箭头可见性；初值 false = 挂载首帧「无箭头」，挂载后按实测翻转） */
 const isScrollable = ref(false)
 const canScrollPrev = ref(false)
 const canScrollNext = ref(false)
@@ -198,6 +242,18 @@ const canScrollNext = ref(false)
  * 抽出来是因为箭头显隐翻转后要**再量一次**（见 `syncScrollState`），而那时元素相同。
  */
 const applyScrollState = (viewport: HTMLElement): void => {
+  /*
+   * `clientWidth === 0` = 布局还没落地（水合首帧 / 样式表尚未生效 / 元素被临时隐藏）。
+   * 此时 `scrollWidth` 可能已有内容宽，直接比较会把「还没量到」误判成「放不下」，
+   * 而箭头一旦出现、后续又没有新的 resize 信号，就会**永久卡在可见状态**。
+   * 因此零宽时统一按「不溢出」处理，等真正的布局信号（`ResizeObserver` / resize）再来量。
+   */
+  if (viewport.clientWidth <= 0) {
+    isScrollable.value = false
+    canScrollPrev.value = false
+    canScrollNext.value = false
+    return
+  }
   const maxScroll = viewport.scrollWidth - viewport.clientWidth
   isScrollable.value = maxScroll > SCROLL_EPSILON
   canScrollPrev.value = viewport.scrollLeft > SCROLL_EPSILON
@@ -207,8 +263,9 @@ const applyScrollState = (viewport: HTMLElement): void => {
 /**
  * 同步滚动状态（挂载后、resize、scroll 事件时调用）。
  *
- * 初始三者皆 false：SSR 直出与客户端首帧都是「无箭头」，挂载后才按实测翻转 ——
- * 不产生水合不匹配（class 变化是挂载后的正常更新，不是首帧差异）。
+ * 初值三者皆 false（挂载首帧「无箭头」），挂载后按实测翻转 —— 与 0.5.7 的口径一致，
+ * 只是「SSR 一致性」这个理由随 ClientOnly 边界失效（现在剩下的理由是：测量必须在
+ * DOM 落地之后，`setup()` 期量不到）。
  *
  * 箭头从「不占位」翻到「占位」会缩小视口，因此翻转后补量一次（`nextTick` 等 DOM 落地）：
  * 该翻转是**单调**的（视口只会更窄 ⇒ 溢出只会更多），补量一次即收敛，不会来回抖动。
@@ -233,7 +290,7 @@ const syncScrollState = (): void => {
 /**
  * 箭头滚动一步：一屏（`clientWidth`）。
  * 一步超过可见宽 ⇒ 两端的到头判定由 scrollLeft 天然收敛，不需要手算边界。
- * 平滑与否尊重 `prefers-reduced-motion`（hooks 原语，SSR 恒 false）。
+ * 平滑与否尊重 `prefers-reduced-motion`（`@fluere-vue/hooks` 原语）。
  */
 const reducedMotion = useReducedMotion()
 const scrollIcons = (direction: 1 | -1): void => {
@@ -252,15 +309,15 @@ const scrollIcons = (direction: 1 | -1): void => {
 /* ------------------------------------------------------------------ */
 
 /**
- * 当前时刻。初值 `null`：SSR 直出与客户端首帧都渲染空时钟文本，
- * `onMounted` 后才写入真实时间 —— 否则服务端时间与客户端时间必然不同 ⇒ 水合告警
- * （与 theme-toggle「挂载后再读存储值」同一手法）。
+ * 当前时刻。外壳处于 `ClientOnly` 边界之内（原则见 docs/ssr-guide.md），
+ * 不存在服务端 / 客户端首帧的差异，因此直接以「现在」起步 —— 不再需要
+ * 0.5.7–0.5.8 那套「初值 null、挂载后写入」的水合口径。
  */
-const now = ref<Date | null>(null)
-const clock = computed(() => (now.value ? formatTrayClock(now.value, locale.value) : null))
+const now = ref(new Date())
+const clock = computed(() => formatTrayClock(now.value, locale.value))
 
-/** `<time datetime>` 的 ISO 值（挂载后才有；初值两侧一致为空属性） */
-const clockDateTime = computed(() => now.value?.toISOString())
+/** `<time datetime>` 的 ISO 值（机器可读时间） */
+const clockDateTime = computed(() => now.value.toISOString())
 
 let clockTimer: ReturnType<typeof setInterval> | null = null
 
@@ -315,6 +372,17 @@ onMounted(() => {
   }, CLOCK_REFRESH_MS)
   syncScrollState()
   globalThis.addEventListener('resize', syncScrollState, { passive: true })
+  /*
+   * `ResizeObserver` 是「图标区视口尺寸变化」的通用信号（视口 resize / 字体与语言切换
+   * 导致入口文本宽度变化 / 水合后样式落地都会触发），比只听 `window.resize` 可靠：
+   * 少了它，「布局还没落地就量过一次」的误判没有第二次纠正机会（实测踩到：
+   * 静态产物里两个箭头永久可见）。箭头显隐自身会改变视口宽 ⇒ 该观察器会再触发一次，
+   * 由 `applyScrollState` 的零宽守卫 + 单调性保证收敛（见 `syncScrollState`）。
+   */
+  if (viewportRef.value) {
+    scrollResizeObserver = new ResizeObserver(syncScrollState)
+    scrollResizeObserver.observe(viewportRef.value)
+  }
 })
 
 onScopeDispose(() => {
@@ -322,9 +390,9 @@ onScopeDispose(() => {
     clearInterval(clockTimer)
     clockTimer = null
   }
-  if (import.meta.client) {
-    globalThis.removeEventListener('resize', syncScrollState)
-  }
+  globalThis.removeEventListener('resize', syncScrollState)
+  scrollResizeObserver?.disconnect()
+  scrollResizeObserver = null
 })
 </script>
 
@@ -343,7 +411,7 @@ onScopeDispose(() => {
   >
     <!-- 最左：开始按钮（全宽度常驻；面板与焦点逻辑见 ShellStartMenu） -->
     <div class="docs-shell-taskbar__zone docs-shell-taskbar__zone--start">
-      <ShellStartMenu @open-tab="emit('openTab', $event)" />
+      <ShellStartMenu @activate-app="emit('activateApp', $event)" />
     </div>
 
     <!--
@@ -357,24 +425,35 @@ onScopeDispose(() => {
       class="docs-shell-taskbar__zone docs-shell-taskbar__zone--icons"
       :class="{ 'is-scrollable': isScrollable }"
     >
-      <FluereTooltip
-        :content="t('shell.taskbarScrollPrev')"
-        placement="top"
-      >
-        <FluereButton
-          class="docs-shell-taskbar__scroll docs-shell-taskbar-icon"
-          appearance="subtle"
-          size="medium"
-          icon-only
-          :disabled="!canScrollPrev"
-          :aria-label="t('shell.taskbarScrollPrev')"
-          @click="scrollIcons(-1)"
+      <!--
+        ⚠️ 显隐落在**外层 span**（`__scroll`）上，不写在 `FluereButton`：
+        按钮根自带 `display: inline-flex`（组件自己的 scoped 规则），
+        与本站的 `.docs-shell-taskbar__scroll { display: none }` **同特异性**（0,2,0）⇒
+        由 CSS 注入顺序决定胜负。实测：dev 下本站规则在后来者位置生效（箭头正常隐藏），
+        **生产构建（esbuild 打包 CSS）里库规则后到** ⇒ 两个箭头在宽视口永久可见
+        （`nuxt generate` 的静态产物实测复现，见 temp/pw-shell-apps.mjs）。
+        与托盘展开按钮同一解法（那里也是外层 span 承担断点显隐）。
+      -->
+      <span class="docs-shell-taskbar__scroll">
+        <FluereTooltip
+          :content="t('shell.taskbarScrollPrev')"
+          placement="top"
         >
-          <template #icon>
-            <FluentIconChevronLeft24Regular :size="20" />
-          </template>
-        </FluereButton>
-      </FluereTooltip>
+          <FluereButton
+            class="docs-shell-taskbar-icon"
+            appearance="subtle"
+            size="medium"
+            icon-only
+            :disabled="!canScrollPrev"
+            :aria-label="t('shell.taskbarScrollPrev')"
+            @click="scrollIcons(-1)"
+          >
+            <template #icon>
+              <FluentIconChevronLeft24Regular :size="20" />
+            </template>
+          </FluereButton>
+        </FluereTooltip>
+      </span>
 
       <!--
         视口：横向滚动、**滚动条全部隐藏**（scrollbar-width: none + webkit 伪元素），
@@ -387,53 +466,20 @@ onScopeDispose(() => {
         @scroll.passive="syncScrollState"
       >
         <!--
-          窗口入口：最小化 / 关闭后提供还原入口，常规态呈激活指示条。
+          应用入口（`SHELL_APPS` 顺序 = 固定顺序）：点击 = 打开 / 还原 / 置顶该应用窗口；
+          焦点应用且窗口在显示时 = 最小化（语义迁移见 desktop-shell 的 `onActivateApp`）。
           用 `FluereButton`（外观 / 尺寸 / 焦点环交给组件实现）+ `.docs-shell-taskbar-icon`
           （任务栏口径的 hover / pressed 状态色与描边，规则在 docs-shell.css）；
           提示走 `FluereTooltip`（外壳已登记层级栈，不会被任务栏盖住，见文件头）。
           `appearance="subtle"`：任务栏上的图标按钮不该有常驻底色。
         -->
-        <span class="docs-shell-taskbar__slot">
-          <FluereTooltip
-            :content="entryLabel"
-            placement="top"
-          >
-            <FluereButton
-              class="docs-shell-taskbar__entry docs-shell-taskbar-icon"
-              appearance="subtle"
-              size="large"
-              icon-only
-              :aria-label="entryLabel"
-              @click="emit('toggleWindow')"
-            >
-              <template #icon>
-                <FluentIconWindow24Regular :size="24" />
-              </template>
-            </FluereButton>
-          </FluereTooltip>
-
-          <!--
-            激活指示条：窗口在桌面显示时出现（对齐实机任务栏「运行中的窗口」下划线）。
-            装饰性 —— 对 AT 隐藏，状态由入口的 `aria-label` 文字承载。
-            几何为应用层构图（无 WinUI 来源，Windows 任务栏由系统绘制）：宽 16 / 高 3 /
-            圆角 `--borderRadiusCircular` / 前景 `--colorBrandBackground`
-            （与 NavigationView 选中指示条同源，站内「选中」统一走强调色）。
-          -->
-          <span
-            class="docs-shell-taskbar__indicator"
-            :class="{ 'is-active': !isWindowHidden }"
-            aria-hidden="true"
-          />
-        </span>
-
-        <!-- 固定入口：点击 = 打开（或切换到）对应窗口标签；激活态见 isPinActive -->
         <span
-          v-for="view in pinnedViews"
-          :key="view.id"
+          v-for="entry in appEntries"
+          :key="entry.id"
           class="docs-shell-taskbar__slot"
         >
           <FluereTooltip
-            :content="view.label"
+            :content="entry.label"
             placement="top"
           >
             <FluereButton
@@ -441,20 +487,33 @@ onScopeDispose(() => {
               appearance="subtle"
               size="large"
               icon-only
-              :aria-label="view.label"
-              @click="emit('openTab', view.id)"
+              :aria-label="entry.label"
+              @click="emit('activateApp', entry.id)"
             >
               <template #icon>
                 <component
-                  :is="view.icon"
+                  :is="entry.icon"
                   :size="24"
                 />
               </template>
             </FluereButton>
           </FluereTooltip>
+
+          <!--
+            激活指示条：该应用窗口在桌面显示时出现（对齐实机任务栏「运行中的窗口」下划线）。
+            装饰性 —— 对 AT 隐藏，状态由入口的 `aria-label` 文字承载。
+            几何为应用层构图（无 WinUI 来源，Windows 任务栏由系统绘制）：宽 16 / 高 3 /
+            圆角 `--borderRadiusCircular` / 前景 `--colorBrandBackground`
+            （与 NavigationView 选中指示条同源，站内「选中」统一走强调色）。
+
+            **焦点 / 非焦点在这里不区分**：Win11 焦点窗口的指示条更长、颜色也不同，但那两条
+            都没有 A 级来源（Windows 任务栏由系统外壳绘制，参考图只覆盖 hover / pressed），
+            本期只表达「运行中」；「哪个是焦点窗口」由标题栏的激活态表达。
+            缺口记在 explorer-layout.md §8，0.9.x 用参考图补。
+          -->
           <span
             class="docs-shell-taskbar__indicator"
-            :class="{ 'is-active': isPinActive(view.id) }"
+            :class="{ 'is-active': entry.isRunning }"
             aria-hidden="true"
           />
         </span>
@@ -484,24 +543,26 @@ onScopeDispose(() => {
         </span>
       </div>
 
-      <FluereTooltip
-        :content="t('shell.taskbarScrollNext')"
-        placement="top"
-      >
-        <FluereButton
-          class="docs-shell-taskbar__scroll docs-shell-taskbar-icon"
-          appearance="subtle"
-          size="medium"
-          icon-only
-          :disabled="!canScrollNext"
-          :aria-label="t('shell.taskbarScrollNext')"
-          @click="scrollIcons(1)"
+      <span class="docs-shell-taskbar__scroll">
+        <FluereTooltip
+          :content="t('shell.taskbarScrollNext')"
+          placement="top"
         >
-          <template #icon>
-            <FluentIconChevronRight24Regular :size="20" />
-          </template>
-        </FluereButton>
-      </FluereTooltip>
+          <FluereButton
+            class="docs-shell-taskbar-icon"
+            appearance="subtle"
+            size="medium"
+            icon-only
+            :disabled="!canScrollNext"
+            :aria-label="t('shell.taskbarScrollNext')"
+            @click="scrollIcons(1)"
+          >
+            <template #icon>
+              <FluentIconChevronRight24Regular :size="20" />
+            </template>
+          </FluereButton>
+        </FluereTooltip>
+      </span>
     </div>
 
     <!-- 最右：系统托盘（版本 / 语言 / 主题 + 时钟；窄档控件收进展开菜单） -->
