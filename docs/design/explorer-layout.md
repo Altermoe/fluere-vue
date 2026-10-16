@@ -8,14 +8,17 @@
 
 ## 0. 范围与归属
 
-| 层                       | 落点                                               | 本期版本    | 说明                                                                       |
-| ------------------------ | -------------------------------------------------- | ----------- | -------------------------------------------------------------------------- |
-| 窗口层                   | `packages/ui/src/app-window/`（`FluereAppWindow`） | 0.5.1 ✅    | 只画外框与标题栏，位置 / 尺寸 / 层级由外壳给                               |
-| 内容容器                 | `packages/ui/src/tab-view/`（`FluereTabView`）     | 0.5.3       | 窗口内的视图切换                                                           |
-| 导航面板                 | `packages/ui/src/navigation-view/`                 | 0.5.4       | 左侧可折叠导航                                                             |
-| 壁纸 / 任务栏 / 开始菜单 | `apps/docs/components/shell/` + `apps/docs/data`   | 0.5.5–0.5.7 | **应用级组合**，不进 `packages/ui`（见 `apps/docs/README.md`〈构件归属〉） |
+| 层                              | 落点                                                                               | 本期版本    | 说明                                                                       |
+| ------------------------------- | ---------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------- |
+| 窗口层                          | `packages/ui/src/app-window/`（`FluereAppWindow`）                                 | 0.5.1 ✅    | 只画外框与标题栏，位置 / 尺寸 / 层级由外壳给                               |
+| 内容容器                        | `packages/ui/src/tab-view/`（`FluereTabView`）                                     | 0.5.3       | 窗口内的视图切换                                                           |
+| 导航面板                        | `packages/ui/src/navigation-view/`                                                 | 0.5.4       | 左侧可折叠导航                                                             |
+| 壁纸 / 任务栏 / 开始菜单        | `apps/docs/components/shell/` + `apps/docs/data`                                   | 0.5.5–0.5.7 | **应用级组合**，不进 `packages/ui`（见 `apps/docs/README.md`〈构件归属〉） |
+| 窗口管理器（多窗口层级 / 焦点） | `apps/docs/utils/shell-window-state.ts` + `components/shell/shell-window-host.vue` | 0.5.9       | 同上；口径见本文 §8                                                        |
 
-> 「Explorer 窗口」= 壁纸层 → 窗口层（`FluereAppWindow` = 标题栏 + 内容区）→ 任务栏层。窗口内容本期挂三个视图：首页（与站点主页共用的营销内容）、组件（注册表卡片网格）、指南（两个起步入口），由 `explorer-window.vue` 按标签 id 分派；文档内页布局不动。
+> 「Explorer 窗口」= 壁纸层 → 窗口层（`FluereAppWindow` = 标题栏 + 内容区）→ 任务栏层。窗口内容本期挂三个视图：首页（与站点主页共用的营销内容）、组件（注册表卡片网格）、指南（两个起步入口），由 `ui-gallery-window.vue`（0.5.9 前叫 `explorer-window.vue`）按标签 id 分派；文档内页布局不动。
+>
+> **0.5.9 落点变更（2026-10-16，经人类明确授权）**：仿真从「一个窗口」升级为**仿真应用系统** ——「应用 = 一扇窗口」，现有窗口成为 **UI Gallery** 应用，新增最小第二应用 **Render Lab**（WebGL2 彩色三角）；桌面同时承载多扇窗口并做**层级 + 焦点**管理（本文 §8）。**范围扩大是明确授权的**，随之改写了 `docs/todo.md` 的两处「不做多窗口」描述与可见文案 `shell.boundary.*`（README〈WindowsOS 仿真边界〉为文案事实源）。
 
 > **0.5.6 落点变更（2026-10-16）**：仿真从站点主页迁到**独立路由 `/os`**（`pages/os/index.vue` + `layouts/os.vue`），站点主页（`/`）回到常规营销页（`layouts/home.vue` + `components/home/home-content.vue`）。
 >
@@ -61,8 +64,8 @@
 
 坐标与公式（`apps/docs/utils/shell-window-state.ts#containWindowOffset`）：`offset` 是相对**静止位置** `base` 的平移量，窗口左上角 = `base + offset`；工作区 = `[0, desktopWidth] × [0, desktopHeight − taskbarHeight]`。收敛在两个路径上**共用同一个纯函数**：
 
-1. **拖拽中**（`explorer-window.vue`）：按**增量**位移推进（`deltaX/deltaY`），锚点 = 上一次收敛后的位移。撞到边界后反向拖拽第一帧就有响应 ⇒ 没有「回拖死区」（按累计位移收敛时，越界量会被累计下来，Web 里指针能跑到视口任意位置，实测死区可达数百像素）。
-2. **视口（宿主）变化后**（`desktop-shell.vue#containOffset`）：`ResizeObserver`（宿主 resize 的通用信号）+ `window.resize`（能力探测失败时的退路）都会重新收敛一次。**这是 Web 独有的风险**：拖拽允许窗口本体挂出桌面，视口一变就可能把标题栏顶出工作区、窗口在屏幕上彻底消失（实机的位置由窗口管理器持有，显示器变化时系统会把窗口收回工作区）。
+1. **拖拽中**（`shell-window-host.vue`，0.5.9 前在 `explorer-window.vue`）：按**增量**位移推进（`deltaX/deltaY`），锚点 = 上一次收敛后的位移。撞到边界后反向拖拽第一帧就有响应 ⇒ 没有「回拖死区」（按累计位移收敛时，越界量会被累计下来，Web 里指针能跑到视口任意位置，实测死区可达数百像素）。
+2. **视口（宿主）变化后**（`desktop-shell.vue#containAllOffsets`，逐窗口）：`ResizeObserver`（宿主 resize 的通用信号）+ `window.resize`（能力探测失败时的退路）都会重新收敛一次。**这是 Web 独有的风险**：拖拽允许窗口本体挂出桌面，视口一变就可能把标题栏顶出工作区、窗口在屏幕上彻底消失（实机的位置由窗口管理器持有，显示器变化时系统会把窗口收回工作区）。
 
 几何量（窗口尺寸 / 静止位置 / 标题栏下缘）一律**实测**（`measure()` 里 `rect − offset`），不在 TS 里重算 CSS 的 `min(...)` / 居中公式 / 标题栏高度：两处一旦漂移，边界就跟实际窗口对不上。
 
@@ -99,7 +102,7 @@ viewport
 
 1. `FluereAppWindow` 的内容区**只控制可视区域**（`overflow: clip` + `min-block-size: 0`），源码注释明确「滚动交给消费方」；窗口尺寸由消费方给 ⇒ 只有内容区有确定高度，才谈得上内部滚动。
 2. 真实 Explorer 的滚动条属于窗口内容，不属于桌面；把整页做成滚动会让任务栏 / 壁纸跟着走，仿真边界立刻破。
-3. 与文档站现状的关系：`apps/docs/layouts/components.vue`（文档内页）与 `apps/docs/layouts/home.vue`（站点主页）的 **`FluereScrollView` 整页滚动口径适用于站点页面**；`/os` 窗口「首页」视图的内容另起一个 `FluereScrollView`（窗口内滚动，见 `explorer-window.vue` 的 `__panel-scroll`）。
+3. 与文档站现状的关系：`apps/docs/layouts/components.vue`（文档内页）与 `apps/docs/layouts/home.vue`（站点主页）的 **`FluereScrollView` 整页滚动口径适用于站点页面**；`/os` 窗口「首页」视图的内容另起一个 `FluereScrollView`（窗口内滚动，见 `ui-gallery-window.vue` 的 `__panel-scroll`）。
 
 **降级**：视口 < `lg`（1024px）时外壳降级为「全屏无边框窗口 + 页面滚动」（移动端不仿桌面，见 todo〈仿真边界〉）；此时窗口内容不再单独滚动，交给页面滚动。降级判据用 `useMediaQuery` / 能力探测，**不在 `setup()` 里直接读 `window`**（[docs/ssr-guide.md](../ssr-guide.md)）。
 
@@ -134,13 +137,13 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 
 **假设**：任务栏高 **48px**（100% 缩放），层级引用 `--zIndexShell`（1500）；开始菜单是**比任务栏更高的一档**，`--zIndexStartMenu` = **1600**（0.5.7 已按本节补入 `repo-tokens.json`，顺序断言同步更新）。
 
-| 层                | 令牌                  | 值   | 说明                                                                                                                          |
-| ----------------- | --------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------- |
-| 壁纸              | `--zIndexWindow` 之上 | 0    | 壁纸不建层，直接作为 shell 根背景                                                                                             |
-| 桌面窗口          | `--zIndexWindow`      | 0    | 窗口自身不叠在别的东西之上                                                                                                    |
-| 窗口内容浮起面    | `--zIndexContent`     | 100  | 窗口内容区内部的浮起表面（非浮层档位）                                                                                        |
-| 任务栏            | `--zIndexShell`       | 1500 | 固定底边；`position: fixed` + `inset-block-end: 0`                                                                            |
-| 开始菜单（0.5.7） | `--zIndexStartMenu`   | 1600 | 必须盖过任务栏与窗口；面板挂在任务栏子树内（由 `--zIndexShell` 的叠放上下文承载），令牌同时锁定档位、防未来独立成层时回退裸值 |
+| 层                | 令牌                  | 值   | 说明                                                                                                                            |
+| ----------------- | --------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 壁纸              | `--zIndexWindow` 之上 | 0    | 壁纸不建层，直接作为 shell 根背景                                                                                               |
+| 桌面窗口          | `--zIndexWindow`      | 0    | 窗口层容器；**层内**多窗口按 `--zIndexStep` 逐档递增（`calc(var(--zIndexWindow) + rank * var(--zIndexStep))`，rank ≤ 7，见 §8） |
+| 窗口内容浮起面    | `--zIndexContent`     | 100  | 窗口内容区内部的浮起表面（非浮层档位）                                                                                          |
+| 任务栏            | `--zIndexShell`       | 1500 | 固定底边；`position: fixed` + `inset-block-end: 0`                                                                              |
+| 开始菜单（0.5.7） | `--zIndexStartMenu`   | 1600 | 必须盖过任务栏与窗口；面板挂在任务栏子树内（由 `--zIndexShell` 的叠放上下文承载），令牌同时锁定档位、防未来独立成层时回退裸值   |
 
 - **高度令牌**：`--shellTaskbarHeight` = `48`（本节新增，`repo-tokens.json` 的 `sources.shellGeometry` 记录）。**证据缺口**：Windows 任务栏由系统外壳绘制，`microsoft-ui-xaml` 无任何对应资源，48 为 Windows 11 100% 缩放的实测值；DPI 缩放 / 小任务栏模式下需覆写。覆写方式：外壳在根节点写 `--shellTaskbarHeight: <px>`（任务栏与为它预留的 `padding-block-end` 都读同一个变量）。
 - **与 ToolTip 档的关系（0.5.6 曾裁决「不挂 ToolTip」，0.5.7 改为方案① 的正解）**：`--zIndexTooltip` = 1400 **低于** `--zIndexShell` = 1500（顺序断言见 `packages/designs/src/repo-tokens.test.ts`）。0.5.6 的临时裁决是「外壳内只用原生 `title`」；**0.5.7 起改为**：外壳把自己作为**宿主层**登记进层级栈（`acquireLayer('--zIndexShell')`，客户端 `onMounted` 登记 / 卸载出栈，见 `desktop-shell.vue`），于是外壳内打开的浮层命中层级栈的**嵌套提升**分支，z = `calc(var(--zIndexShell) + var(--zIndexStep))` = **1510** > 1500，全程引用刻度。外壳内的图标按钮 / 链接一律用 `FluereTooltip`，不再有原生 `title`（契约测试反向断言）。
@@ -250,4 +253,131 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 - 视觉值全部是 `var(--TokenName)` 或 `--fui-<component>-*` / `--shell-*` 局部变量；`pnpm test` 里的样式契约测试从 SFC 源码文本断言（jsdom 不解析 `var()`，见 style-spec §7.1）。
 - 层级：新组件不得出现裸 `z-index`——由 `packages/ui/src/__tests__/z-index-tokens.test.ts` 与 `packages/designs/src/repo-tokens.test.ts` 守住；`apps/docs` 侧的外壳同样只引用 `--zIndex*`。
 - 浮层 / 材质类改动必须在**真实浏览器**里量 `getComputedStyle`（防 scoped / Teleport 静默失效），明暗各留一张对照截图；脚本与截图留 `temp/`，结论写回代码注释 / 契约测试 / 文档页。
-- SSR：视口相关一律 `useMediaQuery` / 能力探测 + 无害默认值，`pnpm lint:ssr` 必须全绿。
+- SSR：**桌面仿真组件在 `ClientOnly` 边界之内**（原则见 `docs/ssr-guide.md`〈Level 2B〉），
+  外壳内部不做 SSR 检查；组件库（`packages/ui` 等）不受豁免，`pnpm lint:ssr` 与
+  `ssr-smoke.test.ts` 仍必须全绿。`/os` 的预渲染产物只有 `#fallback` 占位（路由本身仍在静态产物里）。
+- 多窗口：层级（z 值形态 / 不抬到 `--zIndexContent` 之上）、焦点切换与回退、逐窗口最小化 /
+  关闭 / 重开、每扇窗口位移与标签互不串扰 —— 纯函数部分由
+  `apps/docs/utils/__tests__/shell-window-state.test.ts` 覆盖，交互部分必须在**真实浏览器**里实测
+  （点击下层窗口置顶、任务栏四态入口文案、WebGL 画面像素与降级文案）。
+
+## 8. 仿真应用系统与窗口管理器（0.5.9，经人类明确授权）
+
+> 状态：**0.5.9 落地**（2026-10-16）。本节是「应用 = 窗口」这一层语义与多窗口层级 / 焦点口径的
+> 事实源；实现落点是 `apps/docs/utils/shell-apps.ts`（注册表）、
+> `apps/docs/utils/shell-window-state.ts`（窗口管理器纯函数）、
+> `apps/docs/components/shell/shell-window-host.vue`（窗口宿主）与
+> `apps/docs/components/shell/{ui-gallery-window,render-lab-window}.vue`（两个应用的内容）。
+
+### 8.1 模型
+
+一个**仿真应用** = 一个应用身份 = **一扇窗口 + 一份窗口内容**：
+
+| 字段 / 概念 | 内容                                                                                |
+| ----------- | ----------------------------------------------------------------------------------- |
+| 应用 id     | `ShellAppId`（字面量联合，同时是 CSS 类名后缀 `docs-shell-window--<id>`）           |
+| 应用元数据  | 标题 key / 副标题 key / 图标（`SHELL_APPS`，顺序 = 任务栏与开始菜单的固定顺序）     |
+| 窗口状态    | 每应用一份 `ShellWindowState`（status / maximized / offset / openTabs / activeTab） |
+| z 序        | 从底到顶的 `zOrder`（最小化 / 关闭的应用**留在序里**，还原时先回原位再置顶）        |
+| 焦点        | `activeAppId`（= 最上层可见窗口；全部收起为 `null`）                                |
+
+**内容分派用字面量分支**（宿主里 `v-if="app.id === 'ui-gallery'"` / `v-else-if="…'render-lab'"`），
+不用 `<component :is>`：AGENTS.md〈交互与弹层组件约定〉记着实测结论「动态组件分支上的事件不会被
+可靠转发」，而窗口的 `update:offset` / `openTab` 正是不能被吞的那类事件。加应用 = 加一条注册表
+条目 + 一条字面量分支。
+
+### 8.2 层级（z 序）
+
+- 窗口层容器整体在 `--zIndexWindow`(0) 档；**层内**每扇窗口的 z 值是
+  `calc(var(--zIndexWindow) + rank * var(--zIndexStep))`（rank = 它在 `zOrder` 里的下标），
+  由 `windowZIndex()` 生成**内联样式** —— 全程引用刻度，没有裸 `z-index`。
+- 上限 `SHELL_MAX_WINDOWS = 8`（rank 0..7 ⇒ z 0..70）：超过 9 扇窗口就会把窗口抬到
+  `--zIndexContent`(100) 这个「窗口内容区浮起面」档之上，层级语义随即崩掉 ⇒ 夹取（不拒绝打开）。
+- **窗口 DOM 顺序固定为注册表顺序**，层级只由 z 值表达：不按焦点重排 `v-for`，因为
+  Render Lab 的 `<canvas>` 被搬动有丢 WebGL 上下文的风险（标准行为是「从文档移除」才丢，
+  但没必要冒这个险）。
+- 任务栏 / 开始菜单 / 窗口内容里打开的浮层仍走 `--zIndexShell` 的层级栈嵌套提升（§4）。
+
+### 8.3 焦点与开关语义
+
+| 交互                                              | 结果                                                                   | 实现                 |
+| ------------------------------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| 窗口内任意 `pointerdown`（capture）               | 置顶 + 聚焦                                                            | `focusApp`           |
+| 任务栏 / 开始菜单入口：**焦点应用**且窗口可见     | 最小化                                                                 | `toggleAppFromShell` |
+| 任务栏 / 开始菜单入口：已最小化 / 已关闭 / 非焦点 | 还原（或重新打开）+ 置顶 + 聚焦                                        | `activateApp`        |
+| 最小化 / 关闭**焦点**窗口                         | 焦点交给**下一个最上层可见窗口**；全部收起则为 `null`                  | `topMostVisibleApp`  |
+| 关闭                                              | 复位 `maximized` / `offset`（重新打开 = 居中常规窗口），保留已打开标签 | `closeApp`           |
+| 最小化                                            | **保留**形态（最大化 / 位移 / 标签），从任务栏还原回到最小化前的样子   | `minimizeApp`        |
+
+入口的可访问名 / 提示随状态变化（最小化 / 还原 / 打开 / 切换四态，i18n `shell.taskbarApp*`）——
+说的是「点击会发生什么」，与实机读屏口径一致；激活指示条只表达「该应用窗口在桌面显示」，
+**焦点窗口不改变指示条几何**（Win11 焦点窗口的指示条更长，但那没有 A 级来源，见 §8.5）。
+
+**关闭不再有全局占位卡片**（0.5.5–0.5.8 曾在桌面中央放「窗口已关闭 / 重新打开」卡片）：
+多窗口下「关一个窗口弹全局恢复卡」语义不成立，恢复路径改为任务栏 / 开始菜单入口
+（指示条熄灭 ⇒ 点入口重开），与实机一致，也满足 todo 的「关闭不伪装成坏按钮」。
+
+### 8.4 几何与移动档
+
+- 逐窗口实测（`desktop-shell.vue#measure` 遍历窗口层内 `[data-shell-window]`，按
+  `data-app-id` 记录尺寸 / 静止位置 `rect - offset` / 标题栏下缘），收敛逐窗口进行
+  （`containAllOffsets`）。理由与 §1.1 相同：CSS 是几何的权威实现，TS 里重算必然漂移。
+- 每应用的落位 / 尺寸走 `docs-shell.css` 的 `.docs-shell-window--<id>` 档位
+  （UI Gallery 1120×720 居中；Render Lab 880×600 右下错开 48px —— 错开量受 1024px 桌面档
+  最窄视口约束，再大就会顶出桌面右缘）。
+- **移动档**（< 64rem）：所有窗口几何相同（铺满可视区减去任务栏）⇒ **最上层覆盖其余**，
+  同一时刻只看得到一扇窗口，用任务栏入口切换；不需要额外的「隐藏非焦点窗口」规则。
+  位移清零由 `desktop-shell.vue` 的 `useMediaQuery` 副作用完成（内联 `transform` 永远压过
+  样式表里的 `transform: none`，0.5.5–0.5.8 的那条 CSS 规则是死代码，已删除）。
+
+### 8.5 来源与证据缺口
+
+- Windows 的窗口层级 / 焦点 / 开关语义由系统窗口管理器持有，`microsoft-ui-xaml` 里**没有**任何
+  对应源码（与 §1.1、§4 任务栏高度同一条缺口）。口径来自 ① 用户 Windows 11 实机观察；
+  ② 通行语义：点击窗口内部把它带到最前，最小化 / 关闭后系统把焦点交给下一个可见顶层窗口。
+- **明确不做**（本期非目标）：边缘吸附（Aero Snap）、贴边顶满、窗口吸附（Snap Layouts /
+  Snap Assist）、任务视图（Win+Tab）、Alt+Tab、窗口缩放手柄、每应用位置持久化、
+  焦点窗口指示条的差异化几何、系统级动画复刻。
+- 可见文案（i18n `shell.boundary.{scope,excluded}`）与 [apps/docs/README.md](../../apps/docs/README.md)
+  〈WindowsOS 仿真边界〉已按本节改写 —— **仿真的能力边界必须与实现同步**，不要把
+  「层级 / 焦点」写好而实现没做，也不要把已经做到的写成「不做」。
+
+### 8.6 实测记录（2026-10-16，多窗口 + 两个应用）
+
+**方法与产物**：`temp/pw-shell-apps.mjs`（Playwright + Chromium，**dev server 与
+`pnpm docs:generate` 静态产物各跑一遍**，34 条断言全绿 / 两遍一致），
+`temp/visual-shell-apps/` 四张截图（桌面 / 移动 / reduced-motion / WebGL2 降级）；
+既有拖拽回归 `temp/pw-shell-drag.mjs` 17/17（选择器已限定到 UI Gallery 窗口 ——
+多窗口后它一度因为 `.fui-app-window__titlebar` 命中两扇窗口而报 strict mode 冲突）。
+过程产物不进仓库，可复现判据落在 `apps/docs/utils/__tests__/shell-{apps,window-state}.test.ts`
+与 `shell-style-contract.test.ts`（含下面两个 bug 的防回归断言）。
+
+关键实测值（1600×1000 桌面档 / 390×844 移动档，DPR 1）：
+
+| 量                              | 实测                                                             |
+| ------------------------------- | ---------------------------------------------------------------- |
+| UI Gallery 常规窗口             | 1120×720 @ (240, 24)                                             |
+| Render Lab 常规窗口             | 880×600 @ (408, 72)（右下错开 48）                               |
+| 两窗口 z 值                     | `0` / `10`（点击下层窗口后互换，焦点同步切换）                   |
+| 最大化                          | 1600×952（底部为 48px 任务栏让位）                               |
+| 移动档窗口                      | 390×796（844 − 48），最上层覆盖其余                              |
+| Render Lab canvas backing store | 878×566（= 内容区 CSS 尺寸 × DPR 1）                             |
+| 三角像素占比                    | 0.184（形状完整、未贴边被裁）                                    |
+| 三角顶点色                      | 令牌色的顶点插值（最常见 `rgb(39,158,234)` / `rgb(37,156,233)`） |
+| 图标区箭头                      | ≥ 320px 视口不出现；300px 出现且不产生文档横向溢出               |
+
+**两个只在真实浏览器 + 生产产物里暴露的 bug（已修，均有防回归断言）**：
+
+1. **箭头的 `display` 写在 `FluereButton` 上被库规则压过**：库按钮根自带
+   `display: inline-flex`，与本站 `.docs-shell-taskbar__scroll { display: none }`
+   **同特异性**（0,2,0）⇒ 由 CSS 注入顺序决定胜负。dev 下本站规则后到（正常隐藏），
+   而 `nuxt generate` 的产物里库规则后到 ⇒ **两个箭头在宽视口永久可见**。
+   修法：显隐移到外层 `<span class="docs-shell-taskbar__scroll">`（与托盘展开按钮同一解法）。
+2. **布局未落地时的测量竞态**：水合首帧 `clientWidth = 0` 会被 `scrollWidth > clientWidth`
+   误判成「放不下」，而箭头显隐自身不再产生新的测量信号 ⇒ `isScrollable` **卡死为 true**。
+   修法：`clientWidth <= 0` 时按「不溢出」处理，并补一个 `ResizeObserver` 观察图标区视口，
+   保证样式落地后有第二次测量机会（箭头显隐会改变视口宽 ⇒ 该观察器再触发一次，
+   由零宽守卫 + 单调性收敛）。
+
+降级路径同样实测通过：`prefers-reduced-motion: reduce` 下三角静止（两次采样像素集完全一致），
+`getContext('webgl2')` 被 stub 成 `null` 时窗口内显示 `shell.apps.renderLab.unsupported` 文案。
