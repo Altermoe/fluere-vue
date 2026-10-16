@@ -60,10 +60,40 @@ Nuxt 的 [`<ClientOnly>`](https://nuxt.com/docs/3.x/api/components/client-only) 
 
 **组件库内部不要写死 `<ClientOnly>`**（依赖 Nuxt，破坏框架无关性）。正确姿势：库组件保证"SSR 不崩溃 + 合理默认标记"，由消费方决定是否包裹。
 
+### Level 2B — 文档站桌面仿真的 ClientOnly 边界（0.5.9 起）
+
+> **原则（文档站实现侧）**：`apps/docs` 的**桌面仿真组件**（`components/shell/**` 及其专属
+> 工具模块）**一律实现为 `ClientOnly` 组件**，**其内部可以不做任何 SSR 检查** ——
+> 不需要 `import.meta.client` 判空、不需要浏览器能力探测兜底、不需要为"服务端没有视口"设计
+> 无害默认值或渲染分支。
+>
+> **边界**：这条豁免**只适用于 `apps/docs` 的桌面仿真实现侧**。`packages/ui` / `packages/hooks`
+> / `packages/utils` 是框架无关的组件库，**不受豁免**：仍然必须 SSR 安全（Level 0/1），
+> 仍然由 `packages/ui/src/__tests__/ssr-smoke.test.ts` 的 `renderToString` 冒烟守住。
+
+- **落点唯一**：`apps/docs/pages/os/index.vue` 用 `<ClientOnly>` 包住 `DesktopShell`（以及同样
+  只在客户端有意义的 `HomeRouteOverlay`）。`components/shell/**` 只允许被这一处挂载
+  （`apps/docs/utils/__tests__/shell-style-contract.test.ts` 的〈ClientOnly 边界〉一组断言守着）。
+- **为什么不写 `definePageMeta({ ssr: false })`**：后者会把 `/os` 整条路由从静态产物里摘掉 ——
+  本项目是 `nuxt generate` 静态部署，摘掉即线上 404。`<ClientOnly>` 保留路由与 `useSeoMeta`
+  直出的 head，只放弃桌面 DOM 的服务端渲染。
+- **代价**：`/os` 的预渲染 HTML 里没有桌面结构，首屏是 `#fallback` 占位
+  （因此占位要铺满视口、底色取壁纸令牌 `--micaBackgroundFillColorBase`，避免一帧白闪）。
+- **适用范围举例**：`Render Lab` 应用用 `<canvas>` + WebGL2 渲染 —— 这类内容**根本不可能**
+  在服务端渲染，正是本条原则的典型受益者（组件内因此没有任何 `import.meta.client` 守卫）。
+- **仍要遵守的纪律**：浏览器 API 一律进 `onMounted` / 事件回调（docs/ssr-guide.md Level 0）——
+  这不是为了 SSR，而是为了"不在 DOM 落地前读 DOM"；`onScopeDispose` 里清理监听器同样照旧。
+- **已删除的死重（0.5.9）**：`import.meta.client` 判空、`typeof globalThis.ResizeObserver`
+  能力探测、时钟"挂载前渲染空文本"的水合口径、以及"不用 `useMediaQuery` 参与渲染"的
+  SSR 立论。其中「视口分支走 CSS 断点」的做法**保留**，但理由变为「CSS 断点随 resize 天然生效、
+  不必引 JS 分支」，与 SSR 无关。
+
 ### Level 3 — 环境标志
 
 - Nuxt / Vite 提供 `import.meta.client` / `import.meta.server`（静态替换 + tree-shake）。
 - **通用库代码优先用 `@fluere-vue/utils` 的能力探测**（运行时、框架无关）；`import.meta.*` 留给 docs 应用内代码。
+- **文档站桌面仿真组件**（`apps/docs/components/shell/**`）在 `ClientOnly` 边界之内，
+  既不需要能力探测也不需要环境标志（见 Level 2B）；`import.meta.*` 在这里同样没有用武之地。
 
 ## 5. 项目内基础设施
 
@@ -87,6 +117,8 @@ Nuxt 的 [`<ClientOnly>`](https://nuxt.com/docs/3.x/api/components/client-only) 
 
 ```
 新组件要用浏览器 API？
+├─ 它是 apps/docs 的桌面仿真组件，且只从 /os 的 <ClientOnly> 挂载？
+│   └─ Level 2B：直接写，不做 SSR 检查（但浏览器 API 仍进 onMounted / 事件回调）
 ├─ 只读、不渲染、事件驱动型（matchMedia / rAF / 监听器）
 │   └─ Level 0：放 onMounted / 事件回调 → 完成
 ├─ setup 必须读、值不渲染 → Level 1：复用 @fluere-vue/hooks（或扩展它）

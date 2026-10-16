@@ -69,7 +69,8 @@ pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI �
 - **不引入全局样式**：组件必须自包含；页面级工具类只出现在 `apps/*`。唯一的例外是上面那条"Teleport 浮层"：允许写非 scoped 的 `<style>`，但**类名必须是本库私有 BEM 前缀**（`.fui-<component>`）并在注释里说明理由。
 - **无同值 token 的视觉量 → 组件局部变量**：以 `--fui-<component>-<slot>` 形式在组件内声明，注释里写清"WinUI 资源名 + token 表找不到同值档"以及消费方如何覆盖。
 - **取不到 A 级源码的"值"要显式标注证据缺口**：例如淡入淡出时长落在非公开头文件里时，写清"取值来源 + 为什么只能取这个 + 一行覆盖方法（覆写 `--fui-<component>-*`）"，**禁止**写成"时长就是 xx ms"。
-- **SSR 安全**（详见 [docs/ssr-guide.md](./docs/ssr-guide.md)）：`setup()` 期不得直接访问 `window` / `document` / `matchMedia` / `ResizeObserver`；必须访问时用能力探测 + 无害默认值。生成唯一 id 用 Vue 的 `useId()`（SSR/水合一致），不要用 `getCurrentInstance().uid`。
+- **SSR 安全**（详见 [docs/ssr-guide.md](./docs/ssr-guide.md)）：`setup()` 期不得直接访问 `window` / `document` / `matchMedia` / `ResizeObserver`；必须访问时用能力探测 + 无害默认值。生成唯一 id 用 Vue 的 `useId()`（稳定唯一），不要用 `getCurrentInstance().uid`。
+  - **文档站桌面仿真的豁免**（0.5.9 起，[ssr-guide.md〈Level 2B — 文档站桌面仿真的 ClientOnly 边界〉](./docs/ssr-guide.md)）：`apps/docs` 的桌面仿真组件（`components/shell/**` 及其专属工具）**一律实现为 `ClientOnly` 组件，其内部不做任何 SSR 检查**（无 `import.meta.client` 判空、无能力探测兜底）。**边界只到 `apps/docs` 实现侧**：`packages/ui` / `packages/hooks` / `packages/utils` 仍必须 SSR 安全。
 - **文档站文案一律走 i18n key**（详见 [docs/i18n.md](./docs/i18n.md)）：界面串写进 `apps/docs/i18n/locales/{zh-Hans,en}.json`（`zh-Hans` 为主语言，两侧 key 必须一致），组件库内置文案写进 `packages/ui/src/**/locale.ts`。**消息值不是纯文本**——`@` / `{` / `}` / `|` / `$` 都有语法含义，要原样输出必须写成 `{'@'}` 这类字面量插值；裸 `@`（如包名 `@fluere-vue/ui`）会让 vue-i18n 编译报 `Invalid linked format`、SSR / 预渲染直接 500，而 `pnpm check` **不编译消息、拦不住**。改完文案必须让消息真编译一次（dev server 两语种 200，或 `pnpm docs:generate`）。
 - **无障碍**：装饰性元素对 AT 隐藏、不抢 Tab 序、不拦指针；可访问名由消费方传入或提供 `label` 类 Prop。
 - **动效**：默认尊重 `prefers-reduced-motion`，且关闭动画后必须留下**合理静态形态**（不能出现空环或 0 长度弧）。
@@ -116,4 +117,5 @@ pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI �
 - ❌ 用 `main` 分支或来源不明的 tag 当规范，跳过 [style-spec §2](./docs/style-spec.md#2-版本地图先对版本再读代码) 的版本核对。
 - ❌ 从截图取色当 token 值（截图受系统强调色、DPI、重编码影响）。
 - ❌ 在没有测量证据的情况下宣称"已对齐实机"。
-- ❌ 提交 `temp/` 下的任何内容，或改动 `docs/todo.md` 的验收口径来"让结果看起来达标"。
+- ❌ 提交 `temp/` 下的任何内容。
+- ❌ **除非人类明确授权，否则禁止 AI 自主修改 `docs/todo.md` 的验收口径**（授权范围必须明确：改哪几条、为什么）。获得授权后：改动要连同**授权来源与日期**写进该处文档 / 提交信息，且不得借授权把"没做到"写成"做到了"。
