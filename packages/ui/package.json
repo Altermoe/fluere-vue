@@ -1,6 +1,6 @@
 {
   "name": "@fluere-vue/ui",
-  "version": "0.4.1-alpha.1",
+  "version": "0.5.0-alpha.0",
   "description": "基于 Fluent Design 2 设计语言的 Vue3 组件实现",
   "keywords": [
     "component-library",
