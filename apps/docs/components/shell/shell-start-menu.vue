@@ -44,6 +44,51 @@
  * 同时保证它若未来独立成层也无需改值。**禁止**在本组件写裸 z-index。
  * 宽度 `--shell-start-menu-w`（docs-shell.css 构图变量，`min(...100vw-8px)` 防窄视口溢出）。
  *
+ * ## 开始按钮的徽标与状态（0.5.7 按参考图还原，2026-10-16）
+ *
+ * 三件事在 0.5.7 一并改掉，逐条留证据（参考图 = 用户在 Windows 11 上截的
+ * 2560×48 任务栏与开始按钮 hover / pressed 特写，测量脚本与结论见
+ * docs/design/explorer-layout.md §4）：
+ *
+ * 1. **徽标几何**按公开的官方 Windows 11 徽标资源，不再手画方块：
+ *    Wikimedia Commons《Windows logo - 2021.svg》给出 `viewBox="0 0 4875 4875"` 与
+ *    `path d="M0 0h2311v2310H0zm2564 0h2311v2310H2564zM0 2564h2311v2311H0zm2564 0h2311v2311H2564"`
+ *    （方块 2311 / 间隙 253 / 总 4875）。**本组件没有直接搬这条 path**，而是按它在
+ *    24px 图标位下**整像素对齐**成「方块 11 / 缝 1 / 总 23」：官方比例原样渲染时缝是
+ *    1.25px，实测会被抗锯齿糊成两个半透明像素（`#94c1e4`），而参考图的缝像素是
+ *    **纯背景色**（`#EEEEEE`）⇒ 实机也是整像素对齐渲染的（测量见 explorer-layout.md §4；
+ *    把两种画法同屏渲染后逐像素比对缝隙，是得出该结论的对比实验）。0.5.7 之前是自画的 `7×7 + 2 缝`
+ *    （比例 0.44 / 0.125），方块偏小、缝偏大 —— 这是本次「还原图标」的主因。
+ * 2. **配色**按实机：任务栏把徽标按**强调色渐变**渲染，浅端 = 强调色 Light2
+ *    `--windowsAccentLight2`（#4CC2FF），深端 = 强调色本体 `--windowsAccentPrimary`
+ *    （#0078D4，也是官方徽标文件的填充色）。渐变方向取 `(14,21)`（dy/dx = **1.5**）：
+ *    对参考图徽标做最小二乘拟合得 56°、dy/dx = 1.52，**45° 会让右上与左下同色**，
+ *    而参考图右上（#25A3E9）明显浅于左下（#138FDE）—— 复算本式四角得
+ *    `#4cc2ff / #269de9 / #128ede / #0078d4`，与实测逐角吻合。**不再用 `currentColor`**
+ *    ——单色中性前景与实机的蓝色徽标不是一回事。
+ * 3. **按下态**（参考图三）：徽标变**单色** `--windowsAccentPrimary` 并整体缩到 0.75。
+ *    这两条都没有 A 级来源（Windows 外壳自绘、不在 microsoft-ui-xaml 里），
+ *    按「证据缺口」口径记账：数值来自参考图实测（方块 11px → 8px、总宽 23px → 17.25px
+ *    ⇒ 0.75），覆写口 = 下面两条 `:active` 选择器与 `--windowsAccentPrimary`；
+ *    按下态**不做过渡**（关键帧同样取不到，不猜时长，动效归 0.9.x）。
+ *
+ * 按钮命中区与 hover 状态归**任务栏**口径（40×40 + Control 填充阶梯 + 1px 描边），
+ * 与其余任务栏图标按钮共用 `docs-shell-taskbar-icon`（规则在 docs-shell.css，
+ * 理由见那里的注释）。本组件只负责「把类名挂上去」，不再自写按钮状态。
+ *
+ * ## 提示用 FluereTooltip（0.5.7 起，取代原生 title）
+ *
+ * 0.5.6 曾裁决「外壳内不挂 ToolTip、只用原生 `title`」，因为 `--zIndexTooltip`(1400)
+ * 低于 `--zIndexShell`(1500)，提示会被任务栏自己盖住（explorer-layout.md §4 方案①）。
+ * 0.5.7 落地时按方案① 的正解解决：**外壳把自己登记进层级栈**（`acquireLayer('--zIndexShell')`，
+ * 见 desktop-shell.vue），于是外壳内打开的 ToolTip 命中「嵌套提升」分支，z 变成
+ * `calc(var(--zIndexShell) + var(--zIndexStep))` = 1510 > 1500 —— 全程引用刻度，
+ * 没有裸 z-index。（只覆写 `--fui-tooltip-z` 是**无效的**：提示面拿到的 z 是
+ * `useFlyout` 的内联样式，内联优先于 CSS 声明；这一点已回写文档。）
+ *
+ * 开始菜单打开时不弹提示（`:disabled="open"`）：面板就悬在按钮上方，提示会被
+ * `--zIndexStartMenu`(1600) 的面板盖住，且实机在菜单打开时也不弹按钮提示。
+ *
  * ## 焦点与键盘（0.5.7 的核心逻辑，动效延后）
  *
  * - `useFocusTrap`（`@fluere-vue/hooks` 新原语，本组件是首个消费方）：Tab 困在面板内、
@@ -71,7 +116,7 @@
  */
 
 import { useFocusTrap } from '@fluere-vue/hooks'
-import { FluereButton, useFocusVisual } from '@fluere-vue/ui'
+import { FluereButton, FluereTooltip, useFocusVisual } from '@fluere-vue/ui'
 import { computed, ref, useId } from 'vue'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import { REPOSITORY_URL } from '~/utils/docs-repo'
@@ -87,6 +132,13 @@ const { t } = useDocsI18n()
 
 /** 面板 id（aria-controls 用；`useId()` 保证 SSR / 水合一致） */
 const panelId = useId()
+
+/**
+ * 徽标渐变 id。用 `useId()` 而不是写死字符串：① SSR / 水合一致；
+ * ② 万一页面上挂了第二个外壳，两个 `linearGradient` 也不会互相引用错
+ * （`url(#id)` 只按文档内第一个同名 id 解析）。
+ */
+const logoGradientId = useId()
 
 /** 菜单开合（组件内唯一状态；关闭路径见下方 useFocusTrap 回调） */
 const open = ref(false)
@@ -184,60 +236,86 @@ const onMenuKeydown = (event: KeyboardEvent): void => {
   <div class="docs-start-menu">
     <!--
       开始按钮：任务栏**最左侧常驻**（移动端压缩布局下也保留，见 shell-taskbar.vue）。
-      `subtle` 外观 = 无常驻底色（与任务栏其余图标按钮同口径）；
+      提示走 `FluereTooltip`（取代原生 `title`）—— 层级已由外壳登记层级栈解决，
+      菜单打开时禁用（面板就悬在按钮上方，见文件头「提示用 FluereTooltip」）。
       `aria-haspopup="menu"` + `aria-expanded` 把"会弹出菜单"这件事交给 AT，
       可访问名固定为「开始」（点击后果由 expanded 状态表达）。
-      图标 = 四格窗口字形（应用层品牌字形，非 Fluent 图标：Segoe Fluent Icons 无
-      Windows 徽标条目，见 @fluere-vue/icons generated/names 负面证据；几何为
-      2×2 方块构图，`fill="currentColor"` 随按钮前景取 token 色）。
+
+      图标 = Windows 11 官方徽标（几何与配色出处见文件头「开始按钮的徽标与状态」）：
+      路径取自 Wikimedia Commons《Windows logo - 2021.svg》，填充用强调色对角线渐变；
+      按下态由样式改成单色 + 0.75 缩放（:active 选择器）。
     -->
-    <FluereButton
-      ref="triggerRef"
-      class="docs-start-menu__trigger"
-      appearance="subtle"
-      size="medium"
-      icon-only
-      aria-haspopup="menu"
-      :aria-expanded="open"
-      :aria-controls="open ? panelId : undefined"
-      :aria-label="t('shell.startButton')"
-      :title="t('shell.startButton')"
-      @click="toggle"
+    <FluereTooltip
+      :content="t('shell.startButton')"
+      :disabled="open"
+      placement="top"
     >
-      <template #icon>
-        <svg
-          class="docs-start-menu__logo"
-          viewBox="0 0 16 16"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <rect
-            x="0"
-            y="0"
-            width="7"
-            height="7"
-          />
-          <rect
-            x="9"
-            y="0"
-            width="7"
-            height="7"
-          />
-          <rect
-            x="0"
-            y="9"
-            width="7"
-            height="7"
-          />
-          <rect
-            x="9"
-            y="9"
-            width="7"
-            height="7"
-          />
-        </svg>
-      </template>
-    </FluereButton>
+      <FluereButton
+        ref="triggerRef"
+        class="docs-start-menu__trigger docs-shell-taskbar-icon"
+        appearance="subtle"
+        size="large"
+        icon-only
+        aria-haspopup="menu"
+        :aria-expanded="open"
+        :aria-controls="open ? panelId : undefined"
+        :aria-label="t('shell.startButton')"
+        @click="toggle"
+      >
+        <template #icon>
+          <!--
+            渐变 id 经 CSS 变量注入：`fill` 走 CSS 规则（`--fui-start-menu-logo-fill`），
+            按下态才能用一条普通规则把它替换成单色 —— 若写成行内 `style="fill: ..."`，
+            行内样式会压过按下态规则。
+          -->
+          <svg
+            class="docs-start-menu__logo"
+            :style="{ '--fui-start-menu-logo-fill': `url(#${logoGradientId})` }"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <defs>
+              <!--
+                渐变：方向 (14,21) ≈ 实测的 dy/dx = 1.5（56°），而非 45° —— 两者残差
+                相近（4.4 vs 5.0/255），但**四角颜色**可分辨：45° 会让右上与左下同色，
+                而参考图右上 #25a3e9 明显浅于左下 #138fde。本式复算四角得
+                #4cc2ff / #269de9 / #128ede / #0078d4，与实测逐角吻合。
+              -->
+              <linearGradient
+                :id="logoGradientId"
+                gradientUnits="userSpaceOnUse"
+                x1="0"
+                y1="0"
+                x2="14"
+                y2="21"
+              >
+                <stop
+                  class="docs-start-menu__logo-stop--start"
+                  offset="0"
+                />
+                <stop
+                  class="docs-start-menu__logo-stop--end"
+                  offset="1"
+                />
+              </linearGradient>
+            </defs>
+            <!--
+              几何：方块 11 / 缝 1 / 总 23，**整像素对齐**。
+              官方路径（2311 / 253 / 4875）在 24px 下是 11.38 / 1.25 —— 同屏对比实测
+              它的缝隙被抗锯齿糊成两个半透明像素（#94c1e4），
+              而参考图的缝隙像素是**纯背景色**（#EEEEEE，见 explorer-layout.md §4 测量表），
+              说明实机是整像素对齐渲染的。故按 11/1/23 书写（比例与官方一致到 1% 以内），
+              代价是图标在 24px 图标位里左上偏 0.5px —— 不可见，换来方块与缝隙都不发虚。
+            -->
+            <path
+              class="docs-start-menu__logo-pane"
+              d="M0 0h11v11H0zm12 0h11v11H12zM0 12h11v11H0zm12 0h11v11H12z"
+            />
+          </svg>
+        </template>
+      </FluereButton>
+    </FluereTooltip>
 
     <!--
       面板：`v-if` 让关闭态不占 DOM（SSR 首屏为关闭，两端结构一致）。
@@ -333,14 +411,51 @@ const onMenuKeydown = (event: KeyboardEvent): void => {
 }
 
 .docs-start-menu__trigger {
-  /* 入口命中区对齐任务栏图标槽（40 宽，见 shell-taskbar.vue 同名口径） */
+  /*
+   * 命中区 40×40：`size="large"`（40 高）+ `icon-only`（`aspect-ratio: 1`）已给出正方形，
+   * `min-inline-size` 兜住「图标列宽被内容撑大」的情况 —— 数值与 `.docs-shell-taskbar-icon`
+   * 同源（参考图实测热区 40×40，见 explorer-layout.md §4）。
+   * hover / pressed 的状态色与 1px 描边由 docs-shell.css 的 `.docs-shell-taskbar-icon` 提供。
+   */
   min-inline-size: 40px;
 }
 
+/*
+ * 徽标：24×24（参考图实测 23px + 边缘半像素抗锯齿 ⇒ 24px 图标位）。
+ * 填充色走局部变量是为了让按下态能用普通规则替换它（见模板注释）。
+ */
 .docs-start-menu__logo {
-  inline-size: 16px;
-  block-size: 16px;
-  fill: currentColor;
+  inline-size: 24px;
+  block-size: 24px;
+  transform-origin: center;
+}
+
+.docs-start-menu__logo-pane {
+  fill: var(--fui-start-menu-logo-fill);
+}
+
+/* 渐变的两个停靠点：浅端 = 强调色 Light2，深端 = 强调色本体（出处见文件头） */
+.docs-start-menu__logo-stop--start {
+  stop-color: var(--windowsAccentLight2);
+}
+
+.docs-start-menu__logo-stop--end {
+  stop-color: var(--windowsAccentPrimary);
+}
+
+/*
+ * 按下态（参考图三）：徽标整体转单色强调色，并缩到 0.75。
+ * **证据缺口**：Windows 外壳自绘、无 A 级来源；0.75 由参考图实测得出
+ * （方块 11px → 8px、总宽 23px → 17.25px），无过渡 —— 关键帧同样取不到，不猜时长。
+ * 覆写口：这两条选择器（或改 `--windowsAccentPrimary` 换强调色）。
+ * `:active` 在键盘空格按下时同样命中（与鼠标一致）。
+ */
+.docs-start-menu__trigger:active .docs-start-menu__logo-pane {
+  fill: var(--windowsAccentPrimary);
+}
+
+.docs-start-menu__trigger:active .docs-start-menu__logo {
+  transform: scale(0.75);
 }
 
 /*

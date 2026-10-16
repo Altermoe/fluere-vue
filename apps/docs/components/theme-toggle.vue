@@ -1,42 +1,51 @@
 <script setup lang="ts">
 import { FluentIconWeatherMoon24Regular, FluentIconWeatherSunny24Regular } from '@fluere-vue/icons'
-import { FluereButton } from '@fluere-vue/ui'
+import { FluereButton, FluereTooltip } from '@fluere-vue/ui'
 
 const { isDark, toggle } = useColorMode()
 const { t } = useDocsI18n()
+
+/** 提示 / 可访问名共用一条文案（目标模式），避免两处说法漂移 */
+const label = computed(() => (isDark.value ? t('theme.switchToLight') : t('theme.switchToDark')))
 </script>
 
 <template>
   <!--
     图标按钮直接复用组件库的 FluereButton（icon-only）：外观/尺寸/悬停/焦点环都交给
     组件实现，站点不再手写一套按钮样式。点击事件透传 MouseEvent，供切换动效取圆心。
+    提示走 `FluereTooltip`（不再是原生 `title`）：本按钮在 `/os` 任务栏托盘里，
+    与任务栏其余图标的提示同一套手感与层级（外壳登记层级栈，见 desktop-shell.vue）。
   -->
-  <FluereButton
-    appearance="outline"
-    size="medium"
-    icon-only
-    :aria-label="isDark ? t('theme.switchToLight') : t('theme.switchToDark')"
-    :title="isDark ? t('theme.switchToLight') : t('theme.switchToDark')"
-    @click="toggle"
+  <FluereTooltip
+    :content="label"
+    placement="top"
   >
-    <!--
-      两个图标都渲染、可见性交给 CSS（按 html[data-color-mode]，与 content-code.css 同一约定）：
-      SSR 与水合的 DOM 完全一致，主题差异由 nuxt.config 的首帧脚本在水合前写入的属性决定，
-      既不产生水合告警，也不会闪错图标。aria-label/title 仍是动态文案，靠
-      useColorMode 把「读取存储值」推迟到 onMounted（水合完成后）保证属性一致。
-    -->
-    <template #icon>
-      <!-- size 20：Fluent 2 中号图标按钮（32px）配 20px 图标，与 library 的 .fui-button__icon 一致 -->
-      <FluentIconWeatherSunny24Regular
-        :size="20"
-        class="fui-theme-toggle__icon fui-theme-toggle__icon--sun"
-      />
-      <FluentIconWeatherMoon24Regular
-        :size="20"
-        class="fui-theme-toggle__icon fui-theme-toggle__icon--moon"
-      />
-    </template>
-  </FluereButton>
+    <FluereButton
+      appearance="outline"
+      size="medium"
+      icon-only
+      :aria-label="label"
+      @click="toggle"
+    >
+      <!--
+        两个图标都渲染、可见性交给 CSS（按 html[data-color-mode]，与 content-code.css 同一约定）：
+        SSR 与水合的 DOM 完全一致，主题差异由 nuxt.config 的首帧脚本在水合前写入的属性决定，
+        既不产生水合告警，也不会闪错图标。aria-label / 提示文案仍是动态的，靠
+        useColorMode 把「读取存储值」推迟到 onMounted（水合完成后）保证内容一致。
+      -->
+      <template #icon>
+        <!-- size 20：Fluent 2 中号图标按钮（32px）配 20px 图标，与 library 的 .fui-button__icon 一致 -->
+        <FluentIconWeatherSunny24Regular
+          :size="20"
+          class="fui-theme-toggle__icon fui-theme-toggle__icon--sun"
+        />
+        <FluentIconWeatherMoon24Regular
+          :size="20"
+          class="fui-theme-toggle__icon fui-theme-toggle__icon--moon"
+        />
+      </template>
+    </FluereButton>
+  </FluereTooltip>
 </template>
 
 <style scoped>

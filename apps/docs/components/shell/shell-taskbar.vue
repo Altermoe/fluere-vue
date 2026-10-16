@@ -52,12 +52,44 @@
  * 托盘弹出菜单引用 `--zIndexMenu`（菜单语义档）—— 它在任务栏已建立的叠放上下文内
  * 生效，仍属「引用刻度」，不写裸值。开始菜单面板的档位见 ShellStartMenu。
  *
- * ## 为什么不用 `FluereTooltip`
+ * ## 图标按钮的几何与状态（0.5.7 按参考图还原，2026-10-16）
  *
- * 任务栏里的按钮若挂 `FluereTooltip`，提示会被任务栏自己盖住
- * （`--zIndexTooltip` 1400 < `--zIndexShell` 1500）。裁决记录在
- * explorer-layout.md §4：**外壳内不挂 ToolTip，只用原生 `title`**；
- * 将来要在外壳里挂，按该节方案①覆写 `--fui-tooltip-z`，禁止裸 z-index。
+ * 参考图 = 用户在 Windows 11（2560×48 任务栏，100% 缩放）截的任务栏与开始按钮特写；
+ * 测量方法、逐项数值与结论写在 docs/design/explorer-layout.md §4。要点：
+ *
+ * | 量             | 参考图实测                          | 本实现                                        |
+ * | -------------- | ----------------------------------- | --------------------------------------------- |
+ * | 图标命中区     | 40×40（首个热区 x 12..52 / y 4..43） | `size="large"` + `icon-only`（40×40）          |
+ * | 图标           | 24×24                               | `:size="24"`（0.5.7 前是 20）                  |
+ * | 热区间距       | 4px（槽 pitch 44）                   | 根 grid `column-gap` + 图标区/视口 `gap` = 4px |
+ * | 任务栏内边距   | 左 12 / 右 20（含 8px 显示桌面条）    | `padding-inline: 12` + 托盘 `padding-inline-end: 8` |
+ * | hover / pressed | 浅色填充 + 1px 描边（描边压填充）    | `.docs-shell-taskbar-icon`（docs-shell.css）   |
+ *
+ * **应用区左对齐**：图标区 `justify-content: flex-start`（0.5.7 前是 `center`）——
+ * 实机任务栏是左对齐的，参考图里第一个应用热区紧跟开始按钮（56..96）。
+ *
+ * **滚动箭头只在真的溢出时占位**：`display: none` → `.is-scrollable` 时 `flex`。
+ * 0.5.5 曾用 `visibility: hidden` 让箭头**始终占位**（避免「隐藏→变宽→放得下→仍隐藏」
+ * 的测量死锁），代价是开始按钮与第一个应用之间凭空多出 32px —— 与参考图的「紧贴」
+ * 冲突。改成 `display` 后死锁依然不存在，理由：箭头出现只会**缩小**视口 ⇒
+ * `scrollWidth > clientWidth` 单调，不存在来回翻转；翻转后补一次测量（见
+ * `syncScrollState` 的 `nextTick` 备注）即可让两端可用状态准确。
+ *
+ * ## 提示：`FluereTooltip`（0.5.7 起取代原生 `title`）
+ *
+ * 0.5.6 曾裁决「外壳内不挂 ToolTip、只用原生 `title`」，因为 `--zIndexTooltip`(1400)
+ * 低于 `--zIndexShell`(1500)，提示会被任务栏自己盖住（explorer-layout.md §4 方案①）。
+ * 0.5.7 按方案① 的正解落地：**外壳把自己登记进层级栈**
+ * （`acquireLayer('--zIndexShell')`，见 desktop-shell.vue），外壳内打开的 ToolTip
+ * 因此走「嵌套提升」分支，z = `calc(var(--zIndexShell) + var(--zIndexStep))` = 1510
+ * —— 高于任务栏、且全程引用刻度（没有裸 z-index）。
+ *
+ * 只覆写 `--fui-tooltip-z` 是**无效的**：提示面的 z 由 `useFlyout` 以**内联样式**下发
+ * （`tooltip-fixture.vue` 的 `:style="layerStyle"`），内联优先于组件样式表里的
+ * `z-index: var(--fui-tooltip-z)`。该结论已回写 explorer-layout.md §4。
+ *
+ * 提示文案一律复用既有可访问名（不放第二份文案）：窗口入口随状态给「最小化 / 还原」，
+ * 固定入口给视图名，箭头 / 托盘展开给操作名。
  *
  * ## 入口按钮的可访问性口径（0.5.5 结论沿用）
  *
@@ -87,8 +119,8 @@ import {
   FluentIconChevronUp24Regular,
   FluentIconWindow24Regular,
 } from '@fluere-vue/icons'
-import { FluereButton } from '@fluere-vue/ui'
-import { computed, onMounted, onScopeDispose, ref, useId, watch } from 'vue'
+import { FluereButton, FluereTooltip } from '@fluere-vue/ui'
+import { computed, nextTick, onMounted, onScopeDispose, ref, useId, watch } from 'vue'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import { REPOSITORY_URL } from '~/utils/docs-repo'
 import { formatTrayClock } from '~/utils/shell-clock'
@@ -132,7 +164,7 @@ const isWindowHidden = computed(() => props.status !== 'normal')
 /**
  * 入口的可访问名随状态变化：收起时说「还原」，显示时说「最小化」。
  * 与实机任务栏的读屏口径一致 —— 说的是**点击会发生什么**，而不是「当前是什么状态」。
- * `title` 与 `aria-label` 同值，避免悬停提示与读屏说法打架。
+ * `FluereTooltip` 的提示文案就是这同一条（单一文案，避免悬停提示与读屏说法打架）。
  */
 const entryLabel = computed(() =>
   isWindowHidden.value ? t('shell.taskbarWindowRestore') : t('shell.taskbarWindowMinimize'),
@@ -162,20 +194,40 @@ const canScrollPrev = ref(false)
 const canScrollNext = ref(false)
 
 /**
+ * 量一次视口并写回三个状态。
+ * 抽出来是因为箭头显隐翻转后要**再量一次**（见 `syncScrollState`），而那时元素相同。
+ */
+const applyScrollState = (viewport: HTMLElement): void => {
+  const maxScroll = viewport.scrollWidth - viewport.clientWidth
+  isScrollable.value = maxScroll > SCROLL_EPSILON
+  canScrollPrev.value = viewport.scrollLeft > SCROLL_EPSILON
+  canScrollNext.value = viewport.scrollLeft < maxScroll - SCROLL_EPSILON
+}
+
+/**
  * 同步滚动状态（挂载后、resize、scroll 事件时调用）。
  *
  * 初始三者皆 false：SSR 直出与客户端首帧都是「无箭头」，挂载后才按实测翻转 ——
  * 不产生水合不匹配（class 变化是挂载后的正常更新，不是首帧差异）。
+ *
+ * 箭头从「不占位」翻到「占位」会缩小视口，因此翻转后补量一次（`nextTick` 等 DOM 落地）：
+ * 该翻转是**单调**的（视口只会更窄 ⇒ 溢出只会更多），补量一次即收敛，不会来回抖动。
  */
 const syncScrollState = (): void => {
   const viewport = viewportRef.value
   if (!viewport) {
     return
   }
-  const maxScroll = viewport.scrollWidth - viewport.clientWidth
-  isScrollable.value = maxScroll > SCROLL_EPSILON
-  canScrollPrev.value = viewport.scrollLeft > SCROLL_EPSILON
-  canScrollNext.value = viewport.scrollLeft < maxScroll - SCROLL_EPSILON
+  const wasScrollable = isScrollable.value
+  applyScrollState(viewport)
+  if (isScrollable.value !== wasScrollable) {
+    void nextTick().then(() => {
+      const current = viewportRef.value
+      if (current) {
+        applyScrollState(current)
+      }
+    })
+  }
 }
 
 /**
@@ -297,26 +349,32 @@ onScopeDispose(() => {
     <!--
       中间：图标区。箭头与视口同排，三者 `flex: none` / `minmax(0,...)` 保证窄档
       只有视口被压缩（溢出转为滚动），开始按钮与托盘不被挤走。
-      `.is-scrollable` 由实测驱动（syncScrollState），只控制箭头显隐、不改布局占位。
+      `justify-content: flex-start` = 应用区**向左紧贴开始按钮**（实机任务栏左对齐，
+      参考图首个应用热区紧跟开始按钮，见文件头几何表）；
+      `.is-scrollable` 由实测驱动（syncScrollState），只在真的溢出时才让箭头出现。
     -->
     <div
       class="docs-shell-taskbar__zone docs-shell-taskbar__zone--icons"
       :class="{ 'is-scrollable': isScrollable }"
     >
-      <FluereButton
-        class="docs-shell-taskbar__scroll"
-        appearance="subtle"
-        size="medium"
-        icon-only
-        :disabled="!canScrollPrev"
-        :aria-label="t('shell.taskbarScrollPrev')"
-        :title="t('shell.taskbarScrollPrev')"
-        @click="scrollIcons(-1)"
+      <FluereTooltip
+        :content="t('shell.taskbarScrollPrev')"
+        placement="top"
       >
-        <template #icon>
-          <FluentIconChevronLeft24Regular :size="20" />
-        </template>
-      </FluereButton>
+        <FluereButton
+          class="docs-shell-taskbar__scroll docs-shell-taskbar-icon"
+          appearance="subtle"
+          size="medium"
+          icon-only
+          :disabled="!canScrollPrev"
+          :aria-label="t('shell.taskbarScrollPrev')"
+          @click="scrollIcons(-1)"
+        >
+          <template #icon>
+            <FluentIconChevronLeft24Regular :size="20" />
+          </template>
+        </FluereButton>
+      </FluereTooltip>
 
       <!--
         视口：横向滚动、**滚动条全部隐藏**（scrollbar-width: none + webkit 伪元素），
@@ -330,23 +388,29 @@ onScopeDispose(() => {
       >
         <!--
           窗口入口：最小化 / 关闭后提供还原入口，常规态呈激活指示条。
-          用 `FluereButton`（外观 / 悬停 / 按下 / 焦点环交给组件实现，站点不手写按钮样式）。
+          用 `FluereButton`（外观 / 尺寸 / 焦点环交给组件实现）+ `.docs-shell-taskbar-icon`
+          （任务栏口径的 hover / pressed 状态色与描边，规则在 docs-shell.css）；
+          提示走 `FluereTooltip`（外壳已登记层级栈，不会被任务栏盖住，见文件头）。
           `appearance="subtle"`：任务栏上的图标按钮不该有常驻底色。
         -->
         <span class="docs-shell-taskbar__slot">
-          <FluereButton
-            class="docs-shell-taskbar__entry"
-            appearance="subtle"
-            size="medium"
-            icon-only
-            :aria-label="entryLabel"
-            :title="entryLabel"
-            @click="emit('toggleWindow')"
+          <FluereTooltip
+            :content="entryLabel"
+            placement="top"
           >
-            <template #icon>
-              <FluentIconWindow24Regular :size="20" />
-            </template>
-          </FluereButton>
+            <FluereButton
+              class="docs-shell-taskbar__entry docs-shell-taskbar-icon"
+              appearance="subtle"
+              size="large"
+              icon-only
+              :aria-label="entryLabel"
+              @click="emit('toggleWindow')"
+            >
+              <template #icon>
+                <FluentIconWindow24Regular :size="24" />
+              </template>
+            </FluereButton>
+          </FluereTooltip>
 
           <!--
             激活指示条：窗口在桌面显示时出现（对齐实机任务栏「运行中的窗口」下划线）。
@@ -368,22 +432,26 @@ onScopeDispose(() => {
           :key="view.id"
           class="docs-shell-taskbar__slot"
         >
-          <FluereButton
-            class="docs-shell-taskbar__entry"
-            appearance="subtle"
-            size="medium"
-            icon-only
-            :aria-label="view.label"
-            :title="view.label"
-            @click="emit('openTab', view.id)"
+          <FluereTooltip
+            :content="view.label"
+            placement="top"
           >
-            <template #icon>
-              <component
-                :is="view.icon"
-                :size="20"
-              />
-            </template>
-          </FluereButton>
+            <FluereButton
+              class="docs-shell-taskbar__entry docs-shell-taskbar-icon"
+              appearance="subtle"
+              size="large"
+              icon-only
+              :aria-label="view.label"
+              @click="emit('openTab', view.id)"
+            >
+              <template #icon>
+                <component
+                  :is="view.icon"
+                  :size="24"
+                />
+              </template>
+            </FluereButton>
+          </FluereTooltip>
           <span
             class="docs-shell-taskbar__indicator"
             :class="{ 'is-active': isPinActive(view.id) }"
@@ -393,37 +461,47 @@ onScopeDispose(() => {
 
         <!--
           GitHub 固定入口（入口类控件归中间，系统状控件归托盘 —— 见文件头）。
-          外链语义用 `<a>`（可新标签打开 / 复制地址），样式与任务栏图标槽对齐；
-          可访问名走 `github.openInNewTab`（与 header 的 GithubLink 同一条文案）。
+          外链语义用 `<a>`（可新标签打开 / 复制地址），命中区与 hover / pressed 与
+          任务栏图标按钮同档（`.docs-shell-taskbar-icon` 给描边与命中区，填充在本组件
+          的 `.docs-shell-taskbar__github` 里 —— `<a>` 没有库按钮可覆写）；
+          可访问名与提示走 `github.openInNewTab`（与 header 的 GithubLink 同一条文案）。
         -->
         <span class="docs-shell-taskbar__slot">
-          <a
-            class="docs-shell-taskbar__github"
-            :href="REPOSITORY_URL"
-            target="_blank"
-            rel="noopener noreferrer"
-            :aria-label="t('github.openInNewTab')"
-            :title="t('github.openInNewTab')"
+          <FluereTooltip
+            :content="t('github.openInNewTab')"
+            placement="top"
           >
-            <GithubMark class="docs-shell-taskbar__github-mark" />
-          </a>
+            <a
+              class="docs-shell-taskbar__github docs-shell-taskbar-icon"
+              :href="REPOSITORY_URL"
+              target="_blank"
+              rel="noopener noreferrer"
+              :aria-label="t('github.openInNewTab')"
+            >
+              <GithubMark class="docs-shell-taskbar__github-mark" />
+            </a>
+          </FluereTooltip>
         </span>
       </div>
 
-      <FluereButton
-        class="docs-shell-taskbar__scroll"
-        appearance="subtle"
-        size="medium"
-        icon-only
-        :disabled="!canScrollNext"
-        :aria-label="t('shell.taskbarScrollNext')"
-        :title="t('shell.taskbarScrollNext')"
-        @click="scrollIcons(1)"
+      <FluereTooltip
+        :content="t('shell.taskbarScrollNext')"
+        placement="top"
       >
-        <template #icon>
-          <FluentIconChevronRight24Regular :size="20" />
-        </template>
-      </FluereButton>
+        <FluereButton
+          class="docs-shell-taskbar__scroll docs-shell-taskbar-icon"
+          appearance="subtle"
+          size="medium"
+          icon-only
+          :disabled="!canScrollNext"
+          :aria-label="t('shell.taskbarScrollNext')"
+          @click="scrollIcons(1)"
+        >
+          <template #icon>
+            <FluentIconChevronRight24Regular :size="20" />
+          </template>
+        </FluereButton>
+      </FluereTooltip>
     </div>
 
     <!-- 最右：系统托盘（版本 / 语言 / 主题 + 时钟；窄档控件收进展开菜单） -->
@@ -446,28 +524,33 @@ onScopeDispose(() => {
         可见）。与 layouts/home.vue 的移动折叠按钮同一解法（外层容器承担断点显隐）。
       -->
       <span class="docs-shell-taskbar__tray-expand">
-        <FluereButton
-          ref="trayTriggerRef"
-          appearance="subtle"
-          size="medium"
-          icon-only
-          :aria-expanded="trayOpen"
-          :aria-controls="trayOpen ? trayId : undefined"
-          :aria-label="t('shell.trayIcons')"
-          :title="t('shell.trayIcons')"
-          @click="toggleTray"
+        <FluereTooltip
+          :content="t('shell.trayIcons')"
+          placement="top"
         >
-          <template #icon>
-            <FluentIconChevronUp24Regular
-              v-if="!trayOpen"
-              :size="20"
-            />
-            <FluentIconChevronDown24Regular
-              v-else
-              :size="20"
-            />
-          </template>
-        </FluereButton>
+          <FluereButton
+            ref="trayTriggerRef"
+            class="docs-shell-taskbar-icon"
+            appearance="subtle"
+            size="medium"
+            icon-only
+            :aria-expanded="trayOpen"
+            :aria-controls="trayOpen ? trayId : undefined"
+            :aria-label="t('shell.trayIcons')"
+            @click="toggleTray"
+          >
+            <template #icon>
+              <FluentIconChevronUp24Regular
+                v-if="!trayOpen"
+                :size="20"
+              />
+              <FluentIconChevronDown24Regular
+                v-else
+                :size="20"
+              />
+            </template>
+          </FluereButton>
+        </FluereTooltip>
       </span>
 
       <!--
@@ -531,11 +614,16 @@ onScopeDispose(() => {
    * 三段式：开始(auto) / 图标区(minmax(0,1fr)，允许被压到 0) / 托盘(auto)。
    * 窄视口的挤压顺序由此确定 —— 先压缩中间（交给箭头滚动消化），
    * 开始按钮与托盘时间永远拿得到空间。
+   *
+   * `column-gap` = 热区间距（参考图实测 4px：开始热区 12..52，首个应用热区 56..96）。
+   * 两端的 `padding-inline` = 12px：参考图首个热区距屏幕左缘 12px（explorer-layout.md §4）。
+   * 0.5.7 前是 4px，热区比参考图偏左 8px、应用区还居中（已按参考图改正）。
    */
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  padding-inline: var(--spacingHorizontalXS);
+  column-gap: var(--spacingHorizontalXS);
+  padding-inline: var(--spacingHorizontalM);
 
   /* 浮层档位：全站唯一允许出现在 --zIndexShell 的层（不写裸值） */
   z-index: var(--zIndexShell);
@@ -561,17 +649,22 @@ onScopeDispose(() => {
   flex: none;
   /*
    * 纵向拉满：开始菜单面板以 `inset-block-end: 100%` 锚在本段顶边 ——
-   * 拉满后顶边 = 任务栏上缘，面板贴着任务栏往上展开；否则（段高 = 按钮 32 居中）
-   * 面板会向下嵌进任务栏 8px（半高差）。
+   * 拉满后顶边 = 任务栏上缘，面板贴着任务栏往上展开；否则（段高 = 按钮 40 居中）
+   * 面板会向下嵌进任务栏 4px（半高差）。
    */
   align-self: stretch;
   align-items: stretch;
 }
 
+/*
+ * 图标区：`flex-start` = 应用区**向左紧贴开始按钮**（实机任务栏左对齐）。
+ * 0.5.7 前是 `center`，宽视口下整组图标会飘到任务栏中间，与参考图不符。
+ * 段内 `gap` = 热区间距 4px（箭头出现时与图标之间同样留 4px）。
+ */
 .docs-shell-taskbar__zone--icons {
   flex: 1 1 auto;
-  gap: var(--spacingHorizontalXXS);
-  justify-content: center;
+  gap: var(--spacingHorizontalXS);
+  justify-content: flex-start;
 }
 
 .docs-shell-taskbar__zone--tray {
@@ -584,6 +677,14 @@ onScopeDispose(() => {
   align-self: stretch;
   gap: var(--spacingHorizontalXS);
   justify-content: flex-end;
+
+  /*
+   * 右端多留 8px：参考图实测时钟文本距屏幕右缘 **20px**（任务栏内边距 12 + 8）。
+   * 这 8px 是 Windows 11「显示桌面」条的固有占位（实机在最右端留一条不可见窄条，
+   * 悬停才显形）。本仿真不实现该按钮（点了没反应的按钮 = 坏按钮，AGENTS.md 红线），
+   * 但保留它的间距 —— 否则时钟会贴到屏幕右缘，与参考图右端留白对不上。
+   */
+  padding-inline-end: var(--spacingHorizontalS);
 }
 
 /*
@@ -596,7 +697,8 @@ onScopeDispose(() => {
 .docs-shell-taskbar__viewport {
   display: flex;
   align-items: center;
-  gap: var(--spacingHorizontalXXS);
+  /* 热区间距 4px（参考图：槽 pitch 44 = 40 热区 + 4 缝） */
+  gap: var(--spacingHorizontalXS);
   min-inline-size: 0;
 
   overflow-x: auto;
@@ -613,14 +715,20 @@ onScopeDispose(() => {
   display: none;
 }
 
-/* 箭头：不可见时仍占位（可见性切换不改变测量，见文件头「何时可见」） */
+/*
+ * 箭头：**只在真的放不下时存在**（`display`，不是 `visibility`）。
+ * 0.5.5 用 `visibility: hidden` 让箭头始终占位（换取「测量前提不变」），代价是开始
+ * 按钮与第一个应用热区之间凭空多出 32px —— 与参考图的「紧贴」冲突。改 `display`
+ * 后死锁依然不成立：箭头出现只让视口更窄 ⇒ 溢出单调，不会来回翻转；翻转后
+ * `syncScrollState` 会补量一次（见该函数注释）。
+ */
 .docs-shell-taskbar__scroll {
   flex: none;
-  visibility: hidden;
+  display: none;
 }
 
 .docs-shell-taskbar__zone--icons.is-scrollable .docs-shell-taskbar__scroll {
-  visibility: visible;
+  display: inline-flex;
 }
 
 /* 图标槽：按钮 + 其下方的激活指示条合成一列，指示条贴着任务栏内缘 */
@@ -632,31 +740,43 @@ onScopeDispose(() => {
   justify-content: center;
 }
 
+/*
+ * 入口按钮：命中区 40×40（参考图实测热区 x 12..52 / y 4..43）。
+ * `size="large"` + `icon-only` 已给出 40×40（`aspect-ratio: 1`），这里只兜住
+ * 「内容把宽度撑大」的情况；hover / pressed 状态色与 1px 描边由
+ * `.docs-shell-taskbar-icon`（docs-shell.css）提供 —— 两个消费方共用一份规则。
+ */
 .docs-shell-taskbar__entry {
-  /* 入口按钮尺寸对齐任务栏高度内可用的方形区（48 高 - 上下留白） */
   min-inline-size: 40px;
 }
 
 /*
- * GitHub 固定入口：外链语义（`<a>`），视觉与任务栏图标按钮对齐 ——
- * 命中区 40×32 与 FluereButton medium 同档，hover / active 只换图标色
- * （与 header 的 GithubLink 同一口径；任务栏上不用 outline 按钮外观）。
+ * GitHub 固定入口：外链语义（`<a>`），命中区与 hover / pressed 与任务栏图标按钮同档
+ * —— 描边与命中区来自 `.docs-shell-taskbar-icon`，填充在这里写（`<a>` 不是库按钮，
+ * 没有可覆写的 `--colorSubtleBackground*`）。图标色在 hover / pressed 时提亮，
+ * 与 header 的 GithubLink 同一口径。
  */
 .docs-shell-taskbar__github {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: 40px;
-  min-block-size: 32px;
+  min-block-size: 40px;
   border-radius: var(--borderRadiusMedium);
   color: var(--colorNeutralForeground2);
   text-decoration-line: none;
-  transition-property: color;
+  transition-property: color, background-color;
   transition-duration: var(--durationFaster);
   transition-timing-function: var(--curveEasyEase);
 }
 
-.docs-shell-taskbar__github:hover {
+/* 填充阶梯与库按钮同一对 token（hover = ControlFillColorSecondary / pressed = Tertiary） */
+.docs-shell-taskbar__github:hover:not(:focus-visible) {
+  background-color: var(--controlFillColorSecondary);
+  color: var(--colorNeutralForeground1);
+}
+
+.docs-shell-taskbar__github:active:not(:focus-visible) {
+  background-color: var(--controlFillColorTertiary);
   color: var(--colorNeutralForeground1);
 }
 
@@ -666,7 +786,8 @@ onScopeDispose(() => {
 }
 
 .docs-shell-taskbar__github-mark {
-  block-size: 20px;
+  /* 与任务栏其余图标同档：24px 图标高（参考图实测应用图标 24×24） */
+  block-size: 24px;
   inline-size: auto;
 }
 

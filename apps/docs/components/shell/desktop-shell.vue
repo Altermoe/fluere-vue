@@ -56,6 +56,7 @@
  */
 
 import { useMediaQuery } from '@fluere-vue/hooks'
+import { acquireLayer } from '@fluere-vue/ui'
 import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import {
@@ -97,6 +98,12 @@ const taskbarHeight = ref(48)
 
 /** 桌面根节点（量可视区 + 定位参照） */
 const rootRef = ref<HTMLElement | null>(null)
+
+/**
+ * 外壳在浮层层级栈里的句柄（挂载时登记 `--zIndexShell`，卸载时出栈）。
+ * 类型不引 `FlyoutLayerHandle`（未从包入口导出），用 `acquireLayer` 的返回值推导。
+ */
+let shellLayer: ReturnType<typeof acquireLayer> | null = null
 
 /*
  * 下面两个 ref 指向的是**子组件实例**（模板 ref 落在组件上时拿到的是公开实例，
@@ -204,12 +211,30 @@ const windowSize = computed(() => measuredWindowSize.value ?? fallbackWindowSize
 onMounted(() => {
   measure()
   globalThis.addEventListener('resize', measure, { passive: true })
+  /*
+   * 外壳登记进**浮层层级栈**（0.5.7，explorer-layout.md §4 方案① 的正解）：
+   * 任务栏是 `--zIndexShell`(1500) 档，而 `--zIndexTooltip`(1400) 低于它 —— 外壳内
+   * 挂的 ToolTip 会被任务栏自己盖住（0.5.6 因此裁决「外壳内只用原生 title」）。
+   * 让外壳作为一个「宿主层」入栈后，外壳内随后打开的浮层命中层级栈的**嵌套提升**
+   * 分支：z = `calc(var(--zIndexShell) + var(--zIndexStep))` = 1510 > 1500，
+   * 全程引用刻度、没有裸 z-index。
+   *
+   * 为什么不是覆写 `--fui-tooltip-z`：提示面的 z 由 `useFlyout` 以**内联样式**下发
+   * （tooltip-fixture.vue 的 `:style="layerStyle"`），内联优先于样式表里的
+   * `z-index: var(--fui-tooltip-z)` —— 覆写那个变量对打开态无效（已实测并回写文档）。
+   *
+   * 只在 `onMounted` 登记：层级栈是**模块级**状态，SSR 期间写入会污染并发渲染
+   * （layer-stack.ts 顶部注释），首帧也不该带 inline z-index。
+   */
+  shellLayer = acquireLayer('--zIndexShell')
 })
 
 onScopeDispose(() => {
   if (import.meta.client) {
     globalThis.removeEventListener('resize', measure)
   }
+  shellLayer?.release()
+  shellLayer = null
 })
 
 /*

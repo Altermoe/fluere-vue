@@ -248,15 +248,24 @@ describe('0.5.7 任务栏 / 开始菜单 / 托盘：移动端适配与交互', (
     expect(taskbar).toMatch(/\.docs-shell-taskbar__viewport\s*\{[^}]*overflow-y:\s*hidden/)
   })
 
-  it('两个滚动箭头常驻 DOM、由实测 is-scrollable 控制显隐（visibility 占位，不死锁）', () => {
+  it('两个滚动箭头常驻 DOM、由实测 is-scrollable 控制显隐（display 切换，仍不死锁）', () => {
     expect(taskbar).toContain("t('shell.taskbarScrollPrev')")
     expect(taskbar).toContain("t('shell.taskbarScrollNext')")
     expect(taskbar).toContain('FluentIconChevronLeft24Regular')
     expect(taskbar).toContain('FluentIconChevronRight24Regular')
-    // 可见性切换必须用 visibility（保占位）而不是 display（会改变测量前提）
-    expect(taskbar).toMatch(/\.docs-shell-taskbar__scroll\s*\{[^}]*visibility:\s*hidden/)
+    /*
+     * 0.5.7 由 `visibility: hidden`（永久占位）改成 `display: none`：占位会让开始按钮
+     * 与第一个应用热区之间凭空多出 32px，与参考图的「紧贴」冲突。死锁风险由
+     * 「箭头出现只让视口更窄 ⇒ 溢出单调」+ 翻转后 `nextTick` 补量一次化解，
+     * 因此这里同时断言这两个前提都在源码里（改回去会立刻红）。
+     */
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__scroll\s*\{[^}]*display:\s*none/)
+    expect(taskbar).not.toMatch(/\.docs-shell-taskbar__scroll\s*\{[^}]*visibility:\s*hidden/)
     expect(taskbar).toContain('.is-scrollable .docs-shell-taskbar__scroll')
     expect(taskbar).toContain('scrollBy')
+    // 翻转后补量一次（单调收敛，不需要 ResizeObserver 循环）
+    expect(taskbar).toContain('wasScrollable')
+    expect(taskbar).toContain('nextTick')
   })
 
   it('时钟经 utils/shell-clock 的 Intl 格式化（随 locale），挂载前为空（水合口径）', () => {
@@ -302,6 +311,99 @@ describe('0.5.7 任务栏 / 开始菜单 / 托盘：移动端适配与交互', (
     expect(startMenu).toContain('REPOSITORY_URL')
     // 设计令牌页 / 路线图页尚不存在（docs/todo.md 2.4）—— 禁止出现指向它们的占位死链
     expect(startMenu).not.toMatch(/['"]\/(?:en\/)?(?:tokens|roadmap|changelog)/)
+  })
+})
+
+describe('0.5.7 任务栏图标按钮：几何、状态与提示（2026-10-16 参考图还原）', () => {
+  const taskbar = read(join(shellDir, 'shell-taskbar.vue'))
+  const startMenu = read(join(shellDir, 'shell-start-menu.vue'))
+  const shellCss = read(join(docsRoot, 'assets', 'docs-shell.css'))
+
+  it('命中区 40×40 + 图标 24px + 热区间距 4px（参考图实测值，见 explorer-layout.md §4）', () => {
+    // 开始按钮与入口按钮都用 large（40 高）+ icon-only（aspect-ratio: 1 ⇒ 40 宽）
+    expect(startMenu).toMatch(/size="large"/)
+    expect(taskbar).toMatch(/size="large"/)
+    // 图标 24px（0.5.7 前是 20）
+    expect(taskbar).toContain(':size="24"')
+    expect(startMenu).toMatch(/\.docs-start-menu__logo\s*\{[^}]*block-size:\s*24px/)
+    // 热区间距 4px：根 grid 的 column-gap + 图标区 / 视口的 gap
+    expect(taskbar).toMatch(/column-gap:\s*var\(--spacingHorizontalXS\)/)
+    expect(taskbar).toMatch(
+      /\.docs-shell-taskbar__viewport\s*\{[^}]*gap:\s*var\(--spacingHorizontalXS\)/,
+    )
+    // 任务栏两端内边距 12px（参考图首个热区距屏幕左缘 12px）
+    expect(taskbar).toMatch(/padding-inline:\s*var\(--spacingHorizontalM\)/)
+    // 应用区左对齐（紧贴开始按钮）
+    expect(taskbar).toMatch(
+      /\.docs-shell-taskbar__zone--icons\s*\{[^}]*justify-content:\s*flex-start/,
+    )
+  })
+
+  it('hover / pressed 状态色与描边走 WinUI 控件阶梯，且只写一份（docs-shell.css）', () => {
+    // 状态色不改库组件、也不打特异性官司：覆写库读取的自定义属性
+    expect(shellCss).toContain('--colorSubtleBackgroundHover: var(--controlFillColorSecondary)')
+    expect(shellCss).toContain('--colorSubtleBackgroundPressed: var(--controlFillColorTertiary)')
+    // 1px 描边用 outline + 负偏移（焦点环用 box-shadow、border-color 被库规则压过）
+    expect(shellCss).toMatch(/\.docs-shell-taskbar-icon:hover:not\(:focus-visible\)/)
+    expect(shellCss).toContain('outline-offset: calc(-1 * var(--strokeWidthThin))')
+    // 两个消费方都挂同一个类名（开始按钮在 start-menu，其余在 taskbar）
+    expect(startMenu).toContain('docs-shell-taskbar-icon')
+    expect((taskbar.match(/docs-shell-taskbar-icon/g) ?? []).length).toBeGreaterThanOrEqual(5)
+  })
+
+  it('开始徽标用官方几何 + 强调色渐变，按下态转单色并缩到 0.75', () => {
+    // 官方 Windows 徽标几何（方块 11 / 缝 1 / 总 23，整像素对齐；比例出处见组件注释）
+    expect(startMenu).toContain('M0 0h11v11H0zm12 0h11v11H12zM0 12h11v11H0zm12 0h11v11H12z')
+    // 渐变两色来自仓库令牌（不是硬编码）：浅端强调色 Light2、深端强调色本体
+    expect(startMenu).toContain('stop-color: var(--windowsAccentLight2)')
+    expect(startMenu).toContain('stop-color: var(--windowsAccentPrimary)')
+    // 渐变方向 = 实测的 dy/dx = 1.5（45° 会让右上 / 左下同色，与参考图不符）
+    expect(startMenu).toMatch(/x2="14"[\s\S]{0,40}y2="21"/)
+    // 按下态：单色 + 0.75 缩放（参考图三）
+    expect(startMenu).toMatch(
+      /\.docs-start-menu__trigger:active \.docs-start-menu__logo-pane\s*\{[^}]*fill:\s*var\(--windowsAccentPrimary\)/,
+    )
+    expect(startMenu).toMatch(
+      /\.docs-start-menu__trigger:active \.docs-start-menu__logo\s*\{[^}]*transform:\s*scale\(0\.75\)/,
+    )
+  })
+
+  it('外壳内不再使用原生 title，提示一律 FluereTooltip', () => {
+    /*
+     * 「原生 title」指 DOM 属性。`explorer-window.vue` 里的 `:title` 是
+     * `FluereAppWindow` 的 **Prop**（组件契约，绘制标题栏文字），不是 DOM 属性，
+     * 因此这里按文件区分：图标按钮所在的两个文件禁止出现任何 title（属性或绑定），
+     * 窗口层只允许那一处组件 Prop。
+     */
+    for (const name of [
+      'shell-taskbar.vue',
+      'shell-start-menu.vue',
+      'shell-chrome.vue',
+      'desktop-shell.vue',
+      'desktop-wallpaper.vue',
+    ]) {
+      const text = read(join(shellDir, name))
+      expect(text, name).not.toMatch(/:title=/)
+      expect(text, name).not.toMatch(/\stitle="/)
+    }
+    const window = read(join(shellDir, 'explorer-window.vue'))
+    expect(window).not.toMatch(/\stitle="/)
+    expect((window.match(/:title=/g) ?? []).length).toBe(1)
+    expect(window).toContain(':title="t(\'shell.windowTitle\')"')
+
+    // 任务栏的每个图标按钮 / 链接都在 Tooltip 里（窗口入口、固定入口、GitHub、两个箭头、托盘展开）
+    expect((taskbar.match(/<FluereTooltip/g) ?? []).length).toBeGreaterThanOrEqual(6)
+    expect(startMenu).toContain('<FluereTooltip')
+    // 开始菜单打开时禁用按钮提示（面板就在按钮上方，且实机也不弹）
+    expect(startMenu).toContain(':disabled="open"')
+  })
+
+  it('外壳登记进浮层层级栈，解决 ToolTip 档(1400) 低于任务栏档(1500) 的已知冲突', () => {
+    const desktop = read(join(shellDir, 'desktop-shell.vue'))
+    expect(desktop).toContain("acquireLayer('--zIndexShell')")
+    expect(desktop).toContain('shellLayer?.release()')
+    // 覆写 --fui-tooltip-z 是无效的（提示面的 z 由 useFlyout 内联下发），注释里必须留痕
+    expect(readRaw(join(shellDir, 'shell-taskbar.vue'))).toContain('--fui-tooltip-z')
   })
 })
 
