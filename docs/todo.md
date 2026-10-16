@@ -9,17 +9,17 @@
 
 ## 版本地图
 
-| 版本        | 状态   | 主题                                                                                                               |
-| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| 0.1.0-rc.1  | 已收口 | 通用 WinUI 控件清单                                                                                                |
-| 0.3.0-rc.1  | 进行中 | 能被用起来：i18n / 文档站 WindowsOS 仿真化 / **自动发版流程**（npm 首发 `0.3.0-alpha.2` 已于 2026-10-13 手动发布） |
-| 0.4.0       | 待开工 | Explorer 基建 + 通用件收尾                                                                                         |
-| 0.5.0       | 待开工 | Explorer 骨架（首页 hook 首次上线）                                                                                |
-| 0.6.0       | 待开工 | 地址栏 + 命令层                                                                                                    |
-| 0.7.0       | 待开工 | 数据层 ①：项基座 + 列表                                                                                            |
-| 0.8.0       | 待开工 | 数据层 ② + 布局收尾                                                                                                |
-| 0.9.0-rc.1  | 待开工 | 质感分支（独立 minor）                                                                                             |
-| 0.9 → 1.0.0 | 待开工 | 收尾窗口（4–8 周）                                                                                                 |
+| 版本        | 状态   | 主题                                                                                                                                                   |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0.1.0-rc.1  | 已收口 | 通用 WinUI 控件清单                                                                                                                                    |
+| 0.3.0-rc.1  | 已收口 | 能被用起来：i18n / 文档站 WindowsOS 仿真化 / **自动发版流程**（首发 `0.3.0-alpha.2` 为人工 bootstrap，自 `0.4.0-alpha.1` 起由 `release.yml` 自动发布） |
+| 0.4.0       | 已收口 | Explorer 基建 + 通用件收尾（`0.4.0-alpha.1` / `0.4.1-alpha.1` 均经 CI 自动发布）                                                                       |
+| 0.5.0       | 进行中 | Explorer 骨架（首页 hook 首次上线）—— 组件与外壳已落地，正在收口 `0.5.0-alpha.1`                                                                       |
+| 0.6.0       | 待开工 | 地址栏 + 命令层                                                                                                                                        |
+| 0.7.0       | 待开工 | 数据层 ①：项基座 + 列表                                                                                                                                |
+| 0.8.0       | 待开工 | 数据层 ② + 布局收尾                                                                                                                                    |
+| 0.9.0-rc.1  | 待开工 | 质感分支（独立 minor）                                                                                                                                 |
+| 0.9 → 1.0.0 | 待开工 | 收尾窗口（4–8 周）                                                                                                                                     |
 
 ---
 
@@ -259,7 +259,7 @@
 #### 3.4 发布流水线（CI/CD）
 
 - [x] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`——**已线上验证**（`.github/workflows/ci.yml`：check / test / docs / package-smoke 四个 job；pnpm 版本由 `pnpm/action-setup` 读 `packageManager`）。2026-10-12 推 `main` 后两次运行 [38214181292](https://github.com/Altermoe/fluere-vue/actions/runs/38214181292) / [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) **四个 job 全绿**。
-- [ ] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按预发布 tag（`.changeset/pre.json`，现为 `alpha`）发布（`latest` 的归属与 pre 模式无关，见 3.5 前置约束 2），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，`version` 路径已线上验证，`pack` / `publish` 路径尚未跑过**（`.github/workflows/release.yml`：`select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` 内有 `pnpm check && pnpm test` 自证 + `pnpm build` + `pnpm smoke:dist`，publish 只上传 pack 出来的 tarball）。2026-10-12 实测：`select-mode` 判定 `version`、`version` job 成功开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件、无 `apps/*`），`pack` / `publish` 按预期 skipped；首轮 [38214181271](https://github.com/Altermoe/fluere-vue/actions/runs/38214181271) 曾因 `version.mjs sync` 改动 `apps/*` 而让 action 去找不存在的 `apps/docs/CHANGELOG.md`（ENOENT），已修复。另发现 release PR 分支由 `github-actions[bot]` 推送，其 `pull_request` 触发的 CI run 会被挂成 `action_required`（需维护者手动批准，实测 run [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332)），因此 PR 上默认没有跑完的检查，已在 `pack` 里加自证步骤兜底，详见 [docs/release.md](./release.md#发布流水线github-actions)。落地过程中确认的两条硬约束：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `pnpm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。**更新（2026-10-13）**：`version` 路径随首发再次线上验证——run [38335726761](https://github.com/Altermoe/fluere-vue/actions/runs/38335726761) 的 `select-mode` / `version` 成功、`pack` / `publish` 仍 skipped，release PR #2 被更新为 `0.3.0-alpha.3` + 逐包 CHANGELOG；首发已由 `pnpm release:manual` 人工完成、六包在 registry 上存在 ⇒ **硬约束 ① 已解除**，给六包配好 Trusted Publisher 后 `pack` / `publish` 即可自动发布下一版（这是 3.5 的剩余目标）。
+- [x] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按预发布 tag（`.changeset/pre.json`，现为 `alpha`）发布（`latest` 的归属与 pre 模式无关，见 3.5 前置约束 2），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，`version` 与 `pack` / `publish` 三条路径均已线上验证**（`.github/workflows/release.yml`：`select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` 内有 `pnpm check && pnpm test` 自证 + `pnpm build` + `pnpm smoke:dist`，publish 只上传 pack 出来的 tarball）。2026-10-12 实测：`select-mode` 判定 `version`、`version` job 成功开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件、无 `apps/*`），`pack` / `publish` 按预期 skipped；首轮 [38214181271](https://github.com/Altermoe/fluere-vue/actions/runs/38214181271) 曾因 `version.mjs sync` 改动 `apps/*` 而让 action 去找不存在的 `apps/docs/CHANGELOG.md`（ENOENT），已修复。另发现 release PR 分支由 `github-actions[bot]` 推送，其 `pull_request` 触发的 CI run 会被挂成 `action_required`（需维护者手动批准，实测 run [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332)），因此 PR 上默认没有跑完的检查，已在 `pack` 里加自证步骤兜底，详见 [docs/release.md](./release.md#发布流水线github-actions)。落地过程中确认的两条硬约束：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `pnpm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。**更新（2026-10-13）**：`version` 路径随首发再次线上验证——run [38335726761](https://github.com/Altermoe/fluere-vue/actions/runs/38335726761) 的 `select-mode` / `version` 成功、`pack` / `publish` 仍 skipped，release PR #2 被更新为 `0.3.0-alpha.3` + 逐包 CHANGELOG；首发已由 `pnpm release:manual` 人工完成、六包在 registry 上存在 ⇒ **硬约束 ① 已解除**，给六包配好 Trusted Publisher 后 `pack` / `publish` 即可自动发布下一版（这是 3.5 的剩余目标）。**更新（2026-10-16 回写）**：该剩余目标已于 2026-10-14 达成——`0.4.0-alpha.1` / `0.4.1-alpha.1` 两次自动发布全绿（run 38387428783 / 38529743664），OIDC provenance 已实测存在；逐条事实见下方〈已完成 · 自动发版流程〉。
 - [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）——**前两项已在 CI 落地**：`ci.yml` 的 `package-smoke` job 与 `release.yml` 的 `pack` job 都跑 `pnpm smoke:dist`（`pnpm pack` 出六个 tarball → publint / attw → fixture 消费方安装与 SSR 渲染）。**彩排实测暴露两处 tarball 卫生问题（见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)）**：① `ui` / `designs` / `icons` / `themes` 的 `files` 曾带顶层 `src/`（`ui` 安装后 1.5 MB，约 `dist` 的 70%），与「不含源码」不符——**已修复**：从这四包 `files` 移除顶层 `src`，消费方入口全部由 `publishConfig` 指向 `dist`；`dist/src/**`（`.d.ts`）是 `dist/index.d.ts` 的类型图依赖，随 `dist` 保留（`ui` tarball 250→102 文件、790→471 kB，`pnpm smoke:dist` 复验通过）；② `icons` 解包后 ~43 MB（主要是 `generated/` 图标数据），是唯一体积异类——**上线版本实测确认**（registry 元数据：`icons` 解包 **42.96 MB**，`ui` 1.90 MB、`designs` 0.49 MB、`themes` 0.14 MB、`hooks` 0.04 MB、`utils` 0.02 MB；`ui` tarball 104 项、顶层仅 `dist` + `package.json` + README / LICENSE，无源码）。体积异类已复核但**未做处理**，作为已知项跟踪。
 - [x] 发布彩排：本地 verdaccio 或 `--dry-run` 走通全流程（含 dist 安装、SSR 渲染、CSS 引入）——**已完成**：本地 verdaccio 上完整发布 `0.3.0-rc.1` 六个包，逐项验收「干净目录安装 / SSR `renderToString` / Vite 构建带 CSS / `vue-tsc` 类型引用」全通过，并实测记录空 registry 首发时 `dist-tags` 的 `rc` 与 `latest` 同时指向首个版本（该现象与 2026-10-13 线上结果不一致，成因未留存证据，见 3.5 前置约束 2）；抓出并修正了「pre 模式下不许显式 `--tag`」的文档错误，tarball 卫生与 `icons` 体积问题记入上一条。全过程与数据见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)。
 - [x] 回滚与补救预案：`npm deprecate`、撤销 tag、`latest` 回指上一版的具体步骤写入 `docs/release.md`——**已写入**（[回滚与补救](./release.md#回滚与补救)：deprecate / `dist-tag rm|add` / `gh release delete --cleanup-tag` 撤销 tag 与 Release / 同 commit 重跑的幂等说明）。
@@ -275,12 +275,15 @@
 - [x] 发布后验证（干净目录、走公网 npm 安装，2026-10-13 实测）：安装成功、组件正常渲染、样式已随包发布（`dist/style.css`）、`renderToString` 不抛错、无 peer 警告
 - [x] 部署 tag 与逐包 tag：`v0.3.0-alpha.2`（由 seed 提交 `6345d74` 移到发布提交 `8dfa64f`）+ 六个 `@fluere-vue/<pkg>@0.3.0-alpha.2`，GitHub 与 onedev 均已推送
 
-**未完成 · 自动发版流程（0.3 的剩余发版目标）**
+**已完成 · 自动发版流程（2026-10-14 收口，2026-10-16 回写记录）**
 
-- [ ] 在 npmjs.com 给六个包各配一次 Trusted Publisher（Repository `Altermoe/fluere-vue`、Workflow `release.yml`、Environment 留空）——包已存在，原「硬约束 ①」已解除
-- [ ] 合并 release PR（分支 `changeset-release/main`，内容为 `0.3.0-alpha.3` + 逐包 CHANGELOG），触发 `release.yml` 的 `pack` / `publish`
-- [ ] 线上确认自动发布产物：tarball 与首发一致（不含源码 / 测试）、`dist.attestations` 出现 provenance、全程无 `NPM_TOKEN`
-- [ ] 自动发布后核对 `dist-tags`：本版仍属预发布，`alpha` 应指向新版本；`latest` 仍停在 `0.3.0-alpha.2`（占位版 `0.0.0-stage` 使 `only-pre` 判定恒为假，预发布不会移动它）。**`0.4.0` 稳定版发布后要再核一次 `latest` 是否更新**，未更新就用 `npm dist-tag add` 手工改指
+> 本组四条原为「未完成」，实际已于 2026-10-14 随 `0.4.1-alpha.1` 全部跑通；本轮按人类授权（2026-10-16「修补文档记录」）只把**已发生的事实**回写为勾选状态，未改动任何验收要点与验收口径。
+
+- [x] 在 npmjs.com 给六个包各配一次 Trusted Publisher（Repository `Altermoe/fluere-vue`、Workflow `release.yml`、Environment 留空）——包已存在，原「硬约束 ①」已解除；**已生效**：`0.4.0-alpha.1`（run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)）与 `0.4.1-alpha.1`（run [38529743664](https://github.com/Altermoe/fluere-vue/actions/runs/38529743664)）两次 `pack` + `publish` 全绿，全程无 `NPM_TOKEN`
+- [x] 合并 release PR（分支 `changeset-release/main`）——`0.3.0-alpha.3` 那次 PR #2 最终承载的是 `0.4.0-alpha.1`：`version` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343) bump 后合并为发布提交 `6a0ba67`；`0.4.1-alpha.1` 走 `version` run 38528831348 → 发布提交 `b5941d4`
+- [x] 线上确认自动发布产物：tarball 与首发一致（不含源码 / 测试）、provenance 存在、全程无 `NPM_TOKEN`——registry 的 `/-/npm/v1/attestations` 实测：`0.4.0-alpha.1` / `0.4.1-alpha.1` 每包 **2 份证明**（npm publish v0.1 + SLSA provenance v1），而人工 bootstrap 的 `0.3.0-alpha.2` 为 **404**，对比即证 OIDC 生效
+- [x] 自动发布后核对 `dist-tags`：预发布只落 `alpha`，`latest` 停在 `0.3.0-alpha.2`（占位版 `0.0.0-stage` 使 `only-pre` 判定恒为假）。**实测（2026-10-16）**：六包 `alpha` = `0.4.1-alpha.1`、`latest` = `0.3.0-alpha.2`，与判定一致；文档站部署 tag `v0.4.1-alpha.1` 已上线（`/` 与 `/en` 的 `docsVersion` 均为 `v0.4.1-alpha.1`）
+- **仍未自动化**：`v<version>` 部署 tag 不由 `release.yml` 生成，仍由 `pnpm release:manual` / 手工 `git tag -a` 补推（口径见 [docs/release.md](./release.md)〈尚未自动化〉）
 
 **未完成 · 其它 0.3 收口项**
 
@@ -306,7 +309,7 @@
 
 ### 与 0.4.0+ 排期的衔接
 
-- **目标 1 的 key 约定是 0.5.0 起的硬约束**：文档站侧已落地；**组件库侧（1.4）尚未建立**，0.5.0 前需先补齐，否则新增文案要返工两遍。
+- **目标 1 的 key 约定是 0.5.0 起的硬约束**：**两侧均已落地** —— 文档站侧见 1.1；**组件库侧（1.4）已随 0.4.x 建立并常驻校验**（每组件 `locale.ts` 切片 + `FluereConfigProvider`，`pnpm i18n:check` 逐切片比对两侧 key），0.5.0 起新增文案必须走该通道，不得再散装硬编码。（原「组件库侧尚未建立」的结论已过时，2026-10-16 更正。）
 - **目标 2 是 Explorer 骨架的布局基建**：0.5.0 的 `DesktopShell` / `Taskbar` / `StartMenu` 直接复用 2.1 / 2.2 的产出。
 - **目标 3 是 0.9.0-rc.1 对外可用的前提**：包已首次上线（`0.3.0-alpha.2`），消费方入口指向 `dist`；把自动发版流程跑通后，0.4–0.8 的每个 minor 才能稳定对外发版。
 
@@ -396,15 +399,19 @@
 >
 > **必须先在 0.5.0 定下来的布局假设**（它们最易在最后阶段被推翻）：窗口圆角与阴影、内容区滚动边界、导航面板折叠宽度、任务栏高度与层级、桌面壁纸层的令牌化方案。
 
-| #     | 内容                                                             | 档位 | 验收要点                                                                                    |
-| ----- | ---------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------- |
-| 0.5.1 | `FluereAppWindow`（圆角窗口 + 标题栏 + 可拖拽区）                | L 4  | 圆角 / 阴影 / 描边全部走令牌                                                                |
-| 0.5.2 | `CaptionButtons`（最小化 / 最大化 / 关闭，含关闭键红底 hover）   | M 2  | **真实可用**（最小化 / 最大化 / 还原视口）；全部键盘可达 + `aria-label`                     |
-| 0.5.3 | `TabView`（复用 reka Tabs；含溢出滚动）                          | L 4  | 键位与焦点表现对齐 WinUI TabView                                                            |
-| 0.5.4 | `NavigationView` + `NavigationViewItem`                          | XL 6 | 可折叠面板、分组、选中指示条、设置项；接入 0.4.3 的焦点矩形                                 |
-| 0.5.5 | 文档站 `DesktopShell`（壁纸层 → 窗口层 → 任务栏层）              | L 4  | 层级 / 圆角 / 阴影一律 token，禁止魔法值                                                    |
-| 0.5.6 | 文档站 `Taskbar` + `SystemTray`（`Intl` 时钟 + 主题 / 语言切换） | L 4  | hover / active 指示条；点击弹出或还原窗口；版本号改为读 `package.json`（去掉硬编码 v0.0.1） |
-| 0.5.7 | 文档站 `StartMenu`（Acrylic 面板 + 键盘导航 + Esc 关闭）         | M 3  | 承载站点信息架构；浮层焦点管理下沉到 `packages/hooks`                                       |
+| #     | 内容                                                               | 档位 | 验收要点                                                                                    |
+| ----- | ------------------------------------------------------------------ | ---- | ------------------------------------------------------------------------------------------- |
+| 0.5.1 | `FluereAppWindow`（圆角窗口 + 标题栏 + 可拖拽区）                  | L 4  | 圆角 / 阴影 / 描边全部走令牌                                                                |
+| 0.5.2 | `CaptionButtons`（最小化 / 最大化 / 关闭，含关闭键红底 hover）     | M 2  | **真实可用**（最小化 / 最大化 / 还原视口）；全部键盘可达 + `aria-label`                     |
+| 0.5.3 | `TabView`（复用 reka Tabs；含溢出滚动）                            | L 4  | 键位与焦点表现对齐 WinUI TabView                                                            |
+| 0.5.4 | `NavigationView` + `NavigationViewItem`                            | XL 6 | 可折叠面板、分组、选中指示条、设置项；接入 0.4.3 的焦点矩形                                 |
+| 0.5.5 | 文档站 `DesktopShell`（壁纸层 → 窗口层 → 任务栏层）                | L 4  | 层级 / 圆角 / 阴影一律 token，禁止魔法值                                                    |
+| 0.5.6 | 文档站 `Taskbar` + `SystemTray`（`Intl` 时钟 + 主题 / 语言切换）   | L 4  | hover / active 指示条；点击弹出或还原窗口；版本号改为读 `package.json`（去掉硬编码 v0.0.1） |
+| 0.5.7 | 文档站 `StartMenu`（Acrylic 面板 + 键盘导航 + Esc 关闭）           | M 3  | 承载站点信息架构；浮层焦点管理下沉到 `packages/hooks`                                       |
+| 0.5.8 | 窗口拖拽收敛改为「标题栏始终可见」+ 视口变化后重收敛               | M 2  | 拖到底标题栏仍可抓、无回拖死区；压矮视口后窗口不会消失（追加条目，记录见下方进展）          |
+| 0.5.9 | 仿真应用系统：多窗口层级 / 焦点 + UI Gallery / Render Lab 两个应用 | L 4  | 点下层窗口即置顶并获得焦点；每应用独立最小化 / 最大化 / 关闭；WebGL2 不可用时显示降级文案   |
+
+> **0.5.8 / 0.5.9 两行是 2026-10-16 按人类授权（「修补文档记录」）补记的**：两条交付原本只在下方进展条目里，未进表格；本轮只补记录、**不新增验收口径**（验收要点一栏写的是已交付事实）。
 
 > **0.5.1 / 0.5.2 已落地（组件侧，2026-10-13）**：`FluereAppWindow`（窗口外框：圆角 / 描边 / 阴影 / 标题栏 / 内容可视区）与 `FluereCaptionButtons`（最小化 / 最大化 / 还原 / 关闭，纯逻辑代理）已进 `packages/ui`，四件套齐（SFC + 契约测试 + 中英文档页 + 5 个示例）。规格逐条对齐 `Microsoft.UI.Xaml.Controls.TitleBar`：**行为 / API 读 `winui3/release/2.0.1`**（Gallery v2.9.3 所用 WASDK），模板与画刷读本地快照 `2.5.1`（该控件目录两 tag 有漂移，已记入组件注释）；标题栏 32/48 高度判据、`Compact` 折叠的「后声明组胜出」、失活态的两个分支、拖拽打洞清单均照抄 `TitleBar.cpp`。caption 按钮**无 A 级 XAML 源码**（系统 DWM 绘制），几何 46×32 / 字形 10 / 描边 1 与关闭键红 `#C42B1C` 记为系统度量 + 证据缺口，全部落成可覆盖的组件局部变量；窗口**位置 / 尺寸 / 层级由外部控制**，拖拽只抛 `dragStart` / `dragMove` / `dragEnd`。文档站 `DesktopShell` / `Taskbar` / `SystemTray` / `StartMenu`（0.5.5–0.5.7）与 0.5.4 `NavigationView` 当时仍待做——**现均已落地**，逐条记录见下方 0.5.3–0.5.7 的进展条目。
 

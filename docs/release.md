@@ -351,7 +351,7 @@ No authorized job secret found (project: fluere-vue, job secret: CI_HTTP_PROXY)
 3. 六个包（`@fluere-vue/designs` / `hooks` / `icons` / `themes` / `ui` / `utils`）在 npmjs.com 的
    `Settings → Trusted Publisher` 各配一条：Repository = `Altermoe/fluere-vue`，Workflow filename =
    `release.yml`，**Environment 留空**（除非同时取消 workflow 里 `environment:` 的注释并填同名环境；
-   两边不一致会让 OIDC 校验失败，报的还是误导性的 404）。
+   两边不一致会让 OIDC 校验失败，报的还是误导性的 404）。**已配置生效**（2026-10-14 起连续两次自动发布成功，见下文实测记录）。
 4. publish job 的 `setup-node` **必须**带 `registry-url: https://registry.npmjs.org`：pnpm v11 下
    不写 registry 进 `.npmrc`，OIDC 换取会失败。**不要**配 `NODE_AUTH_TOKEN`——凭据来自 OIDC。
    provenance 在 trusted publishing 下由 pnpm 自动附带，不需要 `--provenance`。
@@ -424,11 +424,26 @@ private 的 `apps/*` 版本一并改掉，changesets action 因此把它们判�
 > 而 `https://registry.npmjs.org/-/package/@fluere-vue%2F<pkg>/dist-tags` 已是新值。判定口径：
 > 以 `https://registry.npmjs.org/@fluere-vue%2F<pkg>/<version>` 的 HTTP 状态（200 = 已发布）为准。
 
+### 线上实测记录（2026-10-14）
+
+第二次由 CI 走完真实发布 `0.4.1-alpha.1`，也是「自动发版链路自 `0.4.x` 起常态化」的确认。
+
+| 阶段                                  | 实测结果                                                                                                                                                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 推 `main`（`cf55377` seed 提交）      | `Release` run [38528831348](https://github.com/Altermoe/fluere-vue/actions/runs/38528831348)：`select-mode` 判 `version` → `version` job 消费 changeset、bump 六包到 `0.4.1-alpha.1` 并更新 release PR；`pack` / `publish` skipped |
+| 合并 release PR（发布提交 `b5941d4`） | `Release` run [38529743664](https://github.com/Altermoe/fluere-vue/actions/runs/38529743664)：`select-mode` 判 `publish` → `pack`（`pnpm check && pnpm test` + `build` + `smoke:dist`）→ `publish`，**三个 job 全绿**              |
+| npm                                   | 六包 `0.4.1-alpha.1` 全部发布；`alpha` = `0.4.1-alpha.1`、`latest` 仍停在 `0.3.0-alpha.2`（`only-pre` 判定恒为假，预期行为）                                                                                                       |
+| 可信发布源                            | 每包 `_npm/v1/attestations` 各 2 份证明；对照人工 bootstrap 的 `0.3.0-alpha.2` 为 `404` ⇒ 凭据确实来自 OIDC。**全程未配 `NODE_AUTH_TOKEN`**，`id-token: write` 只给 publish job 的拆法再次验证可用                                 |
+| OneDev 文档站（手工补推）             | 把 `main`、部署 tag `v0.4.1-alpha.1`（注解 tag，指发布提交 `b5941d4`）与六个逐包 tag 推给 `onedev`；**分支先推、tag 后推**，tag 构建五个 job 全绿，`deploy` 日志含 `[deploy] 健康检查通过：v0.4.1-alpha.1 已上线`                  |
+| 后续 push 的判定                      | 2026-10-15 / 10-16 的 `Release` run（如 [38884420129](https://github.com/Altermoe/fluere-vue/actions/runs/38884420129)）`select-mode` 均判 `none`，三个 job 按预期 skipped —— 没有待发布 changeset 时不会重复发包                  |
+
+> 复核口径同上一节：以 `https://registry.npmjs.org/@fluere-vue%2F<pkg>/<version>` 的 HTTP 状态为准，不以 `npm view` 为准。
+
 ### 尚未自动化 / 尚未线上验证
 
 - **`v<version>` 部署 tag 不由 `release.yml` 建**：GitHub 这条链路只产逐包 tag / Release，OneDev 文档站
   部署要的 `v*` 仍需 `pnpm release:manual`（或手工 `git tag -a` + 逐个 refspec 补推）——`0.4.0-alpha.1`
-  就是这么补的（见上文「线上实测记录」的 OneDev 一行）。
+  与 `0.4.1-alpha.1` 都是这么补的（见上文两条「线上实测记录」的 OneDev 行）。
 - **release PR 拿不到 CI 检查**（`GITHUB_TOKEN` 防递归，见上文），已用 `pack` 里的自证步骤兜住；
   若希望 PR 上也有绿勾，需要给 action 配 PAT / GitHub App token，属于后续可选项。
 - `actions/checkout@v4` / `setup-node@v4` / `pnpm/action-setup@v4` 在 runner 上已被提示
