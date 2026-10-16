@@ -1,6 +1,6 @@
 {
   "name": "@fluere-vue/icons",
-  "version": "0.5.0-alpha.0",
+  "version": "0.5.0-alpha.1",
   "description": "WinUI 3 / Fluent System Icons 的 Vue3 图标库（生成自官方 @fluentui/svg-icons，MIT）",
   "keywords": [
     "fluent",
