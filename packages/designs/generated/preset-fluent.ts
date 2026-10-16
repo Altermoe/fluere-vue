@@ -158,6 +158,7 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --zIndexModal: 1300;
   --zIndexTooltip: 1400;
   --zIndexShell: 1500;
+  --zIndexStartMenu: 1600;
   --zIndexStep: 10;
   --smokeFillColorDefault: rgba(0, 0, 0, 0.302);
   --subtleFillColorTransparent: rgba(255, 255, 255, 0);
@@ -490,6 +491,7 @@ export const tokensCssText = `/* Generated from data/fluent-tokens.json + data/r
   --layerOnMicaBaseAltFillColorSecondary: light-dark(rgba(0, 0, 0, 0.039), rgba(255, 255, 255, 0.059));
   --layerOnMicaBaseAltFillColorTransparent: light-dark(rgba(0, 0, 0, 0), rgba(255, 255, 255, 0));
   --solidBackgroundFillColorTertiary: light-dark(#f9f9f9, #282828);
+  --surfaceStrokeColorFlyout: light-dark(rgba(0, 0, 0, 0.059), rgba(0, 0, 0, 0.2));
   --dividerStrokeColorDefault: light-dark(rgba(0, 0, 0, 0.059), rgba(255, 255, 255, 0.082));
   --layerOnMicaBaseAltFillColorTertiary: light-dark(#f9f9f9, #2c2c2c);
   --cardBackgroundFillColorDefault: light-dark(rgba(255, 255, 255, 0.702), rgba(255, 255, 255, 0.051));
@@ -882,6 +884,7 @@ const themeColors = {
     'layerOnMicaBaseAltFillColorSecondary': 'var(--layerOnMicaBaseAltFillColorSecondary)',
     'layerOnMicaBaseAltFillColorTransparent': 'var(--layerOnMicaBaseAltFillColorTransparent)',
     'solidBackgroundFillColorTertiary': 'var(--solidBackgroundFillColorTertiary)',
+    'surfaceStrokeColorFlyout': 'var(--surfaceStrokeColorFlyout)',
     'dividerStrokeColorDefault': 'var(--dividerStrokeColorDefault)',
     'layerOnMicaBaseAltFillColorTertiary': 'var(--layerOnMicaBaseAltFillColorTertiary)',
     'cardBackgroundFillColorDefault': 'var(--cardBackgroundFillColorDefault)',
@@ -1035,6 +1038,7 @@ const themeZIndex = {
     'modal': 'var(--zIndexModal)',
     'tooltip': 'var(--zIndexTooltip)',
     'shell': 'var(--zIndexShell)',
+    'start-menu': 'var(--zIndexStartMenu)',
     'step': 'var(--zIndexStep)',
 }
 

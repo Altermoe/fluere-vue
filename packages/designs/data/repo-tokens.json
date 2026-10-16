@@ -1,7 +1,7 @@
 {
   "note": "仓库自有令牌（Fluent token 表没有对应档位的部分）。由 scripts/generate.mjs 与 data/fluent-tokens.json 合并后生成 generated/*；extract-tokens.mjs 只重写 data/fluent-tokens.json，不会覆盖本文件，所以这里的手写值不会被上游重新抽取冲掉。每个 token 的 `note` 记录取值依据 / 消费方，`kind` 决定它进不进 UnoCSS 的颜色刻度。",
   "sources": {
-    "zIndex": "本仓库自定的分层刻度（0.4.2）。对齐既有实现值（下拉 1000 / ToolTip 1100），并显式覆盖：窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 外壳（任务栏 / 开始菜单）；ToolTip 档 1400 夹在模态与外壳之间（见 packages/designs/src/repo-tokens.test.ts 的顺序断言）。刻度内留 10 的间隔，供 0.4.1 的层级栈做嵌套提升（zIndexStep）。",
+    "zIndex": "本仓库自定的分层刻度（0.4.2）。对齐既有实现值（下拉 1000 / ToolTip 1100），并显式覆盖：窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 外壳（任务栏）< 开始菜单（0.5.7）；ToolTip 档 1400 夹在模态与外壳之间（见 packages/designs/src/repo-tokens.test.ts 的顺序断言）。刻度内留 10 的间隔，供 0.4.1 的层级栈做嵌套提升（zIndexStep）。",
     "shellGeometry": "桌面外壳（apps/docs 的 DesktopShell / Taskbar，0.5.x）与 NavigationView 的几何缺档。导航面板两档宽度取自 microsoft-ui-xaml tag winui3/release/2.5.1：src/controls/dev/NavigationView/NavigationView.idl（`OpenPaneLength` 320.0 / `CompactPaneLength` 48.0）与同目录 NavigationView.cpp:1457 的 DisplayMode 判据；任务栏高度**没有 A 级源码**（Windows 外壳不在 microsoft-ui-xaml 里），按 Windows 11 100% 缩放的实测值 48 记账，属证据缺口，消费方可一行覆写。",
     "materials": "0.4.4 的 WinUI 材质画刷桥接值。取值来源：① src/controls/dev/CommonStyles/Common_themeresources_any.xaml（Layer*/Card*/Smoke*/Subtle* 与 Mica 纯色基准）；② src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml（Acrylic 的 TintColor / TintOpacity / TintLuminosityOpacity / FallbackColor）——均取自 microsoft-ui-xaml tag winui3/release/2.5.1。WinUI 里这些值是 AARRGGBB，这里的 light/dark 是等价的 CSS 写法（alpha 用 3 位小数），原值写在各自 note 里。WinUI 的 Mica **本体由系统 DWM 绘制**，公开源码树没有 Mica 的 Color 资源，故 mica* 取「Mica 不可用时的纯色基准」SolidBackgroundFillColor*；真正的 Mica Web 近似（渐变 + 半透明层）属 0.9.1。"
   },
@@ -52,7 +52,13 @@
       "light": "1500",
       "dark": "1500",
       "kind": "number",
-      "note": "开始菜单 / 任务栏等应用级外壳（0.5.x，落在 apps/*）"
+      "note": "任务栏等应用级外壳（0.5.x，落在 apps/*）。开始菜单单独一档 zIndexStartMenu（0.5.7），见 explorer-layout.md §4"
+    },
+    "zIndexStartMenu": {
+      "light": "1600",
+      "dark": "1600",
+      "kind": "number",
+      "note": "开始菜单面板（0.5.7 StartMenu，apps/docs）。必须盖过任务栏（zIndexShell 1500）与窗口（0），故取 > 1500；它与 ToolTip(1400) 低于外壳的既有冲突按 explorer-layout.md §4 裁决处理（外壳内不挂 ToolTip，需要时覆写 --fui-tooltip-z），禁止在应用里写裸 z-index"
     },
     "zIndexStep": {
       "light": "10",
@@ -101,6 +107,12 @@
       "dark": "#282828",
       "kind": "color",
       "note": "WinUI SolidBackgroundFillColorTertiaryBrush（亮 #F9F9F9 / 暗 #282828）。0.5.3 TabView 选中 tab 的填充（TabViewItemHeaderBackgroundSelected）。注意它与 layerOnMicaBaseAltFillColorTertiary（亮 #F9F9F9 / 暗 #2C2C2C）不是同一个资源，暗色档差 4/255，不要互相替代"
+    },
+    "surfaceStrokeColorFlyout": {
+      "light": "rgba(0, 0, 0, 0.059)",
+      "dark": "rgba(0, 0, 0, 0.2)",
+      "kind": "color",
+      "note": "WinUI SurfaceStrokeColorFlyout（亮 #0F000000 / 暗 #33000000，AARRGGBB→CSS：0x0F=15/255=0.059、0x33=51/255=0.2）。取值来源：microsoft-ui-xaml tag winui3/release/2.5.1 的 src/controls/dev/CommonStyles/Common_themeresources_any.xaml（亮暗两个 ThemeDictionaries 分支）；消费方：0.5.7 StartMenu 面板描边（MenuFlyoutPresenterBorderBrush=SurfaceStrokeColorFlyoutBrush，同 tag 的 CommonStyles/MenuFlyout_themeresources.xaml:41）。Fluent token 表无同值档（colorNeutralStrokeAlpha 亮 0.05 暗为白色 0.1，语义与值均不等），故落 repo-token"
     },
     "dividerStrokeColorDefault": {
       "light": "rgba(0, 0, 0, 0.059)",

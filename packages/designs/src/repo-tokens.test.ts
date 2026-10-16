@@ -9,7 +9,8 @@
  *   ① 两支事实源不重名（重名会让生成结果取决于遍历顺序，generate.mjs 也会直接抛错）；
  *   ② 每个 token 都有明暗值与取值说明（来源 / 消费方）；
  *   ③ z-index 刻度保持《人工校验闸门》要求的相对顺序：
- *      窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 外壳，ToolTip 在最上；
+ *      窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 外壳 < 开始菜单，
+ *      ToolTip 档夹在模态与外壳之间（顺序断言即该文案的可执行版）；
  *   ④ zIndexStep 为正，嵌套浮层才能按层级栈向上提升。
  */
 import { describe, expect, it } from 'vitest'
@@ -65,6 +66,8 @@ describe('data/repo-tokens.json', () => {
       'zIndexModal',
       'zIndexTooltip',
       'zIndexShell',
+      // 0.5.7：开始菜单必须盖过任务栏与窗口（explorer-layout.md §4）
+      'zIndexStartMenu',
     ]
     const values = tiers.map((name) => tierOf(name))
     for (let index = 1; index < values.length; index += 1) {

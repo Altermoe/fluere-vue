@@ -97,6 +97,16 @@ describe('桌面外壳：层级只引用刻度', () => {
     // 桌面根 / 窗口层都不应把层级抬到外壳档
     expect(desktop).not.toContain('z-index: var(--zIndexShell)')
   })
+
+  it('0.5.7：开始菜单与托盘弹层引用各自档位（StartMenu 1600 / Menu 1100），不写裸值', () => {
+    const startMenu = read(join(shellDir, 'shell-start-menu.vue'))
+    expect(startMenu).toContain('z-index: var(--zIndexStartMenu)')
+
+    const taskbar = read(join(shellDir, 'shell-taskbar.vue'))
+    expect(taskbar).toContain('z-index: var(--zIndexMenu)')
+    // 弹出菜单不得借裸 z-index「自己抬一层」——上面的全目录扫描也会兜底，这里给明确报错信息
+    expect(taskbar).not.toMatch(/z-index:\s*\d/)
+  })
 })
 
 describe('桌面外壳：色值与几何只走令牌', () => {
@@ -155,40 +165,143 @@ describe('桌面外壳：NavigationView 的尺寸写法', () => {
   })
 })
 
-describe('桌面外壳：站点 chrome 的两处落点', () => {
+describe('桌面外壳：站点 chrome 的落点（0.5.7 托盘化）', () => {
   /*
-   * 背景（0.5.5 实测）：`FluereAppWindow` 的标题栏右头格是 grid 的 `auto` 轨，
+   * 背景（0.5.5 实测，历史）：`FluereAppWindow` 的标题栏右头格是 grid 的 `auto` 轨，
    * 窄视口下会缩到 min-content —— 390px 时只有 43px，四个 chrome 控件换行成 108px 高，
-   * 越过 48px 的标题栏压到标签条上。修法是「标题栏一份（桌面档）+ 内容区应用栏一份
-   * （移动档）」按断点互斥显示。这两条断言守住「互斥」与「控件清单只有一份」，
-   * 防后人只改一处导致两档行为漂移或换行回归。
+   * 越过 48px 的标题栏压到标签条上。0.5.5–0.5.6 因此拆「标题栏 + 应用栏」两处互斥落点。
+   *
+   * 0.5.7 收口：站点 chrome 整体迁入**任务栏系统托盘**，并按语义拆清单 ——
+   * 版本 / 语言 / 主题（系统状控件）留在 ShellChrome，GitHub（入口类）归任务栏
+   * 中间固定入口。这批断言守住「清单只有一份」「窗口里一份都不落」「GitHub 不重复」。
    */
-  it('四个控件的清单只有一份定义（shell-chrome.vue），两处落点各引用一次', () => {
-    const window = read(join(shellDir, 'explorer-window.vue'))
+  it('ShellChrome 清单只有三个系统状控件（版本 / 语言 / 主题，无 GitHub）', () => {
     const chrome = read(join(shellDir, 'shell-chrome.vue'))
-    const controls = ['DocsVersionTag', 'GithubLink', 'LocaleSwitch', 'ThemeToggle']
-
-    for (const name of controls) {
+    for (const name of ['DocsVersionTag', 'LocaleSwitch', 'ThemeToggle']) {
       expect(chrome).toContain(`<${name}`)
-      // 落点自己不得再直接写控件（否则加第五个控件时两边会漂移）
-      expect(window).not.toContain(`<${name}`)
     }
-    expect((window.match(/<ShellChrome\b/g) ?? []).length).toBe(2)
+    expect(chrome).not.toContain('<GithubLink')
   })
 
-  it('两处落点按断点互斥：桌面隐藏应用栏，移动隐藏标题栏那一份', () => {
+  it('窗口（标题栏 / 内容区）不再落任何站点 chrome', () => {
     const window = read(join(shellDir, 'explorer-window.vue'))
-    // 桌面档（媒体查询之外）：应用栏 `display: none`
-    expect(window).toMatch(/\.docs-shell-window__appbar\s*\{[^}]*display:\s*none/)
-    // 移动档内互斥翻转
-    const mobile = window.slice(window.indexOf('@media (max-width: 63.999rem)'))
-    expect(mobile).toMatch(/\.docs-shell-window__titlebar-chrome\s*\{[^}]*display:\s*none/)
-    expect(mobile).toMatch(/\.docs-shell-window__appbar\s*\{[^}]*display:\s*flex/)
+    expect(window).not.toContain('<ShellChrome')
+    expect(window).not.toContain('<DocsVersionTag')
+    expect(window).not.toContain('<LocaleSwitch')
+    expect(window).not.toContain('<ThemeToggle')
+    // `#right-header` 也不该再被占位（占位会按 UpdateHeight 把标题栏钉在 48）
+    expect(window).not.toContain('<template #right-header>')
+  })
+
+  it('托盘里 ShellChrome 落两处（内联 + 弹出菜单），构成一份清单的两个互斥消费方', () => {
+    const taskbar = read(join(shellDir, 'shell-taskbar.vue'))
+    expect((taskbar.match(/<ShellChrome\b/g) ?? []).length).toBe(2)
+    expect(taskbar).not.toContain('<GithubLink')
+    // GitHub 归中间固定入口（入口类控件），仓库地址引用单一事实源
+    expect(taskbar).toContain('REPOSITORY_URL')
+    expect(taskbar).toContain('<GithubMark')
+  })
+
+  it('主页 header 同时消费 GithubLink 与 ShellChrome（GitHub 拆出清单后不丢入口）', () => {
+    const home = read(join(docsRoot, 'layouts', 'home.vue'))
+    expect(home).toContain('<GithubLink')
+    expect(home).toContain('<ShellChrome')
+    // 仓库地址只允许从 utils/docs-repo 引用，不许再写字面量
+    expect(home).not.toContain('https://github.com/Altermoe/fluere-vue')
+  })
+
+  it('托盘两处落点按断点互斥：桌面隐藏展开按钮，窄档隐藏内联组（都渲染、只切 display）', () => {
+    const taskbar = read(join(shellDir, 'shell-taskbar.vue'))
+    // 默认（桌面档）：内联可见、展开按钮隐藏
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__tray-expand\s*\{[^}]*display:\s*none/)
+    // 移动档内互斥翻转；且该媒体查询只切这两个控件，不得隐藏时钟
+    const mobile = taskbar.slice(taskbar.indexOf('@media (max-width: 63.999rem)'))
+    expect(mobile).toMatch(/\.docs-shell-taskbar__tray-inline\s*\{[^}]*display:\s*none/)
+    expect(mobile).toMatch(/\.docs-shell-taskbar__tray-expand\s*\{[^}]*display:\s*flex/)
+    expect(mobile).not.toContain('docs-shell-taskbar__clock')
   })
 
   it('chrome 不做 flex-wrap（换行 = 0.5.5 踩过的 108px 溢出）', () => {
     const chrome = read(join(shellDir, 'shell-chrome.vue'))
     expect(chrome).toContain('flex-wrap: nowrap')
+  })
+})
+
+describe('0.5.7 任务栏 / 开始菜单 / 托盘：移动端适配与交互', () => {
+  const taskbar = read(join(shellDir, 'shell-taskbar.vue'))
+  const startMenu = read(join(shellDir, 'shell-start-menu.vue'))
+
+  it('任务栏三段式：开始(auto) · 图标区(minmax(0,1fr)) · 托盘(auto) —— 窄档先压中间', () => {
+    expect(taskbar).toContain('grid-template-columns: auto minmax(0, 1fr) auto')
+    // 开始按钮与托盘所在段都 flex: none（不参与收缩），只有图标区可被压走
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__zone--start\s*\{[^}]*flex:\s*none/)
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__zone--tray\s*\{[^}]*flex:\s*none/)
+  })
+
+  it('图标区不出现原生滚动条（两套隐藏都写：标准属性 + webkit 伪元素）', () => {
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__viewport\s*\{[^}]*overflow-x:\s*auto/)
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__viewport\s*\{[^}]*scrollbar-width:\s*none/)
+    expect(taskbar).toMatch(
+      /\.docs-shell-taskbar__viewport::-webkit-scrollbar\s*\{[^}]*display:\s*none/,
+    )
+    // 纵向也禁（48px 定高里任何滚动条都会挤压图标区）
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__viewport\s*\{[^}]*overflow-y:\s*hidden/)
+  })
+
+  it('两个滚动箭头常驻 DOM、由实测 is-scrollable 控制显隐（visibility 占位，不死锁）', () => {
+    expect(taskbar).toContain("t('shell.taskbarScrollPrev')")
+    expect(taskbar).toContain("t('shell.taskbarScrollNext')")
+    expect(taskbar).toContain('FluentIconChevronLeft24Regular')
+    expect(taskbar).toContain('FluentIconChevronRight24Regular')
+    // 可见性切换必须用 visibility（保占位）而不是 display（会改变测量前提）
+    expect(taskbar).toMatch(/\.docs-shell-taskbar__scroll\s*\{[^}]*visibility:\s*hidden/)
+    expect(taskbar).toContain('.is-scrollable .docs-shell-taskbar__scroll')
+    expect(taskbar).toContain('scrollBy')
+  })
+
+  it('时钟经 utils/shell-clock 的 Intl 格式化（随 locale），挂载前为空（水合口径）', () => {
+    expect(taskbar).toContain('formatTrayClock')
+    expect(taskbar).toContain('ref<Date | null>(null)')
+    expect(taskbar).toContain(':datetime="clockDateTime"')
+    // 时间行与日期行都在 --shell-tray-clock-w 预留宽度内（挂载后不平移图标区）
+    expect(taskbar).toContain('var(--shell-tray-clock-w)')
+  })
+
+  it('开始菜单：useFocusTrap 下沉消费 + role=menu + 方向键 / Home / End', () => {
+    expect(startMenu).toContain("from '@fluere-vue/hooks'")
+    expect(startMenu).toContain('useFocusTrap(')
+    expect(startMenu).toContain('onEscape:')
+    expect(startMenu).toContain('onOutsidePointer:')
+    expect(startMenu).toContain('aria-haspopup="menu"')
+    expect(startMenu).toContain('role="menu"')
+    expect(startMenu).toContain('role="menuitem"')
+    for (const key of ['ArrowDown', 'ArrowUp', 'Home', 'End']) {
+      expect(startMenu).toContain(`'${key}'`)
+    }
+  })
+
+  it('托盘弹出菜单同样走 useFocusTrap（Esc / 外部点击 / 焦点归还）', () => {
+    expect(taskbar).toContain('useFocusTrap(')
+    expect(taskbar).toContain('onEscape:')
+    expect(taskbar).toContain('onOutsidePointer:')
+    expect(taskbar).toContain(':aria-expanded="trayOpen"')
+  })
+
+  it('移动端窗口为常驻任务栏让出高度（0.5.7 任务栏不再被隐藏）', () => {
+    const window = read(join(shellDir, 'explorer-window.vue'))
+    expect(window).toContain('calc(100% - var(--shell-taskbar-h))')
+  })
+
+  it('不做搜索坏按钮（站内搜索属 0.6 的 Ctrl+K，任务栏 / 开始菜单无假入口）', () => {
+    expect(taskbar).not.toContain('FluentIconSearch')
+    expect(startMenu).not.toContain('FluentIconSearch')
+  })
+
+  it('开始菜单条目只来自 SHELL_VIEWS 数据源 + GitHub 单一地址，不引用不存在的页面', () => {
+    expect(startMenu).toContain('SHELL_VIEWS')
+    expect(startMenu).toContain('REPOSITORY_URL')
+    // 设计令牌页 / 路线图页尚不存在（docs/todo.md 2.4）—— 禁止出现指向它们的占位死链
+    expect(startMenu).not.toMatch(/['"]\/(?:en\/)?(?:tokens|roadmap|changelog)/)
   })
 })
 
@@ -206,8 +319,14 @@ describe('桌面外壳：SSR 与水合安全', () => {
     // 桌面 / 移动端差异必须由 CSS 断点驱动；模板里不该出现 isDesktop 的条件渲染
     expect(desktop).not.toMatch(/v-if="isDesktop/)
     expect(desktop).not.toMatch(/v-if="!isDesktop/)
-    // 任务栏用 CSS 隐藏（移动档 @media），不是模板 v-if
-    expect(desktop).toMatch(/@media \(max-width: 63\.999rem\)/)
+    /*
+     * 0.5.7：任务栏在所有宽度常驻（0.5.5 曾在移动档用 @media 把它 `display: none`）。
+     * 反向断言守住新口径 —— 桌面外壳里不许再出现针对任务栏的隐藏规则；
+     * 任务栏自身的断点（托盘压缩 / 展开按钮互斥）归 shell-taskbar.vue，
+     * 那里的 @media 只切控件、不碰时钟（见「站点 chrome 的落点」一节）。
+     */
+    expect(desktop).not.toContain('docs-shell-taskbar)')
+    expect(desktop).not.toMatch(/\.docs-shell-taskbar[\s\S]{0,120}display:\s*none/)
   })
 
   it('setup() 期不直接访问 window / document / matchMedia（能力探测交给 hooks）', () => {

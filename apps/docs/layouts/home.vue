@@ -153,8 +153,14 @@ onScopeDispose(() => {
             </NuxtLink>
           </nav>
         </div>
-        <!-- ml-auto：换行到第二行后仍贴右对齐（同一行时与 justify-between 等效） -->
-        <ShellChrome class="docs-home-shell__chrome" />
+        <!--
+          右侧控件行：GitHub（入口类，0.5.7 起不进 ShellChrome 清单）+ 三个系统状控件。
+          整行仍是 header-inner 的最后一个子项（space-between 贴右），换行口径不变。
+        -->
+        <div class="docs-home-shell__chrome">
+          <GithubLink />
+          <ShellChrome />
+        </div>
       </div>
     </header>
 
@@ -261,6 +267,18 @@ onScopeDispose(() => {
   display: flex;
   align-items: center;
   gap: var(--spacingHorizontalXXL);
+}
+
+/*
+ * 右侧控件行（GitHub + ShellChrome 三控件）。间距与 ShellChrome 内部同档
+ * （spacingHorizontalM），使四个入口在视觉上等距 —— GitHub 不因拆出清单而显得脱节。
+ */
+.docs-home-shell__chrome {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacingHorizontalM);
+  flex-wrap: nowrap;
 }
 
 .docs-home-shell__nav-toggle {

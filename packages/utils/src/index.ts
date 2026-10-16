@@ -2,6 +2,7 @@ export {
   isClient,
   isServer,
   hasMatchMedia,
+  hasDocument,
   hasResizeObserver,
   hasMutationObserver,
   hasIntersectionObserver,

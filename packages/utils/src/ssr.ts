@@ -29,6 +29,15 @@ const isServer = !isClient
 /** `matchMedia` 是否可用（prefers-reduced-motion 等媒体查询） */
 const hasMatchMedia = (): boolean => typeof globalThis.matchMedia === 'function'
 
+/**
+ * `document` 是否可用（DOM 监听 / 焦点操作）。
+ *
+ * 与 `isClient`（导入时求值的平台常量）不同，这里按**调用时**求值：单测可以
+ * `vi.stubGlobal('document', undefined)` 复现「无 DOM 环境」验证副作用为零
+ * （hooks 的 `useFocusTrap` SSR 用例即如此），运行期能力也可能被宿主改变。
+ */
+const hasDocument = (): boolean => typeof globalThis.document !== 'undefined'
+
 /** `ResizeObserver` 是否可用（视口 / 内容尺寸监听） */
 const hasResizeObserver = (): boolean => typeof globalThis.ResizeObserver === 'function'
 
@@ -46,6 +55,7 @@ export {
   isClient,
   isServer,
   hasMatchMedia,
+  hasDocument,
   hasResizeObserver,
   hasMutationObserver,
   hasIntersectionObserver,

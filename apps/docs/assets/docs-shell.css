@@ -66,6 +66,23 @@
   --shell-desktop-margin: 24px;
 
   /*
+   * 开始菜单面板宽度（构图参数，0.5.7）。
+   * Win11 实机开始菜单更宽（≈ 600），但我们的面板只有「三视图 + GitHub」四条，
+   * 480 是「够放一行标签 + 呼吸」的取值；组件内用
+   * `min(var(--shell-start-menu-w), 100vw - 8px)` 收窄，窄视口不溢出。
+   * 覆写方式：消费方写同名变量即可。
+   */
+  --shell-start-menu-w: 480px;
+
+  /*
+   * 托盘时钟的预留宽度（构图参数，0.5.7）。
+   * 时钟挂载前是空文本（水合口径，见 shell-taskbar.vue 的 `now` 注释），
+   * 不预留宽度的话时钟一出现，中间图标区会整体平移一帧。
+   * 64px 按两语种日期的较宽者（`2026/10/16` / `10/16/2026`，12px 字号实测 ≈ 60px）取整。
+   */
+  --shell-tray-clock-w: 64px;
+
+  /*
    * 壁纸渐变的**构图参数**（角度与停靠点）。色值一律引用 Mica 纯色基准令牌：
    *   --micaBackgroundFillColorBase / --micaBackgroundFillColorBaseAlt
    * （取值来源与换算见 packages/designs/data/repo-tokens.json 的 sources.materials）

@@ -28,6 +28,13 @@
 >
 > ⚠️ 与 `docs/todo.md` 的关系：该文件把「文档站首页第一眼即 Explorer 仿真窗口」写成 0.9.7 的呈现目标。本次迁移**改变了这个呈现口径**（第一眼是常规营销主页，仿真在 `/os`，主页 header 与 CTA 区各有入口）—— 已同步回写该文件的对应表述，验收要点（不溢出 / 不重叠 / 移动端降级 / 边界可见）不变。
 
+> **0.5.7 落点变更（2026-10-16）**：任务栏从「最小可用占位」扩成完整三段式（开始 / 图标区 / 托盘），并把站点 chrome（版本 / 语言 / 主题）从窗口标题栏与应用栏**收进任务栏托盘**；GitHub 按语义拆到中间固定入口。两条口径随之改变：
+>
+> 1. **任务栏全宽度常驻**（0.5.5 曾在移动档 `display: none`）：窄视口改用压缩布局（开始按钮常驻、图标区箭头滚动且不出原生滚动条、托盘保时钟并把其余图标收进展开菜单）；窗口在移动档为它让出 `calc(100% - var(--shell-taskbar-h))`。§2 的降级段与 §4 已按此回写。
+> 2. **站点 chrome 不再落窗口内**：`#right-header` 不再占位 ⇒ 按 A 级 `UpdateHeight()` 判据，标题栏随 Content / LeftHeader / RightHeader 全空收为 **32（compact）**（icon / title 不参与判据）。§6.3 的历史实测保留作为「为什么曾经拆两处」的证据，但两处落点已删除。
+>
+> 构图细节与交互口径见 `apps/docs/components/shell/{shell-taskbar,shell-start-menu,shell-chrome}.vue` 文件头。
+
 ## 1. 窗口圆角与阴影
 
 **假设**：窗口层**只能用 `FluereAppWindow` 的既有口径**，外壳不得再写圆角 / 阴影 / 描边值。
@@ -71,7 +78,9 @@ viewport
 > 1. `FluereScrollView` 的 presenter 是**绝对定位**，宿主必须有**确定高度**才滚得动（`packages/ui/src/scrollview` 与 `layouts/components.vue` 的同款注释）。若移动档改为页面滚动，就得把内容渲染器换成非 ScrollView 的实现 ⇒ 服务端与客户端会渲染出**不同的 DOM 结构**，除非再做一层同构的高度测量，收益不抵复杂度。
 > 2. 视口判据在 SSR 下拿不到真实值（`useMediaQuery` 恒返回 `false`），若用它决定渲染什么，首帧必然与水合结果不一致 ⇒ 水合不匹配告警。用 CSS 断点则结构一致。
 >
-> 用户可见结果与本节原意一致（都能滚动看到全部内容），且 0.5.0 的验收要点「移动端不溢出不重叠 / 降级为全屏无边框」完全满足：实测 390px 视口下窗口铺满视口宽、任务栏 `display: none`、无横向溢出。`useMediaQuery` 仍在使用，但**只做副作用**（退到移动档时复位窗口拖拽位移），不参与渲染。
+> 用户可见结果与本节原意一致（都能滚动看到全部内容），且 0.5.0 的验收要点「移动端不溢出不重叠 / 降级为全屏无边框」完全满足：实测 390px 视口下窗口铺满视口宽、无横向溢出。`useMediaQuery` 仍在使用，但**只做副作用**（退到移动档时复位窗口拖拽位移），不参与渲染。
+>
+> **0.5.7 修订**：移动档**任务栏不再隐藏**，改为压缩常驻（开始按钮常驻 / 图标区箭头滚动 / 托盘保时间，见 `shell-taskbar.vue` 文件头）。窗口形态仍是「全屏无边框」，但高度让出任务栏：`block-size: calc(100% - var(--shell-taskbar-h))`。上一段的降级判据（CSS 断点、不把视口判据接进渲染）不变；`desktop-shell.vue` 里「移动档隐藏任务栏」的 `@media` 已删除，契约测试改为**反向断言**（外壳里不许再出现针对任务栏的隐藏规则）。
 
 ## 3. 导航面板折叠宽度
 
@@ -91,19 +100,20 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 
 ## 4. 任务栏高度与层级
 
-**假设**：任务栏高 **48px**（100% 缩放），层级引用 `--zIndexShell`（1500）；开始菜单是**比任务栏更高的一档**，0.5.7 落地时补 `--zIndexStartMenu`（见下）。
+**假设**：任务栏高 **48px**（100% 缩放），层级引用 `--zIndexShell`（1500）；开始菜单是**比任务栏更高的一档**，`--zIndexStartMenu` = **1600**（0.5.7 已按本节补入 `repo-tokens.json`，顺序断言同步更新）。
 
-| 层                | 令牌                       | 值     | 说明                                                               |
-| ----------------- | -------------------------- | ------ | ------------------------------------------------------------------ |
-| 壁纸              | `--zIndexWindow`(0) 之上   | 0      | 壁纸不建层，直接作为 shell 根背景                                  |
-| 桌面窗口          | `--zIndexWindow`           | 0      | 窗口自身不叠在别的东西之上                                         |
-| 窗口内容浮起面    | `--zIndexContent`          | 100    | 窗口内容区内部的浮起表面（非浮层档位）                             |
-| 任务栏            | `--zIndexShell`            | 1500   | 固定底边；`position: fixed` + `inset-block-end: 0`                 |
-| 开始菜单（0.5.7） | **待补** `zIndexStartMenu` | > 1500 | 必须盖过任务栏与窗口；补进 `repo-tokens.json` 后再写组件，禁止裸值 |
+| 层                | 令牌                  | 值   | 说明                                                                                                                          |
+| ----------------- | --------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 壁纸              | `--zIndexWindow` 之上 | 0    | 壁纸不建层，直接作为 shell 根背景                                                                                             |
+| 桌面窗口          | `--zIndexWindow`      | 0    | 窗口自身不叠在别的东西之上                                                                                                    |
+| 窗口内容浮起面    | `--zIndexContent`     | 100  | 窗口内容区内部的浮起表面（非浮层档位）                                                                                        |
+| 任务栏            | `--zIndexShell`       | 1500 | 固定底边；`position: fixed` + `inset-block-end: 0`                                                                            |
+| 开始菜单（0.5.7） | `--zIndexStartMenu`   | 1600 | 必须盖过任务栏与窗口；面板挂在任务栏子树内（由 `--zIndexShell` 的叠放上下文承载），令牌同时锁定档位、防未来独立成层时回退裸值 |
 
 - **高度令牌**：`--shellTaskbarHeight` = `48`（本节新增，`repo-tokens.json` 的 `sources.shellGeometry` 记录）。**证据缺口**：Windows 任务栏由系统外壳绘制，`microsoft-ui-xaml` 无任何对应资源，48 为 Windows 11 100% 缩放的实测值；DPI 缩放 / 小任务栏模式下需覆写。覆写方式：外壳在根节点写 `--shellTaskbarHeight: <px>`（任务栏与为它预留的 `padding-block-end` 都读同一个变量）。
-- **与 ToolTip 档的关系（已知冲突，0.5.6 处理）**：`--zIndexTooltip` = 1400 **低于** `--zIndexShell` = 1500（顺序断言见 `packages/designs/src/repo-tokens.test.ts`）。因此**锚在任务栏 / 开始菜单里的 ToolTip 会被外壳盖住**。两种合法解法，0.5.6 二选一并回写本文档：① 该处的 ToolTip 覆写 `--fui-tooltip-z: calc(var(--zIndexShell) + var(--zIndexStep))`；② 把 `--zIndexTooltip` 抬到外壳之上（同时改 `repo-tokens.json`、AGENTS.md 的刻度描述与顺序断言）。**不得**在应用里写裸 z-index 绕过。
-- 任务栏图标组居中、hover / active 指示条几何在 0.5.6 定，取值逻辑同 ToolTip：找不到 A 级来源的按「证据缺口」记账并给覆写口（组件局部变量或 `--shell*` 令牌）。
+- **与 ToolTip 档的关系（已知冲突，0.5.6 裁决 = 方案①，2026-10-16 回写）**：`--zIndexTooltip` = 1400 **低于** `--zIndexShell` = 1500（顺序断言见 `packages/designs/src/repo-tokens.test.ts`）。**裁决**：保留刻度不动；**外壳（任务栏 / 开始菜单 / 托盘弹层）内一律不挂 `FluereTooltip`，只用原生 `title` 属性**（0.5.6–0.5.7 落地时已照此实现）。将来确需在外壳里挂 ToolTip，按方案① 由该处覆写 `--fui-tooltip-z: calc(var(--zIndexShell) + var(--zIndexStep))`；方案②（抬高 `--zIndexTooltip` 全局档位）仍属备选，动它必须同步改 `repo-tokens.json`、AGENTS.md 的刻度描述与顺序断言。**不得**在应用里写裸 z-index 绕过。
+- **任务栏布局（0.5.6 定稿，三段式）**：`grid-template-columns: auto minmax(0, 1fr) auto` —— 最左开始按钮、中间图标区（可收缩、箭头滚动）、最右托盘；窄视口只压中间段。图标命中区 40×32（`FluereButton medium` + `min-inline-size: 40`）、激活指示条 16×3（`--borderRadiusCircular` + `--colorBrandBackground`）、滚动箭头 32×32。**证据缺口**：Windows 任务栏几何由系统外壳绘制，`microsoft-ui-xaml` 无对应资源 —— 以上均为应用层构图，覆写口 = 组件类名下的 token 引用（无硬编码数值进样式）。
+- **移动端压缩布局（0.5.7）**：箭头仅在图标区**实测溢出**时可见（`visibility` 切换、占位不变，测量前提稳定）；图标区滚动条全部隐藏（`scrollbar-width: none` + `::-webkit-scrollbar { display: none }`，避免 48px 定高被挤压）；托盘 `< 64rem` 收起内联控件组、保留时钟与展开按钮。
 
 ## 5. 桌面壁纸层的令牌化方案
 
@@ -124,13 +134,13 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 
 `packages/designs/data/repo-tokens.json`（生成物 `generated/tokens.css` / `preset-fluent.ts` / `token-names.ts` 同步重生成）：
 
-| 令牌                            | 值  | 来源 / 缺口                                                                            |
-| ------------------------------- | --- | -------------------------------------------------------------------------------------- |
-| `--navigationPaneExpandedWidth` | 320 | WinUI `OpenPaneLength` 缺省（`NavigationView.idl:159/198`，tag `2.5.1`）               |
-| `--navigationPaneCompactWidth`  | 48  | WinUI `CompactPaneLength` 缺省（`NavigationView.idl:195`）                             |
-| `--shellTaskbarHeight`          | 48  | **证据缺口**：Windows 外壳不在 `microsoft-ui-xaml` 里；48 = Windows 11 100% 缩放实测值 |
-
-`--zIndexStartMenu` 不预先造（还不知道开始菜单与任务栏的确切叠放需求），0.5.7 需要时按 §4 补，并同时更新顺序断言。
+| 令牌                            | 值                                            | 来源 / 缺口                                                                                                                                                                                                       |
+| ------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--navigationPaneExpandedWidth` | 320                                           | WinUI `OpenPaneLength` 缺省（`NavigationView.idl:159/198`，tag `2.5.1`）                                                                                                                                          |
+| `--navigationPaneCompactWidth`  | 48                                            | WinUI `CompactPaneLength` 缺省（`NavigationView.idl:195`）                                                                                                                                                        |
+| `--shellTaskbarHeight`          | 48                                            | **证据缺口**：Windows 外壳不在 `microsoft-ui-xaml` 里；48 = Windows 11 100% 缩放实测值                                                                                                                            |
+| `--zIndexStartMenu`             | 1600                                          | 0.5.7 按 §4 补入（盖过任务栏 1500 与窗口 0）；顺序断言已加该档                                                                                                                                                    |
+| `--surfaceStrokeColorFlyout`    | 亮 `rgba(0,0,0,0.059)` / 暗 `rgba(0,0,0,0.2)` | WinUI `SurfaceStrokeColorFlyout`（亮 `#0F000000` / 暗 `#33000000`，`Common_themeresources_any.xaml` tag `2.5.1`；`MenuFlyoutPresenterBorderBrush` 引用它）—— Fluent 表无同值档，0.5.7 开始菜单 / 托盘弹层描边消费 |
 
 ### 6.1 应用层构图参数（0.5.5 落地，**不进 `packages/designs`**）
 
@@ -143,19 +153,25 @@ DisplayMode 判据（`NavigationView.cpp:1445-1470`，`PaneDisplayMode = Auto` �
 | `--shell-desktop-margin`  | `24px`                                  | 窗口与桌面边缘留白（最大化时归零）                                                |
 | `--shell-wallpaper-angle` | `160deg`                                | 壁纸渐变角度（§5 提到的构图参数）                                                 |
 | `--shell-wallpaper-stop`  | `60%`                                   | 壁纸渐变停靠点                                                                    |
+| `--shell-start-menu-w`    | `480px`                                 | 开始菜单面板宽度上限（0.5.7；组件内 `min(..., 100vw - 8px)` 收窄，窄视口不溢出）  |
+| `--shell-tray-clock-w`    | `64px`                                  | 托盘时钟预留宽度（0.5.7）：挂载前时钟是空文本，不预留则文本出现时图标区平移一帧   |
 
 覆写方式：消费方在任意祖先节点写同名变量即可（任务栏高度也可改 `--shellTaskbarHeight`，只写裸数字）。**不允许**把这些值散落到组件的样式里当魔法数字 —— `apps/docs/utils/__tests__/shell-style-contract.test.ts` 会扫描外壳源码，禁止裸 `z-index` 与 `#RRGGBB` 字面量。
 
-### 6.2 任务栏的最小任务栏取舍（0.5.5）
+### 6.2 任务栏的取舍与落地结论（0.5.5 最小版 → 0.5.6/0.5.7 完整版）
 
-0.5.5 只落地**最小可用**任务栏：高度占位 + 窗口还原入口 + 激活指示条。完整的居中图标组（开始 / 搜索 / 已固定入口）与 hover 指示条属 0.5.6。
+0.5.5 只落地**最小可用**任务栏（高度占位 + 窗口还原入口 + 激活指示条）；0.5.6–0.5.7 扩成完整三段式（开始按钮 + 固定入口图标区 + 系统托盘），布局与几何见 §4 的「任务栏布局」条目，移动端压缩口径见 §4「移动端压缩布局」。
 
-两条落地结论（实测得出，记在这里防回归）：
+四条落地结论（实测 / 源码得出，记在这里防回归）：
 
-1. **任务栏里的 ToolTip 会自遮挡**：`--zIndexTooltip`(1400) < `--zIndexShell`(1500)，挂 `FluereTooltip` 的提示会被任务栏自己盖住。§4 已把两种合法解法留给 0.5.6 裁决；0.5.5 只用原生 `title` 属性，**不写裸 z-index 绕过**。
-2. **任务栏入口用「动作按钮」而不是 toggle**：`FluereButton` 的 `:aria-pressed="selected || undefined"` 在 `selected=false` 时会把属性整个丢掉，做成 toggle 会导致同一按钮**时而带 `aria-pressed` 时而不带**（比"没有 toggle 语义"更糟）。因此入口的可访问名说明点击后果（「最小化窗口」/「还原窗口」），窗口显示状态由激活指示条用视觉表达。
+1. **任务栏里的 ToolTip 会自遮挡**：`--zIndexTooltip`(1400) < `--zIndexShell`(1500)，挂 `FluereTooltip` 的提示会被任务栏自己盖住。**0.5.6 裁决 = 方案①**（外壳内不挂 ToolTip、只用原生 `title`；需要时由该处覆写 `--fui-tooltip-z`），已回写 §4 并照此实现，**不写裸 z-index 绕过**。
+2. **任务栏入口用「动作按钮」而不是 toggle**：`FluereButton` 的 `:aria-pressed="selected || undefined"` 在 `selected=false` 时会把属性整个丢掉，做成 toggle 会导致同一按钮**时而带 `aria-pressed` 时而不带**（比"没有 toggle 语义"更糟）。因此窗口入口的可访问名说明点击后果（「最小化窗口」/「还原窗口」），窗口显示状态由激活指示条用视觉表达；固定入口与开始按钮同口径（开始按钮的开合状态由 `aria-expanded` 承载，那是另一套合法语义）。
+3. **不放搜索按钮**（0.5.7）：判定基准里的「搜索」依赖站内搜索（docs/todo.md 2.3 的 `Ctrl+K`，0.6+）。没有可搜的东西时放搜索入口 = 坏按钮（AGENTS.md 红线），故任务栏 / 开始菜单都不放，边界文案已同步去掉「搜索」（i18n `shell.boundary.scope`）。
+4. **箭头代替原生滚动条**（0.5.7）：图标区若露出原生滚动条，会在 48px 定高里把图标挤扁（移动端验收「不能出现原生滚动条挤压高度」）。做法：两套滚动条隐藏（标准 + webkit 伪元素）+ 两个箭头按钮编程 `scrollBy`；箭头只在实测溢出时可见，且**始终占位**（`visibility` 切换）—— 否则会出现「隐藏箭头 → 变宽 → 放得下 → 仍隐藏」的测量死锁。
 
-### 6.3 站点 chrome 的两处落点（0.5.5，**新增**，不改 §1–§5 的假设）
+### 6.3 站点 chrome 的落点（0.5.5 两处互斥 → 0.5.7 收进任务栏托盘，**不改 §1–§5 的假设**）
+
+> **0.5.7 现状（2026-10-16）**：下面 0.5.5 的「两处互斥落点」**已整体撤销** —— 站点 chrome 迁入**任务栏系统托盘**（≥ 64rem 内联一组 / < 64rem 收进展开菜单的弹出面板，两处仍按断点互斥、共用同一份 `shell-chrome.vue` 清单），主页 header 保留一份（`GithubLink` 拆出清单后由布局直接并列渲染）。窗口内的 `#right-header` 与应用栏均已删除，标题栏按 `UpdateHeight()` 收为 32。理由：任务栏常驻 ⇒ 窗口关闭 / 最小化时主题、语言、版本入口也不会消失；而 0.5.5 拆两处的根因（48px 标题栏装不下四个控件）在「托盘 + 按语义拆清单（GitHub 归固定入口，托盘只剩三个）」之后不再构成约束。下表与实测数据**保留作为该裁决的历史证据**，断言已改写为「窗口内零 chrome 落点」（`shell-style-contract.test.ts`）。
 
 0.5.5 起初把站点 chrome 控件（版本 tag / GitHub / 语言 / 主题）全部放进 `FluereAppWindow` 的 `#right-header`（标题栏右头格），并在窄视口给控件组加 `flex-wrap: wrap`。**真实浏览器实测证明这条路走不通**：
 

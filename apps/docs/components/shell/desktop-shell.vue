@@ -15,7 +15,13 @@
  * │  └─ ExplorerWindow           窗口（标题栏 + 导航 + 标签 + 内容滚动）
  * ├─ 关闭占位卡片                与窗口同层（互斥，不同时出现）
  * └─ ShellTaskbar               z-index: var(--zIndexShell)   ← 1500（贴底固定）
+ *     ├─ ShellStartMenu          开始按钮 + 开始菜单面板（--zIndexStartMenu 档，0.5.7）
+ *     ├─ 中间图标区               可横向滚动（箭头驱动，无原生滚动条）
+ *     └─ 系统托盘                 时钟 + 内联控件 / 展开菜单（窄档压缩）
  * ```
+ *
+ * 任务栏**全宽度常驻**（0.5.7 起；0.5.5 曾在移动档整条隐藏，评审后改为压缩常驻），
+ * 窗口在移动档为它让出 `calc(100% - var(--shell-taskbar-h))` 的高度。
  *
  * ## 文档级滚动被关闭（explorer-layout.md §2 锁定的假设）
  *
@@ -159,9 +165,9 @@ const measure = (): void => {
   }
   const bar = elementOf(taskbarRef.value)
   /*
-   * 任务栏在移动档被 CSS 隐藏（`display: none`），实测高为 0 —— 此时**保留**
-   * 上一次的有效值而不是写 0：写 0 会让拖拽收敛的纵向边界在移动档变宽松，
-   * 而移动档的窗口本就是全屏无边框（不参与这套几何），保留旧值更无意外。
+   * 任务栏自 0.5.7 起在所有宽度常驻（移动档压缩而非隐藏），正常情况下实测高恒 > 0。
+   * 保留 `measured > 0` 守卫：若消费方把 `--shellTaskbarHeight` 覆写为 0（隐藏任务栏），
+   * 这里不把 0 写进缓存 —— 拖拽收敛的纵向边界不至于因此失去下界语义。
    * 若消费方覆写了 `--shellTaskbarHeight`，桌面档下的实测值会立刻反映出来。
    */
   if (bar) {
@@ -285,6 +291,18 @@ const onSelectTab = (tab: ShellTabId): void => {
   state.value = selectTab(state.value, tab)
 }
 
+/**
+ * 从任务栏（固定入口 / 开始菜单条目）打开标签。
+ *
+ * 与窗口内导航的 `openTab` 不同，这条路径还承担**还原窗口**：用户完全可能在
+ * 窗口已最小化 / 已关闭时点固定入口（实机任务栏点固定应用 = 把它弄到前台）。
+ * `reopenWindow` 只复位 status（保留 openTabs / maximized 之外的形态语义由状态机
+ * 各自负责），`openTab` 幂等选中标签。
+ */
+const onOpenTabFromShell = (tab: ShellTabId): void => {
+  state.value = reopenWindow(openTab(state.value, tab))
+}
+
 /** 新建标签：当前只提供「回到首页视图」这一个有意义的去处（真实新建属 0.6+ 的地址栏） */
 const onAddTab = (): void => {
   state.value = openTab(state.value, SHELL_DEFAULT_TAB_ID)
@@ -365,14 +383,19 @@ const isClosableVisible = computed(() => state.value.status === 'closed')
     </div>
 
     <!--
-      任务栏：始终渲染，移动档由 CSS 隐藏（`display: none`）。
-      为什么不按视口 `v-if`：视口判据在 SSR 下拿不到真实值，用 `v-if` 会让
-      服务端与客户端渲染出不同的 DOM 结构 ⇒ 水合不匹配。CSS 隐藏则结构一致。
+      任务栏：**全宽度常驻**（0.5.7 起），移动档换压缩布局（开始常驻 / 箭头滚动 /
+      托盘保时间），切换全部由 shell-taskbar.vue 内的 CSS 断点承担。
+      这里始终渲染、绝不按视口 `v-if` —— 视口判据在 SSR 下拿不到真实值，
+      用 `v-if` 会让服务端与客户端渲染出不同的 DOM 结构 ⇒ 水合不匹配。
+      `active-tab`：固定入口的激活指示条（当前视图是否在显示）。
+      `open-tab`：固定入口与开始菜单条目 —— 走「还原窗口 + 打开标签」的统一路径。
     -->
     <ShellTaskbar
       ref="taskbarRef"
       :status="state.status"
+      :active-tab="state.activeTab"
       @toggle-window="onToggleWindow"
+      @open-tab="onOpenTabFromShell"
     />
   </div>
 </template>
@@ -504,15 +527,9 @@ const isClosableVisible = computed(() => state.value.status === 'closed')
  * 用户可见结果一致（都能滚动看到全部内容），且 0.5.0 的验收要点
  * 「移动端不溢出不重叠 / 降级为全屏无边框」完全满足。该偏离已回写
  * docs/design/explorer-layout.md §2 的降级段。
+ *
+ * 0.5.7 补记：**任务栏不再在移动档隐藏**（评审改口径：压缩常驻 —— 开始按钮常驻、
+ * 中间箭头滚动、托盘保时间）。因此本文件在该断点下没有任何需要隐藏的层，
+ * 只剩 explorer-window.vue 给窗口让出任务栏高度这一处联动；窗口降级形态不变。
  */
-@media (max-width: 63.999rem) {
-  /*
-   * 任务栏不渲染：移动端不该有一条 48px 的固定条占掉本就紧张的纵向空间。
-   * 用 CSS 隐藏而不是模板 v-if —— 视口判据在 SSR 下拿不到真实值，
-   * 用 v-if 会让服务端与客户端结构不一致 ⇒ 水合不匹配。
-   */
-  .docs-shell-desktop :deep(.docs-shell-taskbar) {
-    display: none;
-  }
-}
 </style>

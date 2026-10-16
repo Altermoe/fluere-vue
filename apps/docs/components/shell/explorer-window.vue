@@ -27,14 +27,12 @@
  * ② **三个组件的根都不写 `position`**（实测 `static`）：需要定位上下文时必须自己包一层，
  *    见 `.docs-shell-window__frame` 的 `position: relative`。
  * ③ **`FluereTabView` 根不写 `block-size`**：`h-full` / `flex-1 min-h-0` 都有效。
- * ④ **48px 定高标题栏装不下四个站点 chrome 控件**：`FluereAppWindow` 标题栏是 12 列
- *    grid，右头格是 `auto` 轨；390px 视口下实测该格只剩 **43px**，四个控件换行成
- *    **108px 高**并越过标题栏压到标签条上（内容区被覆盖）。改 `nowrap` 也不行 ——
- *    四控件 min-content 约 123px，加 caption 区 138px、最小拖拽区 48px 后必然超出 390px。
- *    因此站点 chrome 有**两处互斥落点**（同一份清单 `shell-chrome.vue`）：
- *    ≥ 64rem 在标题栏 `#right-header`（标题栏高 48），< 64rem 在窗口内容区顶部的应用栏
- *    （`.docs-shell-window__appbar`）。两处都渲染、由 CSS 断点互斥显示 ⇒ SSR 结构一致。
- *    这是外壳构图问题，**不靠改组件几何解决**（explorer-layout.md §1）。
+ * ④ **站点 chrome 已于 0.5.7 迁出窗口**（历史约束保留备查）：48px 定高标题栏装不下
+ *    四个站点控件 —— 12 列 grid 的右头格是 `auto` 轨，390px 视口实测只剩 43px，
+ *    控件换行成 108px 高并压到标签条上；0.5.5–0.5.6 因此拆了「标题栏 + 应用栏」两处
+ *    互斥落点（实测数据与完整推理见 explorer-layout.md §6.3）。0.5.6 仿真独立路由、
+ *    0.5.7 任务栏落地后，按原计划整体收进**任务栏系统托盘**（窄档收进展开菜单），
+ *    本组件不再渲染任何站点 chrome —— 窗口关闭后主题 / 语言 / 版本入口也不会消失。
  *
  * ## 事件口径（避免同一个交互被处理两次）
  *
@@ -46,11 +44,7 @@
  * 删哪个、关完选谁由外壳的状态机决定（见 utils/shell-window-state.ts）。
  */
 
-import {
-  FluentIconDocument24Regular,
-  FluentIconGrid24Regular,
-  FluentIconHome24Regular,
-} from '@fluere-vue/icons'
+import { FluentIconDocument24Regular } from '@fluere-vue/icons'
 import {
   FluereAppWindow,
   FluereNavigationView,
@@ -64,9 +58,9 @@ import type { Component } from 'vue'
 import HomeContent from '~/components/home/home-content.vue'
 import { useComponentNav } from '~/composables/use-component-nav'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
+import { SHELL_VIEWS } from '~/utils/shell-views'
 import { SHELL_DEFAULT_TAB_ID, clampWindowOffset, isBlankTab } from '~/utils/shell-window-state'
 import type { ShellTabId, ShellWindowOffset, ShellWindowState } from '~/utils/shell-window-state'
-import ShellChrome from './shell-chrome.vue'
 
 /*
  * 关于 `FLUERE_NAVIGATION_SETTINGS_VALUE`：那是组件库导出给消费方判断「选中的是不是
@@ -194,19 +188,19 @@ interface ShellView {
 /**
  * 导航面板的条目（数据源 = 站点信息架构，不复制一份硬编码清单）。
  *
- * 导航项与标签一一对应：点导航项 = 打开（或切换）对应标签，与实机 Explorer 里
- * 「左栏选中 → 右侧视图切换」一致。
+ * 静态定义（id / 图标 / 标题 key）自 0.5.7 起收敛到 `~/utils/shell-views` ——
+ * 任务栏固定入口与开始菜单条目共用同一份，改清单只改一处。
  *
  * 条目刻意只有三项 —— 每一项目前都有**真实内容**（首页 = 营销页、组件 = 注册表卡片网格、
  * 指南 = 起步入口）。不为了"看起来像 Explorer"补空壳条目：空条目点开只有一句
- * 「暂无内容」，那是把仿真做成了装饰。完整的信息架构（设计令牌 / 路线图 / 搜索 / 设置）
- * 属 0.5.6–0.5.7，届时随内容一起加。
+ * 「暂无内容」，那是把仿真做成了装饰。剩余信息架构的去向：
+ *  - 搜索 → 0.6 的 `Ctrl+K` 命令面板（docs/todo.md 2.3），开始菜单与任务栏都不放假搜索按钮；
+ *  - 设置（主题 / 语言 / 版本）→ **已落任务栏系统托盘**（0.5.7），导航面板继续关闭内置设置项；
+ *  - 设计令牌 / 路线图 → 等对应页面存在（docs/todo.md 2.4）。
  */
-const views = computed<ShellView[]>(() => [
-  { id: SHELL_DEFAULT_TAB_ID, title: t('shell.tabs.home'), icon: FluentIconHome24Regular },
-  { id: 'components', title: t('shell.tabs.components'), icon: FluentIconGrid24Regular },
-  { id: 'guide', title: t('shell.tabs.guide'), icon: FluentIconDocument24Regular },
-])
+const views = computed<ShellView[]>(() =>
+  SHELL_VIEWS.map((view) => ({ id: view.id, title: t(view.titleKey), icon: view.icon })),
+)
 
 /** 已打开标签的视图定义（顺序按状态机的 openTabs） */
 const openViewList = computed(() =>
@@ -281,19 +275,14 @@ const onNavigationSelection = (value: string | number | undefined): void => {
       </template>
 
       <!--
-        右侧标题栏内容 = 站点原有的四个 chrome 控件（版本 tag / GitHub / 语言 / 主题），
-        由 `ShellChrome` 统一承载（控件清单只有一份定义）。
-        迁移而非复制：它们在 0.5.6 会收进系统托盘，本期先落在标题栏，保证 `/os` 迁址后
-        站点能力不丢（这是 0.5.5 与 0.5.6 之间的临时落位，写在组件注释里）。
-        注意 `#right-header` 非空 ⇒ 标题栏高 48（组件 `UpdateHeight()` 的判据）。
-
-        ⚠️ 这一份**只在 ≥ 64rem 显示**：更窄的视口下标题栏装不下四个控件
-        （390px 实测该格只有 43px、换行成 108px 高并压到标签条上），
-        改用下方窗口内容区顶部的应用栏那一份。原因与实测数据见 shell-chrome.vue。
+        0.5.7：站点 chrome 已迁入任务栏系统托盘（ShellChrome 不再出现在窗口里，
+        见文件头④与 shell-chrome.vue 的落点表）。这里刻意**不占位** `#right-header`：
+        按 A 级 `TitleBar.cpp#UpdateHeight()` 的判据，Content / LeftHeader / RightHeader
+        三者全空时标题栏收为 **32（compact）**——标题栏里不再有任何控件，收窄是源码
+        规定的行为，不是回归（icon / title 不参与判据，见 app-window.vue 的
+        `titleBarSize`）。若将来标题栏要放回控件（0.6+ 的地址栏 / 窗口内搜索），
+        放回即自动回到 48。
       -->
-      <template #right-header>
-        <ShellChrome class="docs-shell-window__titlebar-chrome" />
-      </template>
 
       <!--
         窗口内容区。`FluereAppWindow` 的 `__content` 是 `flex: 1 1 auto; display: flex;
@@ -303,24 +292,14 @@ const onNavigationSelection = (value: string | number | undefined): void => {
       -->
       <div class="docs-shell-window__body">
         <!--
-          移动档（< 64rem）的站点 chrome 应用栏：版本 / GitHub / 语言 / 主题。
-
-          为什么需要它：48px 定高的标题栏在窄视口下装不下这四个控件 ——
-          390px 实测标题栏右头格只剩 43px，四控件换行成 108px 高并压到标签条上。
-          应用栏落在窗口内容区顶部（可以随窗口变宽、也可以换行），
-          与标题栏里那一份**按断点互斥显示**，DOM 结构不随视口变化（SSR / 水合一致）。
-          完整推理与实测数据见 shell-chrome.vue 文件头。
-        -->
-        <ShellChrome class="docs-shell-window__appbar" />
-
-        <!--
           `FluereNavigationView`：面板开合受控（外壳持有状态，将来任务栏 / 键盘也能联动），
           `pane-display-mode="auto"` 走缺省阈值（≥1008 Expanded / 收窄 Compact），
           与 explorer-layout.md §3 的假设一致 —— 外壳不干预 DisplayMode。
 
           刻意**关闭内置设置项**：`FLUERE_NAVIGATION_SETTINGS_VALUE` 是保留哨兵值，
-          其消费路径（判断"选中的是不是设置项"）在 0.5.6 收进系统托盘时才有意义；
-          本期主题 / 语言 / 版本由标题栏控件承担，避免哨兵值与标签 id 空间混淆。
+          其消费路径（判断"选中的是不是设置项"）需要一个「设置」入口才有意义；
+          设置类控件（主题 / 语言 / 版本）已由**任务栏系统托盘**承担（0.5.7），
+          导航面板里再放一个语义重复的入口只会让两个"设置"互相打架。
         -->
         <FluereNavigationView
           class="docs-shell-window__nav flex-1 min-h-0"
@@ -498,8 +477,8 @@ const onNavigationSelection = (value: string | number | undefined): void => {
 .docs-shell-window__body {
   display: flex;
   /*
-   * 纵向排布：移动档的应用栏（`__appbar`）在上，导航视图吃掉剩余高度。
-   * 桌面档应用栏是 `display: none`，因此这里的纵向排布对桌面观感没有影响。
+   * 纵向排布：0.5.7 起只剩导航视图一个子项（移动档应用栏已随 chrome 迁出），
+   * flex 列布局保留 —— 将来标题栏内搜索（0.6+）等头部行可以自然插到导航之上。
    */
   flex-direction: column;
   flex: 1 1 auto;
@@ -613,38 +592,17 @@ const onNavigationSelection = (value: string | number | undefined): void => {
 }
 
 /*
- * 站点 chrome 的两处落点（同一份控件清单，见 shell-chrome.vue）。
- *
- * 桌面档：标题栏右头（`#right-header`）—— 标题栏高 48（组件判据）。
- * 移动档：窗口内容区顶部的应用栏 —— 标题栏装不下四个控件。
- *
- * 两者**按断点互斥**（各自 `display: none` 一份），DOM 结构不随视口变化。
- */
-.docs-shell-window__titlebar-chrome {
-  /* 允许被 grid 的 auto 轨压缩（桌面档宽度充裕，这里只是防御） */
-  min-inline-size: 0;
-}
-
-/*
- * 移动档应用栏：桌面档不参与布局（四个控件在标题栏里）。
- *
- * 高度不写死：由内容（32px 控件）加 `--spacingVerticalXS` 上下留白得出，
- * 避免出现无来源的魔法尺寸；`flex: none` 保证它不被内容区压扁。
- */
-.docs-shell-window__appbar {
-  display: none;
-}
-
-/*
  * 移动端降级：不仿桌面（apps/docs/README.md〈WindowsOS 仿真边界〉）。
  *
  * 断点 64rem = 1024px，与 desktop-shell.vue 的 `@media`、`useMediaQuery('(min-width: 64rem)')`
  * 三处同值。
  *
- * 形态：「全屏无边框窗口」。窗口铺满桌面可视区（任务栏在移动档已被隐藏，
- * 因此不需要为它留高度），但**保留标题栏**：标题栏里的四个 chrome 控件
- * （版本 / GitHub / 语言 / 主题）是站点导航与首屏信息的一部分，降级不该把它们丢掉。
- * 它们在移动档由应用栏承载（标题栏那一份隐藏），原因与实测数据见 shell-chrome.vue。
+ * 形态：「全屏无边框窗口 + 常驻压缩任务栏」（0.5.7 起任务栏在移动档不再隐藏，
+ * 改为压缩常驻 —— 开始按钮常驻、图标区箭头滚动、托盘保时间，见 shell-taskbar.vue）。
+ * 因此窗口铺满可视区时**必须为任务栏让出高度**（`calc(100% - var(--shell-taskbar-h))`），
+ * 否则底部内容会被任务栏盖住（任务栏底色是半透明的，被盖住的内容会"透"出来更难看）。
+ * 标题栏仍保留（图标 + 标题 + caption；chrome 控件已迁去托盘，标题栏此时按
+ * `UpdateHeight` 判据为 compact 32，见模板内的注释）。
  *
  * 圆角不在这里归零：`.is-maximized` 已经给了 `border-radius: 0` 的语义，但那条
  * 由 `state.maximized` 驱动，移动档与它无关。这里**不写圆角**——桌面档下窗口的
@@ -655,7 +613,8 @@ const onNavigationSelection = (value: string | number | undefined): void => {
 @media (max-width: 63.999rem) {
   .docs-shell-window {
     inline-size: 100%;
-    block-size: 100%;
+    /* 铺满宽度、高度为可视区减去常驻任务栏（0.5.7：任务栏移动档常驻） */
+    block-size: calc(100% - var(--shell-taskbar-h));
     inset-block-start: 0;
     inset-inline-start: 0;
     margin-inline-start: 0;
@@ -666,22 +625,6 @@ const onNavigationSelection = (value: string | number | undefined): void => {
      * 出现窗口被推出屏幕的闪动。
      */
     transform: none;
-  }
-
-  /* 标题栏那一份隐藏 —— 窄视口下它会换行并压到标签条上（实测 108px > 48px） */
-  .docs-shell-window__titlebar-chrome {
-    display: none;
-  }
-
-  /* 应用栏接管这四个入口；底色与上缘分隔线沿用任务栏那一档材质语义 */
-  .docs-shell-window__appbar {
-    display: flex;
-    flex: none;
-    align-items: center;
-    padding-block: var(--spacingVerticalXS);
-    padding-inline: var(--spacingHorizontalM);
-    border-block-end: var(--strokeWidthThin) solid var(--dividerStrokeColorDefault);
-    background-color: var(--layerOnMicaBaseAltFillColorDefault);
   }
 }
 </style>
