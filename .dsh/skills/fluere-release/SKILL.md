@@ -168,24 +168,33 @@ export ONE_DEV_TOKEN=$(node -e \
   "$ONEDEV_CFG")
 
 # 用 GIT_ASKPASS 传密：令牌不进 URL / argv / .git/config
+#
+# ⚠️ 用户名**必须是真实存在的 OneDev 用户**（如令牌属主 `codemarker`）。写 `git` 这类不存在的
+#    用户名时，**读操作照样成功**（ls-remote / fetch / --dry-run 全绿，项目是公开的 ⇒ 匿名可读），
+#    但真正的 push 会被判为匿名写 → `HTTP 403`。这个陷阱在 2026-10-16 发 0.5.0-alpha.1 时踩到。
 export GIT_ASKPASS=$(mktemp) GIT_TERMINAL_PROMPT=0
-printf '#!/bin/sh\ncase "$1" in\n  Username*) echo git;;\n  Password*) echo "$ONE_DEV_TOKEN";;\nesac\n' > "$GIT_ASKPASS"
+printf '#!/bin/sh\ncase "$1" in\n  Username*) echo codemarker;;\n  Password*) echo "$ONE_DEV_TOKEN";;\nesac\n' > "$GIT_ASKPASS"
 chmod +x "$GIT_ASKPASS"
 
 ONEDEV_REMOTE=$(git remote get-url onedev)     # HTTPS URL，不含凭据
 
+# 0) 反代对「带 Content-Length 的 POST 体」会回 403，push 一律走 chunked：
+#    把 postBuffer 设得比 pack 小即可强制 chunked 传输（2026-10-16 实测：默认设置下
+#    `POST git-receive-pack (474776 bytes)` → `HTTP 403`；`postBuffer=65536` → `(chunked)` 成功）。
+GIT_PUSH=(git -c http.postBuffer=65536 push)
+
 # 1) 分支先推：OneDev 的 job secret 按「提交可达性」授权，tag 先推会让 5 个 job 秒败
-git push "$ONEDEV_REMOTE" refs/heads/main:refs/heads/main
+"${GIT_PUSH[@]}" "$ONEDEV_REMOTE" refs/heads/main:refs/heads/main
 sleep 5
 
 # 2) 部署 tag：必须是注解 tag，且指向发布提交（check job 会校验 tag 去 v == 根版本）
 git tag -a "v<VERSION>" <RELEASE_COMMIT> -m "docs site deploy: <VERSION>"
-git push "$ONEDEV_REMOTE" "refs/tags/v<VERSION>:refs/tags/v<VERSION>"
+"${GIT_PUSH[@]}" "$ONEDEV_REMOTE" "refs/tags/v<VERSION>:refs/tags/v<VERSION>"
 
 # 3) 六个逐包 tag（GitHub 上由 changeset publish 生成，先取回再推）
 #    逐包 tag 名形如 @<SCOPE>/<pkg>@<VERSION>，六个包各一条
 git fetch --no-tags github 'refs/tags/@<SCOPE>/<pkg>@<VERSION>:refs/tags/@<SCOPE>/<pkg>@<VERSION>'
-git push "$ONEDEV_REMOTE" 'refs/tags/@<SCOPE>/<pkg>@<VERSION>'   # 六个
+"${GIT_PUSH[@]}" "$ONEDEV_REMOTE" 'refs/tags/@<SCOPE>/<pkg>@<VERSION>'   # 六个
 ```
 
 - `v<VERSION>` **不由 `release.yml` 生成**，只能手工打（注解 tag）。
@@ -206,7 +215,7 @@ git push "$ONEDEV_REMOTE" 'refs/tags/@<SCOPE>/<pkg>@<VERSION>'   # 六个
 | git refs | GitHub 与 OneDev 的 `main`、`v<VERSION>`、六个逐包 tag 都指向同一 `<RELEASE_COMMIT>` |
 | 本地 | 工作区干净，本地 `main` == 远端 `main` |
 
-## 3. 本次踩坑清单（2026-10-14 发 `0.4.1-alpha.1` 实测）
+## 3. 踩坑清单（2026-10-14 发 `0.4.1-alpha.1`、2026-10-16 发 `0.5.0-alpha.1` 实测）
 
 | 坑 | 规避 |
 | --- | --- |
@@ -218,11 +227,14 @@ git push "$ONEDEV_REMOTE" 'refs/tags/@<SCOPE>/<pkg>@<VERSION>'   # 六个
 | `git fetch` 走 SSH 挂起 | `timeout` + 明确 refspec，别全量 `--tags` |
 | OneDev SSH 不可用 | 用 dsh-onedev 令牌走 HTTPS + `GIT_ASKPASS`；不要往 URL 里塞令牌 |
 | OneDev「tag 先推、分支后推」→ job 秒败 | **分支先推、tag 后推** |
+| OneDev push 403（用户名不是真实用户） | `GIT_ASKPASS` 的 `Username` 必须回**真实 OneDev 登录名**（如 `codemarker`）。回 `git` 时读操作（`ls-remote` / `--dry-run`）**全部正常**，只有真正带 pack 的 push 报 403 —— 2026-10-16 实测 |
+| OneDev push 403（反代拒绝带 Content-Length 的 POST 体） | push 加 `-c http.postBuffer=65536` 强制 chunked；默认设置下 `POST git-receive-pack (474776 bytes)` 报 `HTTP 403`，改 chunked 后同一 push 成功 |
 | npm 传播延迟导致「像只发了几个包」 | 以 `<VERSION>` 版本端点 HTTP 200 为准，稍后重试 |
 | 预发布被误以为该占 `latest` | 预发布只落 `<preTag>`，`latest` 原地不动；改指须显式 `npm dist-tag add` |
 | `v*` 部署 tag 没人替你打 | `release.yml` 只产逐包 tag / Release，部署 tag 手工 `git tag -a` |
 | release PR 分支 CI 是 0 job 的 startup failure | 非阻塞；发布链路由 `pack` 自证 + `main` 上的 CI 为准 |
 | 全局 `credential.helper=manager` 报 `git: 'credential-manager' is not a git command` | 无害，忽略 |
+| OneDev 构建 id ≠ number | 轮询用 `/~api/builds/<id>`；列表里的 `number` 是构建序号，拿它当 id 会查到别的项目 |
 
 ## 4. 验收清单（发版完成 = 全勾）
 
