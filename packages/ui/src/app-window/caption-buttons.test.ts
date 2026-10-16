@@ -5,6 +5,13 @@ import { h } from 'vue'
 import FluereConfigProvider from '../config-provider/config-provider.vue'
 import FluereCaptionButtons from './caption-buttons.vue'
 import captionButtonsSfc from './caption-buttons.vue?raw'
+import {
+  CAPTION_BUTTON_GLYPH_STROKE_WIDTH_CLOSE,
+  CAPTION_GLYPH_CLOSE,
+  CAPTION_GLYPH_MAXIMIZE,
+  CAPTION_GLYPH_MINIMIZE,
+  CAPTION_GLYPH_RESTORE,
+} from './constants'
 
 /**
  * FluereCaptionButtons 契约测试。
@@ -16,6 +23,12 @@ import captionButtonsSfc from './caption-buttons.vue?raw'
  *     依据 `TitleBarRightPaddingWidth` ← `AppWindowTitleBar.RightInset()` 这一 A 级线索 +
  *     参考图实测），字形形状中最大化 / 还原两条取自遗留 `WindowCaptionButton` 样式的
  *     `Path.Data`（`generic.xaml:15697-15786`）。
+ *   - 字形保真度（2026-10-16）：三条字形按「1:1 冻结帧 ↔ Windows 11 参考图逐像素平均
+ *     绝对差（Δ）」扫描定值（temp/glyph-lab.mjs + temp/glyph-lab-compare.py），
+ *     结论留在 constants.ts 与组件注释里，本文件对「已定值的几何 + 逐字形线宽/端头」
+ *     做回归契约（`shape-rendering: crispEdges` 会关掉 AA、把 45° 笔画退化成阶梯，
+ *     故样式块里不允许再出现它，也不允许再出现 `stroke-width` / `stroke-linecap`，
+ *     否则会把 path 上的呈现属性盖掉）。
  *
  * jsdom 不解析 CSS 自定义属性（`var()`），拿不到可靠的计算样式 ⇒ 状态样式改为
  * 「从 SFC 源码解析出声明本身」做契约断言（与 infobar / progress-bar 测试同一手法，
@@ -183,27 +196,76 @@ describe('FluereCaptionButtons 渲染契约', () => {
       expect(path.attributes('vector-effect')).toBe('non-scaling-stroke')
     }
   })
+
+  it('线宽与端头逐字形写在 path 属性上（CSS 里不得再声明，否则会把呈现属性盖掉）', () => {
+    const wrapper = mount(FluereCaptionButtons)
+    // 最小化 / 最大化：线宽 1（= CAPTION_BUTTON_GLYPH_STROKE_WIDTH 缺省值）、butt 端头
+    for (const selector of [
+      '.fui-caption-buttons__button--minimize path',
+      '.fui-caption-buttons__button--maximize path',
+    ]) {
+      expect(wrapper.get(selector).attributes('stroke-width')).toBe('1')
+      expect(wrapper.get(selector).attributes('stroke-linecap')).toBe('butt')
+    }
+    // 关闭叉两条路径：线宽 1.1（1.0 在 Chrome 里 45° 会退化成硬阶梯）+ 圆头端头
+    for (const path of wrapper.findAll('.fui-caption-buttons__button--close path')) {
+      expect(path.attributes('stroke-width')).toBe('1.1')
+      expect(path.attributes('stroke-linecap')).toBe('round')
+    }
+    // 还原字形两条路径同样走 round（遗留样式的 StrokeStart/EndLineCap = Round）
+    const maximized = mount(FluereCaptionButtons, { props: { maximized: true } })
+    for (const path of maximized.findAll('.fui-caption-buttons__button--maximize path')) {
+      expect(path.attributes('stroke-linecap')).toBe('round')
+    }
+  })
+})
+
+describe('FluereCaptionButtons 字形几何契约（1:1 逐像素校准结果，见 constants.ts）', () => {
+  it('三条字形的外框与端头口径（10×10、墨迹压满外框、逐字形线宽 / 端头）', () => {
+    // 最小化：10×1 实心横条，墨迹落在第 6 像素行（y 5..6，比几何中心低 0.5px）⇒ Δ0.00
+    expect(CAPTION_GLYPH_MINIMIZE.viewBox).toBe('0 0 10 10')
+    expect(CAPTION_GLYPH_MINIMIZE.paths).toEqual(['M0 5.5H10'])
+    expect(CAPTION_GLYPH_MINIMIZE.linecap).toBe('butt')
+
+    // 最大化：中线内缩 0.5（= 线宽 1 ÷ 2）、圆角 r0.25（参考图角像素覆盖 58%）⇒ Δ2.51
+    expect(CAPTION_GLYPH_MAXIMIZE.viewBox).toBe('0 0 10 10')
+    expect(CAPTION_GLYPH_MAXIMIZE.paths[0]).toContain('M0.75 0.5H9.25')
+    expect(CAPTION_GLYPH_MAXIMIZE.paths[0]).toContain('A0.25 0.25')
+    expect(CAPTION_GLYPH_MAXIMIZE.linecap).toBe('butt')
+
+    // 关闭叉：端点 ±0.55（= 线宽 ÷ 2 ⇒ 圆头外缘贴满外框）+ 线宽 1.1 + round ⇒ Δ3.19
+    expect(CAPTION_GLYPH_CLOSE.viewBox).toBe('0 0 10 10')
+    expect(CAPTION_GLYPH_CLOSE.paths).toEqual(['M0.55 0.55 9.45 9.45', 'M9.45 0.55 0.55 9.45'])
+    expect(CAPTION_GLYPH_CLOSE.strokeWidth).toBe(CAPTION_BUTTON_GLYPH_STROKE_WIDTH_CLOSE)
+    expect(CAPTION_GLYPH_CLOSE.linecap).toBe('round')
+
+    // 还原：前置方框 + 后置方框可见边，沿用遗留自然空间（11.008×11.016，各向外扩 0.5）
+    expect(CAPTION_GLYPH_RESTORE.viewBox).toBe('-0.504 -2.501 12.016 12.018')
+    expect(CAPTION_GLYPH_RESTORE.paths).toHaveLength(2)
+    expect(CAPTION_GLYPH_RESTORE.linecap).toBe('round')
+  })
 })
 
 describe('FluereCaptionButtons 样式契约（读 SFC 源码）', () => {
   const rules = readStyleRules()
 
-  it('几何取自系统度量：单键 46×32、字形 10、描边 1（落成局部变量，可被消费方覆盖）', () => {
+  it('几何取自系统度量：单键 46×32、字形 10、墨色 #000000 / #FFFFFF（落成局部变量，可被消费方覆盖）', () => {
     const root = rules.get('.fui-caption-buttons') ?? ''
     expect(root).toContain('--fui-caption-buttons-button-width: 46px')
     expect(root).toContain('--fui-caption-buttons-button-height: 32px')
     expect(root).toContain('--fui-caption-buttons-glyph-size: 10px')
-    expect(root).toContain('--fui-caption-buttons-glyph-stroke: 1px')
+    // 墨色 = 遗留样式的 WindowCaptionForeground → SystemBaseHighColor（token 表无同值档）
+    expect(root).toContain('--fui-caption-buttons-glyph-color: light-dark(#000000, #ffffff)')
 
     const button = rules.get('.fui-caption-buttons__button') ?? ''
     expect(button).toContain('inline-size: var(--fui-caption-buttons-button-width)')
     expect(button).toContain('block-size: var(--fui-caption-buttons-button-height)')
   })
 
-  it('底 / 前景沿用 TitleBarBackButton* 一族画刷（SubtleFill + TextFill）', () => {
+  it('底 / 前景沿用 TitleBarBackButton* 一族画刷（SubtleFill + 字形墨色局部变量）', () => {
     const button = rules.get('.fui-caption-buttons__button') ?? ''
     expect(button).toContain('background-color: var(--colorSubtleBackground)')
-    expect(button).toContain('color: var(--colorNeutralForeground1)')
+    expect(button).toContain('color: var(--fui-caption-buttons-glyph-color)')
     expect(rules.get('.fui-caption-buttons__button:hover') ?? '').toContain(
       'background-color: var(--colorSubtleBackgroundHover)',
     )
@@ -244,10 +306,14 @@ describe('FluereCaptionButtons 样式契约（读 SFC 源码）', () => {
     expect(readStyleText()).not.toContain('transition')
   })
 
-  it('字形是描边路径：fill: none + stroke: currentColor + shape-rendering', () => {
+  it('字形是描边路径：fill: none + stroke: currentColor，且样式块里不得有 crispEdges / 线宽 / 端头', () => {
     const glyph = rules.get('.fui-caption-buttons__glyph') ?? ''
     expect(glyph).toContain('fill: none')
     expect(glyph).toContain('stroke: currentColor')
-    expect(glyph).toContain('stroke-width: var(--fui-caption-buttons-glyph-stroke)')
+    // 线宽 / 端头必须留在 path 的呈现属性上：写进 CSS 会把逐字形值整个盖掉（静默失效）
+    expect(glyph).not.toContain('stroke-width')
+    expect(glyph).not.toContain('stroke-linecap')
+    // crispEdges 会关掉抗锯齿 ⇒ 45° 笔画退化成硬阶梯（Δ15.7 vs Δ3.2，见组件注释）
+    expect(readStyleText()).not.toContain('crispEdges')
   })
 })

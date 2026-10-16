@@ -126,25 +126,39 @@ WinUI 3's `TitleBar` **has no caption buttons in its template** (all 12 columns 
 
 Everything below is therefore a **system metric**, cross-checked against 1:1 Windows 11 screenshots and exposed as overridable component-local variables:
 
-| Quantity              | Value                                         | Source and verification                                                                                                                                                                               |
-| --------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Button width × height | **46 × 32**                                   | `TitleBarRightPaddingWidth` is overridden at runtime by `AppWindowTitleBar.RightInset()` (A-level lead); measured glyph-center pitch **46.0 / 46.0** in the reference screenshot                      |
-| Glyph box / stroke    | **10 / 1px**                                  | Measured: minimize = 10×1 bar, maximize = 10×10 stroked square, close = 10×10 cross                                                                                                                   |
-| Vertical placement    | **top-aligned**                               | With a 48-high title bar the back-arrow ink center is y≈23.5 (= 48/2) while the caption glyph center is y≈15.5 (= 32/2) ⇒ the buttons occupy only the top 32                                          |
-| Hover / pressed fill  | `colorSubtleBackgroundHover` / `…Pressed`     | The same A-level brush family as the title-bar buttons (`SubtleFillColorSecondary/Tertiary`)                                                                                                          |
-| Close hover red       | **`#C42B1C`**                                 | WinUI system color `SystemFillColorCritical` (`Common_themeresources_any.xaml:282`), identical to Windows 11; the legacy `#e81123` is **defined but never referenced** and cannot be used as evidence |
-| Close pressed red     | `colorStatusDangerBackground3Hover` (#B10E1C) | No source at all; nearest semantic token                                                                                                                                                              |
+| Quantity               | Value                                         | Source and verification                                                                                                                                                                                                                                |
+| ---------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Button width × height  | **46 × 32**                                   | `TitleBarRightPaddingWidth` is overridden at runtime by `AppWindowTitleBar.RightInset()` (A-level lead); measured glyph-center pitch **46.0 / 46.0** in the reference screenshot                                                                       |
+| Glyph box / line width | **10 / 1px** (close cross 1.1px)              | Measured: minimize = 10×1 bar, maximize = 10×10 stroked square, close = 10×10 cross; the 1.1px close value is justified in "Glyph calibration" below                                                                                                   |
+| Glyph ink              | **`#000000` / `#FFFFFF`** (light / dark)      | Legacy `WindowCaptionForeground` → `SystemControlForegroundBaseHighBrush` → `SystemBaseHighColor` (`generic.xaml:263` + `:4132`); no matching token (`colorNeutralForeground1` is #242424 in light), so it becomes `--fui-caption-buttons-glyph-color` |
+| Vertical placement     | **top-aligned**                               | With a 48-high title bar the back-arrow ink center is y≈23.5 (= 48/2) while the caption glyph center is y≈15.5 (= 32/2) ⇒ the buttons occupy only the top 32                                                                                           |
+| Hover / pressed fill   | `colorSubtleBackgroundHover` / `…Pressed`     | The same A-level brush family as the title-bar buttons (`SubtleFillColorSecondary/Tertiary`)                                                                                                                                                           |
+| Close hover red        | **`#C42B1C`**                                 | WinUI system color `SystemFillColorCritical` (`Common_themeresources_any.xaml:282`), identical to Windows 11; the legacy `#e81123` is **defined but never referenced** and cannot be used as evidence                                                  |
+| Close pressed red      | `colorStatusDangerBackground3Hover` (#B10E1C) | No source at all; nearest semantic token                                                                                                                                                                                                               |
 
-Override these local variables for a stricter match:
+Glyph calibration (1:1 frozen frames vs. the Windows 11 reference screenshot, scored by per-pixel **mean absolute ink difference Δ**, lower = closer; scripts `temp/glyph-lab.mjs` + `temp/glyph-lab-compare.py` stay in `temp/`, the conclusions live in `packages/ui/src/app-window/constants.ts` and the component comments):
+
+| Glyph    | Settled value                                                                        | Δ        | Rejected candidates                             |
+| -------- | ------------------------------------------------------------------------------------ | -------- | ----------------------------------------------- |
+| Minimize | `M0 5.5H10` (`butt`; ink lands on the 6th pixel row, 0.5px below center)             | **0.00** | `M0.5 5H9.5` → 16.11                            |
+| Maximize | 10×10 box, centerline inset 0.5, corner `r0.25` (`butt`)                             | **2.51** | square corners → 3.38; legacy `r≈1.67px` → 9.72 |
+| Close    | endpoints `±0.55` (= width÷2 so the round cap fills the box), width **1.1**, `round` | **3.19** | width 1.0 → 15.74; width 1.2 → 11.08            |
+
+Two systematic fixes (the root cause of the former "clunky / broken" look): ① **dropping `shape-rendering: crispEdges`** — it disables anti-aliasing, turning 45° strokes into hard stair-steps and quantizing the rounded corners into blocks (Δ15.7 vs Δ3.2); ② **moving line width and line cap onto the per-glyph `path` presentation attributes** (minimize / maximize `1px` + `butt`, close `1.1px` + `round`) — CSS rules outrank presentation attributes, so keeping them in `<style scoped>` would silently override the per-glyph values.
+
+To match a real machine exactly, override these local variables:
 
 ```css
 .my-caption-buttons {
   --fui-caption-buttons-button-width: 46px;
   --fui-caption-buttons-glyph-size: 10px;
+  --fui-caption-buttons-glyph-color: #000000; /* #ffffff in dark */
   --fui-caption-buttons-close-hover: #c42b1c;
   --fui-caption-buttons-close-pressed: #b22b26;
 }
 ```
+
+> Glyph **line width / line cap / path** are deliberately not local variables: they interlock with the path geometry (endpoint = width ÷ 2) and differ per glyph, so overriding one of them breaks the box alignment — use the `minimize-icon` / `maximize-icon` / `restore-icon` / `close-icon` slots to swap glyphs instead.
 
 ## Dragging: events only
 
@@ -282,24 +296,26 @@ With `draggable` (default true), pressing the title bar **outside interactive re
 
 Computed styles measured with Playwright + system Chrome (1280×900 / DPR 1) on this very page (the script and screenshots are process artifacts under `temp/`; the conclusions are below):
 
-| Quantity                         | Measured                                                                                                                                             |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Title-bar height                 | `32` (no header slots) / `48` (with header slots)                                                                                                    |
-| Window radius / border / content | `8px` / `1px` / `overflow: clip`                                                                                                                     |
-| Title / subtitle                 | `font-size: 12px` / foreground `rgb(66, 66, 66)`                                                                                                     |
-| Back button                      | `40 × 44`, radius `4px`, left offset `5` (1 border + 2 padding + 2 margin)                                                                           |
-| Caption button / area / pitch    | `46 × 32` / `138` / `46`                                                                                                                             |
-| Caption glyph                    | `10 × 10`, centered, `stroke-width: 1px`, top-aligned in a 48-high bar (`offsetTop: 0`)                                                              |
-| Minimize hover / close hover     | `rgb(245, 245, 245)` / `rgb(196, 43, 28)` (= #C42B1C) + white glyph                                                                                  |
-| Focus rectangle                  | `inset 0 0 0 2px rgb(0,0,0), inset 0 0 0 3px rgb(255,255,255)`                                                                                       |
-| Inactive title                   | `rgb(97, 97, 97)`                                                                                                                                    |
-| Maximized                        | radius `0px`, no shadow, caption glyph `restore`                                                                                                     |
-| `motion`                         | `none` ⇒ `transition-duration: 0s`; `auto` ⇒ `border-radius, box-shadow, background-color`                                                           |
-| Dragging (real pointer)          | carried by CSS `translate`; a `+60 / +40 px` drag yields `translate: 60px 40px` (integer with `roundToInteger`); `data-dragging=true` while dragging |
+| Quantity                         | Measured                                                                                                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Title-bar height                 | `32` (no header slots) / `48` (with header slots)                                                                                                                      |
+| Window radius / border / content | `8px` / `1px` / `overflow: clip`                                                                                                                                       |
+| Title / subtitle                 | `font-size: 12px` / foreground `rgb(66, 66, 66)`                                                                                                                       |
+| Back button                      | `40 × 44`, radius `4px`, left offset `5` (1 border + 2 padding + 2 margin)                                                                                             |
+| Caption button / area / pitch    | `46 × 32` / `138` / `46`                                                                                                                                               |
+| Caption glyph                    | `10 × 10`, centered, `stroke-width` attribute `1` (close cross `1.1`), `shape-rendering: auto`, top-aligned in a 48-high bar (`offsetTop: 0`)                          |
+| Caption ink / fidelity           | light `rgb(0, 0, 0)` / dark `rgb(255, 255, 255)`; per-pixel mean ink difference vs. the Windows 11 reference **2.09/255** (minimize 0.00 / maximize 2.73 / close 3.59) |
+| Minimize hover / close hover     | `rgb(245, 245, 245)` / `rgb(196, 43, 28)` (= #C42B1C) + white glyph                                                                                                    |
+| Focus rectangle                  | `inset 0 0 0 2px rgb(0,0,0), inset 0 0 0 3px rgb(255,255,255)`                                                                                                         |
+| Inactive title                   | `rgb(97, 97, 97)`                                                                                                                                                      |
+| Maximized                        | radius `0px`, no shadow, caption glyph `restore`                                                                                                                       |
+| `motion`                         | `none` ⇒ `transition-duration: 0s`; `auto` ⇒ `border-radius, box-shadow, background-color`                                                                             |
+| Dragging (real pointer)          | carried by CSS `translate`; a `+60 / +40 px` drag yields `translate: 60px 40px` (integer with `roundToInteger`); `data-dragging=true` while dragging                   |
 
 ## Implementation notes
 
 - **Height logic mirrors `UpdateHeight()`**: only `LeftHeader` / `Content` / `RightHeader` count; `Title` / `Subtitle` do not affect the height tier.
+- **Three deliberate departures from the legacy system chrome for the caption glyphs (calibrated 2026-10-16)**: ① dropping `shape-rendering: crispEdges` (it disables anti-aliasing, turning 45° strokes into hard stair-steps); ② moving line width / line cap onto the per-glyph `path` presentation attributes (CSS outranks presentation attributes, so keeping them in the style block would silently override the per-glyph values); ③ switching the ink to the local variable `light-dark(#000000, #ffffff)` (= `WindowCaptionForeground` → `SystemBaseHighColor`; no token matches it). The geometry candidate scan is in "Caption buttons: the evidence gap" above.
 - **Compact folding is "last declared group wins"**: both `TitleTextGroup` and `DisplayModeGroup` write `PART_TitleText.Visibility`, and the latter is declared later ⇒ `Compact` hides title / subtitle and moves the center content from centered to left with a 16 end margin. The criterion is not a breakpoint but "desired width of the center ≥ its available width" (`contentArea.DesiredSize().Width >= contentAreaGrid.ActualWidth()`), with the threshold remembered from the moment folding started; the Web side measures desired width through a hidden mirror (`visibility: hidden` + `aria-hidden` + `inert`).
 - **Web equivalent of punching passthrough holes**: `pointerdown` does not start a drag when it lands in `[data-fui-app-window-nodrag]`, a native interactive element, or `[data-fui-app-window-drag-exempt]`. `Esc` cancels; `pointercancel` and lost capture end as `canceled=true`.
 - **Back / pane-toggle buttons skip the AnimatedIcon animation for now**: WinUI uses `AnimatedBackVisualSource` / `AnimatedGlobalNavigationButtonVisualSource` (LottieGen output, `c_durationTicks` = 13333333 ≈ 1.3333 s, 48×48 canvas, 12 markers, `Foreground` theme property). This library ships static glyphs for now; the animation lands with 0.5.4 `NavigationView` (the slots are already in place).

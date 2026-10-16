@@ -126,14 +126,25 @@ WinUI 3 的 `TitleBar` **模板里没有 caption 按钮**（12 列读完，无�
 
 因此下面的量都是「**系统度量**」，用 Windows 11 参考截图 1:1 交叉验证，并全部落成可覆盖的组件局部变量：
 
-| 量                 | 取值                                           | 来源与验证                                                                                                                                                                    |
-| ------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 单键宽 × 高        | **46 × 32**                                    | `TitleBarRightPaddingWidth` 运行期被 `AppWindowTitleBar.RightInset()` 覆盖（A 级线索）；参考图实测三键字形中心间距 **46.0 / 46.0**                                            |
-| 字形外框 / 描边    | **10 / 1px**                                   | 参考图实测（最小化 10×1 横条、最大化 10×10 描边方框、关闭 10×10 叉）                                                                                                          |
-| caption 区竖直位置 | **顶端对齐**                                   | 标题栏 48 高时，返回箭头墨迹中心 y≈23.5（= 48/2）而 caption 字形中心 y≈15.5（= 32/2）⇒ 按钮只占顶部 32                                                                        |
-| hover / pressed 底 | `colorSubtleBackgroundHover` / `…Pressed`      | 标题栏按钮同族的 A 级画刷（`SubtleFillColorSecondary/Tertiary`）                                                                                                              |
-| 关闭键 hover 红    | **`#C42B1C`**                                  | WinUI 系统色 `SystemFillColorCritical`（`Common_themeresources_any.xaml:282`）与 Windows 11 关闭键红逐字节一致；旧 chrome 里的 `#e81123` **只有定义行、零引用行**，不能当依据 |
-| 关闭键 pressed 红  | `colorStatusDangerBackground3Hover`（#B10E1C） | 无任何来源，取语义位最近的 token                                                                                                                                              |
+| 量                 | 取值                                           | 来源与验证                                                                                                                                                                                                                                  |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 单键宽 × 高        | **46 × 32**                                    | `TitleBarRightPaddingWidth` 运行期被 `AppWindowTitleBar.RightInset()` 覆盖（A 级线索）；参考图实测三键字形中心间距 **46.0 / 46.0**                                                                                                          |
+| 字形外框 / 线宽    | **10 / 1px**（关闭叉 1.1px）                   | 参考图实测（最小化 10×1 横条、最大化 10×10 描边方框、关闭 10×10 叉）；关闭叉取 1.1 的像素依据见下「字形定值过程」                                                                                                                           |
+| 字形墨色           | **`#000000` / `#FFFFFF`**（浅 / 深主题）       | 遗留样式 `WindowCaptionForeground` → `SystemControlForegroundBaseHighBrush` → `SystemBaseHighColor`（`generic.xaml:263` + `:4132`）；token 表无同值档（`colorNeutralForeground1` 浅色是 #242424），落成 `--fui-caption-buttons-glyph-color` |
+| caption 区竖直位置 | **顶端对齐**                                   | 标题栏 48 高时，返回箭头墨迹中心 y≈23.5（= 48/2）而 caption 字形中心 y≈15.5（= 32/2）⇒ 按钮只占顶部 32                                                                                                                                      |
+| hover / pressed 底 | `colorSubtleBackgroundHover` / `…Pressed`      | 标题栏按钮同族的 A 级画刷（`SubtleFillColorSecondary/Tertiary`）                                                                                                                                                                            |
+| 关闭键 hover 红    | **`#C42B1C`**                                  | WinUI 系统色 `SystemFillColorCritical`（`Common_themeresources_any.xaml:282`）与 Windows 11 关闭键红逐字节一致；旧 chrome 里的 `#e81123` **只有定义行、零引用行**，不能当依据                                                               |
+| 关闭键 pressed 红  | `colorStatusDangerBackground3Hover`（#B10E1C） | 无任何来源，取语义位最近的 token                                                                                                                                                                                                            |
+
+字形形状的定值过程（1:1 冻结帧 ↔ Windows 11 参考图逐像素**平均绝对差 Δ** 候选扫描，越小越像；脚本 `temp/glyph-lab.mjs` + `temp/glyph-lab-compare.py`，属过程产物不进仓库，结论已落到 `packages/ui/src/app-window/constants.ts` 与组件注释）：
+
+| 字形   | 定值                                                              | Δ        | 淘汰的备选                                     |
+| ------ | ----------------------------------------------------------------- | -------- | ---------------------------------------------- |
+| 最小化 | `M0 5.5H10`（`butt`；墨迹落在第 6 像素行，比几何中心低 0.5px）    | **0.00** | `M0.5 5H9.5` → 16.11                           |
+| 最大化 | 10×10 方框，中线内缩 0.5、圆角 `r0.25`（`butt`）                  | **2.51** | 直角 → 3.38；遗留样式 `r≈1.67px` 大圆角 → 9.72 |
+| 关闭   | 端点 `±0.55`（= 线宽÷2，圆头外缘贴满外框）、线宽 **1.1**、`round` | **3.19** | 线宽 1.0 → 15.74；线宽 1.2 → 11.08             |
+
+两处系统性修正（原先「粗笨 / 断线」的根因）：① **移除 `shape-rendering: crispEdges`** —— 它关掉抗锯齿后，45° 笔画退化成硬边阶梯、方框圆角被量化成块（Δ 15.7 vs 3.2）；② **线宽与端头改由 `path` 的呈现属性逐字形输出**（最小化 / 最大化 `1px` + `butt`、关闭叉 `1.1px` + `round`）—— CSS 规则的优先级高于呈现属性，若继续写在 `<style scoped>` 里会把逐字形值整个盖掉。
 
 需要严格对齐实机时，覆盖这些局部变量即可：
 
@@ -141,10 +152,13 @@ WinUI 3 的 `TitleBar` **模板里没有 caption 按钮**（12 列读完，无�
 .my-caption-buttons {
   --fui-caption-buttons-button-width: 46px;
   --fui-caption-buttons-glyph-size: 10px;
+  --fui-caption-buttons-glyph-color: #000000; /* 深色主题下是 #ffffff */
   --fui-caption-buttons-close-hover: #c42b1c;
   --fui-caption-buttons-close-pressed: #b22b26;
 }
 ```
+
+> 字形**线宽 / 端头 / 路径**不做成局部变量：它们与路径几何互相咬合（端点位置 = 线宽 ÷ 2），逐字形不同，覆盖其中一项就会破坏外框对齐 —— 要换字形请用 `minimize-icon` / `maximize-icon` / `restore-icon` / `close-icon` 四个插槽。
 
 ## 拖拽：只抛事件
 
@@ -278,24 +292,26 @@ WinUI 3 的 `TitleBar` **模板里没有 caption 按钮**（12 列读完，无�
 
 Playwright + 系统 Chrome（1280×900 / DPR 1）在文档站本页实测的计算样式（脚本与截图属过程产物，只留在 `temp/`；结论如下）：
 
-| 量                             | 实测                                                                                                                              |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 标题栏高度                     | `32`（无头部插槽）/ `48`（有）                                                                                                    |
-| 窗口圆角 / 描边 / 内容区       | `8px` / `1px` / `overflow: clip`                                                                                                  |
-| 标题 / 副标题                  | `font-size: 12px` / 前景 `rgb(66, 66, 66)`                                                                                        |
-| 返回按钮                       | `40 × 44`、圆角 `4px`、左缘偏移 `5`（1 描边 + 2 内边距 + 2 Margin）                                                               |
-| caption 单键 / 区宽 / 键心间距 | `46 × 32` / `138` / `46`                                                                                                          |
-| caption 字形                   | `10 × 10`、居中、`stroke-width: 1px`、48 高时顶端对齐（`offsetTop: 0`）                                                           |
-| 最小化 hover / 关闭键 hover    | `rgb(245, 245, 245)` / `rgb(196, 43, 28)`（= #C42B1C）+ 白字形                                                                    |
-| 焦点矩形                       | `inset 0 0 0 2px rgb(0,0,0), inset 0 0 0 3px rgb(255,255,255)`                                                                    |
-| 失活标题                       | `rgb(97, 97, 97)`                                                                                                                 |
-| 最大化                         | 圆角 `0px`、无阴影、caption 字形 `restore`                                                                                        |
-| `motion`                       | `none` ⇒ `transition-duration: 0s`；`auto` ⇒ `border-radius, box-shadow, background-color`                                        |
-| 拖拽（真实指针）               | 外壳用 CSS `translate` 承载：拖动 `+60 / +40 px` 后 `translate:60px 40px`（roundToInteger 下为整数）；拖动中 `data-dragging=true` |
+| 量                             | 实测                                                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 标题栏高度                     | `32`（无头部插槽）/ `48`（有）                                                                                                                       |
+| 窗口圆角 / 描边 / 内容区       | `8px` / `1px` / `overflow: clip`                                                                                                                     |
+| 标题 / 副标题                  | `font-size: 12px` / 前景 `rgb(66, 66, 66)`                                                                                                           |
+| 返回按钮                       | `40 × 44`、圆角 `4px`、左缘偏移 `5`（1 描边 + 2 内边距 + 2 Margin）                                                                                  |
+| caption 单键 / 区宽 / 键心间距 | `46 × 32` / `138` / `46`                                                                                                                             |
+| caption 字形                   | `10 × 10`、居中、`stroke-width` 属性 `1`（关闭叉 `1.1`）、`shape-rendering: auto`、48 高时顶端对齐（`offsetTop: 0`）                                 |
+| caption 字形墨色 / 保真度      | 浅色 `rgb(0, 0, 0)` / 深色 `rgb(255, 255, 255)`；与 Windows 11 参考图 1:1 逐像素**墨量**平均差 **2.09/255**（最小化 0.00 / 最大化 2.73 / 关闭 3.59） |
+| 最小化 hover / 关闭键 hover    | `rgb(245, 245, 245)` / `rgb(196, 43, 28)`（= #C42B1C）+ 白字形                                                                                       |
+| 焦点矩形                       | `inset 0 0 0 2px rgb(0,0,0), inset 0 0 0 3px rgb(255,255,255)`                                                                                       |
+| 失活标题                       | `rgb(97, 97, 97)`                                                                                                                                    |
+| 最大化                         | 圆角 `0px`、无阴影、caption 字形 `restore`                                                                                                           |
+| `motion`                       | `none` ⇒ `transition-duration: 0s`；`auto` ⇒ `border-radius, box-shadow, background-color`                                                           |
+| 拖拽（真实指针）               | 外壳用 CSS `translate` 承载：拖动 `+60 / +40 px` 后 `translate:60px 40px`（roundToInteger 下为整数）；拖动中 `data-dragging=true`                    |
 
 ## 实现要点
 
 - **高度判定照抄 `UpdateHeight()`**：只有 `LeftHeader` / `Content` / `RightHeader` 参与，`Title` / `Subtitle` 不影响高度档位。
+- **caption 字形与原系统 chrome 的三处偏离（2026-10-16 校准）**：① 去掉 `shape-rendering: crispEdges`（它关掉抗锯齿，45° 笔画退化成硬边阶梯）；② 线宽 / 端头改由 `path` 的呈现属性逐字形输出（CSS 优先级高于呈现属性，留在样式块里会把逐字形值盖掉）；③ 墨色改用局部变量 `light-dark(#000000, #ffffff)`（= `WindowCaptionForeground` → `SystemBaseHighColor`，token 表无同值档）。字形几何的候选 Δ 扫描见上文《caption 按钮的证据缺口》。
 - **Compact 折叠是「后声明组胜出」**：`TitleTextGroup` 与 `DisplayModeGroup` 都会写 `PART_TitleText.Visibility`，后者声明在后 ⇒ `Compact` 生效时标题 / 副标题折叠、中段由居中改左对齐并右移 16。判据不是断点，而是「中段期望宽 ≥ 中段可用宽」（`contentArea.DesiredSize().Width >= contentAreaGrid.ActualWidth()`），阈值是**进入折叠那一刻的标题栏宽度**；Web 侧用一层隐藏镜像量期望宽（`visibility: hidden` + `aria-hidden` + `inert`）。
 - **拖拽打洞的 Web 等价物**：`pointerdown` 命中 `[data-fui-app-window-nodrag]`、原生可交互元素或 `[data-fui-app-window-drag-exempt]` 时不启动拖拽 —— 对应 WinUI 的 passthrough 矩形。`Esc` 取消、`pointercancel` / 失去捕获同样以 `canceled=true` 收尾。
 - **返回 / 导航按钮暂不做 AnimatedIcon 动画**：WinUI 用 `AnimatedBackVisualSource` / `AnimatedGlobalNavigationButtonVisualSource`（LottieGen 产物，`c_durationTicks` = 13333333 ≈ 1.3333 s、画布 48×48、12 个 marker、主题属性 `Foreground`），本库先用静态字形，动画随 0.5.4 `NavigationView` 落地（插槽已留出）。

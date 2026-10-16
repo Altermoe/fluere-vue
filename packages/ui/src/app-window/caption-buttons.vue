@@ -44,13 +44,26 @@
  *
  * 浏览器实测（2026-10-13，Playwright + 系统 Chrome，1280×900 / DPR 1；脚本
  * temp/pw-app-window.mjs，页面 /components/app-window；以下结论可复现）：
- *   单键 46×32、caption 区 138 宽、键心间距 46 / 46、字形 10×10 且居中、`stroke-width` = 1px；
+ *   单键 46×32、caption 区 138 宽、键心间距 46 / 46、字形 10×10 且居中、线宽 1px；
  *   48 高标题栏里 caption 区 `offsetTop` = 0（顶端对齐），贴窗口右缘（只剩 1px 描边）；
  *   hover 底 `rgb(245, 245, 245)`（colorSubtleBackgroundHover）；关闭键 hover 底
  *   `rgb(196, 43, 28)` = #C42B1C、字形 `rgb(255, 255, 255)`（colorNeutralForegroundOnBrand）；
  *   焦点矩形 `inset 0 0 0 2px rgb(0,0,0), inset 0 0 0 3px rgb(255,255,255)`
  *   （= colorStrokeFocus2 外层 2px + colorStrokeFocus1 内层 1px）；失活字形转
  *   `colorNeutralForeground3`。
+ *
+ * 字形保真度校准（2026-10-16；Playwright 1:1 冻结帧 ↔ Windows 11 参考图逐像素比对，
+ * 脚本 temp/glyph-lab.mjs / temp/glyph-lab-compare.py；Δ = 逐像素平均绝对差，越小越像）：
+ *   最小化 `M0 5.5H10`（butt）→ **Δ0.00**：墨迹正好落在第 6 像素行（y 5..6，比外框
+ *     几何中心低 0.5px —— 系统光栅化把 1px 横条取整到像素行的结果），与参考图逐像素一致；
+ *   最大化 10×10 圆角方框（中线内缩 0.5、圆角 r0.25、butt）→ **Δ2.51**
+ *     （直角 Δ3.38、遗留样式的 r≈1.67px 大圆角 Δ9.72）；
+ *   关闭叉（端点 ±0.55 = 线宽÷2 使圆头外缘贴满外框、线宽 1.1、round）→ **Δ3.19**
+ *     （线宽 1.0 时 Δ15.74、1.2 时 Δ11.08 —— 1.0 在 Chrome 里 45° 会退化成硬阶梯）；
+ *   墨色改为纯黑：#000000 —— 依据是遗留样式的 `WindowCaptionForeground` →
+ *     `SystemControlForegroundBaseHighBrush` → `SystemBaseHighColor` = #000000 / #FFFFFF
+ *     （浅 / 深主题），与参考图墨色实测（最小化横条像素值 0）一致；原先用的 token
+ *     colorNeutralForeground1 浅色是 #242424（偏灰，token 表无此同值档）。
  *
  * 与 WinUI / 系统的差异（有意为之，逐条记录）：
  *   - **能力开关的口径是假设**：`IsMinimizable` / `IsMaximizable` 为 false 时**隐藏**按钮，
@@ -77,6 +90,7 @@ import { useScopeMessages } from '@fluere-vue/hooks'
 import { computed, defineComponent, h } from 'vue'
 import type { PropType } from 'vue'
 import {
+  CAPTION_BUTTON_GLYPH_STROKE_WIDTH,
   CAPTION_GLYPH_CLOSE,
   CAPTION_GLYPH_MAXIMIZE,
   CAPTION_GLYPH_MINIMIZE,
@@ -94,6 +108,18 @@ defineOptions({ name: 'FluereCaptionButtons' })
  * `vector-effect="non-scaling-stroke"` 复刻 XAML 的 `Stretch="Fill"` 行为 ——
  * 几何被拉伸填满外框，但**描边厚度不随之缩放**（遗留样式 9×9 外框 + 0.5 描边即此口径）。
  * `preserveAspectRatio="none"` 同理（两条 A 级路径的自然边界都近似正方，形变 <0.1%）。
+ *
+ * **线宽与端头落在字形数据上、由属性输出（不在 CSS 里）**：两条原因 ——
+ *  1. 每个字形的线宽本来就不一样（最小化 / 最大化 = 1，关闭叉 = 1.1，见 constants.ts 的
+ *     Chrome 45° 退化证据），一条 CSS 声明表达不了；
+ *  2. SVG **呈现属性（presentation attribute）的优先级低于任何 CSS 规则**，若样式块里再写
+ *     `stroke-width` / `stroke-linecap`，会把这里的逐字形值整个盖掉（静默失效）。
+ * 端头同样逐字形：最大化为 `butt`（方框闭合路径不需要端头），关闭叉为 `round`（遗留样式的
+ * `StrokeStartLineCap` / `StrokeEndLineCap` = Round，且与参考图那 4 个高覆盖角像素吻合）。
+ *
+ * **不加 `shape-rendering: crispEdges`**：它关掉抗锯齿后，45° 笔画会退化成硬边阶梯、
+ * 圆角被量化成块（temp/glyph-lab.mjs 冻结帧实测；默认 `auto` 的逐像素平均绝对差
+ * 关闭叉 3.2/255 vs crispEdges 15.7/255）。
  */
 const CaptionGlyphView = defineComponent({
   name: 'FluereCaptionGlyph',
@@ -110,7 +136,14 @@ const CaptionGlyphView = defineComponent({
         'aria-hidden': 'true',
         'focusable': 'false',
       },
-      glyphProps.glyph.paths.map((d) => h('path', { d, 'vector-effect': 'non-scaling-stroke' })),
+      glyphProps.glyph.paths.map((d) =>
+        h('path', {
+          d,
+          'vector-effect': 'non-scaling-stroke',
+          'stroke-width': glyphProps.glyph.strokeWidth ?? CAPTION_BUTTON_GLYPH_STROKE_WIDTH,
+          'stroke-linecap': glyphProps.glyph.linecap ?? 'butt',
+        }),
+      ),
     ),
 })
 
@@ -220,12 +253,20 @@ const onMaximizeRestore = (): void => {
 /* WinUI 系统度量（无 A 级 XAML 模板，依据见 constants.ts 与文件头）：   */
 /*   单键宽 46 / 高 32（= TitleBarCompactHeight）                       */
 /*   字形外框 10、描边 1（参考图 1:1 实测；遗留样式为 9×9 / 0.5）        */
+/*   字形线宽 / 端头逐字形定义（关闭叉 1.1 + round，其余 1 + butt），     */
+/*   由 SVG 属性输出，理由见 <script setup> 里 CaptionGlyphView 的注释   */
 /* 画刷映射（对齐 TitleBar_themeresources.xaml 的 TitleBarBackButton*）： */
 /*   rest      底色 透明                     → colorSubtleBackground      */
 /*   hover     底色 SubtleFillColorSecondary → colorSubtleBackgroundHover */
 /*   pressed   底色 SubtleFillColorTertiary  → colorSubtleBackgroundPressed */
 /*   disabled  底色 ControlFillColorDisabled → colorNeutralBackgroundDisabled */
-/*   rest      前景 TextFillColorPrimary     → colorNeutralForeground1    */
+/*   rest      前景 = 遗留样式的 `WindowCaptionForeground` →                 */
+/*              SystemControlForegroundBaseHighBrush → SystemBaseHighColor   */
+/*              = #000000 / #FFFFFF（浅 / 深主题，generic.xaml:263 + 4132）  */
+/*              —— token 表无同值档（token 的 colorNeutralForeground1 浅色   */
+/*              是 #242424），故落成局部变量                                 */
+/*              --fui-caption-buttons-glyph-color: light-dark(#000000,#ffffff) */
+/*              （参考图墨色实测亦为纯黑 #000000，作交叉验证）              */
 /*   pressed   前景 TextFillColorSecondary   → colorNeutralForeground2    */
 /*   disabled  前景 TextFillColorDisabled    → colorNeutralForegroundDisabled */
 /*   失活      前景 TitleBarDeactivatedForegroundBrush → colorNeutralForeground3 */
@@ -244,7 +285,9 @@ const onMaximizeRestore = (): void => {
   --fui-caption-buttons-button-width: 46px;
   --fui-caption-buttons-button-height: 32px;
   --fui-caption-buttons-glyph-size: 10px;
-  --fui-caption-buttons-glyph-stroke: 1px;
+  /* 字形墨色：`WindowCaptionForeground` → `SystemBaseHighColor`（浅 #000000 / 深 #FFFFFF）；
+     token 表无同值档，故落成本地变量（依据与覆盖方法见上方注释块） */
+  --fui-caption-buttons-glyph-color: light-dark(#000000, #ffffff);
   --fui-caption-buttons-close-hover: #c42b1c;
   --fui-caption-buttons-close-pressed: var(--colorStatusDangerBackground3Hover);
 
@@ -266,7 +309,7 @@ const onMaximizeRestore = (): void => {
   border: none;
   border-radius: 0;
   background-color: var(--colorSubtleBackground);
-  color: var(--colorNeutralForeground1);
+  color: var(--fui-caption-buttons-glyph-color);
   cursor: default;
   /* 字形是描边路径，颜色随 currentColor */
   font: inherit;
@@ -322,10 +365,10 @@ const onMaximizeRestore = (): void => {
   /* 字形 = 描边路径（FillBrush 不存在于遗留样式；`Path` 只有 Stroke） */
   fill: none;
   stroke: currentColor;
-  stroke-width: var(--fui-caption-buttons-glyph-stroke);
-  stroke-linecap: butt;
+  /* stroke-width / stroke-linecap 逐字形写在 path 属性上（见 CaptionGlyphView 注释），
+     这里**不能**再声明，否则呈现属性会被 CSS 规则盖掉；
+     shape-rendering 保持默认 auto —— crispEdges 会关掉抗锯齿，把 45° 笔画退化成阶梯。 */
   stroke-linejoin: miter;
-  shape-rendering: crispEdges;
   pointer-events: none;
 }
 </style>

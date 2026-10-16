@@ -93,67 +93,100 @@ export const CAPTION_BUTTONS_AREA_WIDTH = CAPTION_BUTTON_WIDTH * 3
 /** 字形外框边长（参考图实测：最小化 10×1、最大化 10×10 描边方框、关闭 10×10 叉） */
 export const CAPTION_BUTTON_GLYPH_SIZE = 10
 
-/** 字形描边宽度（参考图 1:1 实测 1px） */
+/** 字形描边宽度基线：1（参考图 1:1 实测最小化横条与方框边均为 1px 实心） */
 export const CAPTION_BUTTON_GLYPH_STROKE_WIDTH = 1
 
 /**
- * 最大化 / 还原字形的 `Path.Data`，**逐字抄自** WinUI 遗留 chrome 样式
- * `generic.xaml:15697-15786` 的 `WindowCaptionButton` 模板（`MinMaxStates` 组）：
- *   - `WindowStateNormal`（窗口未最大化 ⇒ 显示"最大化"字形）
- *   - `WindowStateMaximized`（已最大化 ⇒ 显示"还原"字形）
+ * 关闭叉的描边宽度：1.1。
  *
- * 该样式属旧 `Windows.UI.Xaml` 系统 chrome，**WinUI 3 的 `TitleBar` 不消费它**
- * （`CWindowChrome.cpp` 只设 `ButtonBackgroundColor` 与 caption 区矩形，无绘制代码）；
- * 它是仓库里**唯一**存在的 caption 字形几何，故作为形状来源，并按下述方式落到本组件：
- *   - 原样式以 `Stretch="Fill"` 把一个 `Path` 填进 9×9 方框、`StrokeThickness` = 0.5
- *     （HC 3.0）；`Windows 11` 参考图实测字形外框 10×10、描边 1px ⇒ 本组件的外框取
- *     10（`CAPTION_BUTTON_GLYPH_SIZE`）、描边取 1（`CAPTION_BUTTON_GLYPH_STROKE_WIDTH`），
- *     并用 `vector-effect="non-scaling-stroke"` 复刻「描边厚度不随 Stretch 缩放」这一 XAML 行为。
- *   - 两条路径的自然边界几乎正方（正常 9.006×9.016、最大化 11.008×11.016），
- *     故 `preserveAspectRatio="none"` 的形变可忽略（<0.1%）。
+ * 参考图实测「每行墨量 ≈1.40」（核心像素覆盖 90% + 两侧各 25%），对应 45° 细线的
+ * 线宽 ≈1.0；但 Chrome 把 45° 上的 1px 描边**退化成硬边阶梯**（无 AA 过渡，
+ * temp/glyph-lab.mjs 实测），只有 1.1px 才会重新产生参考图那种 AA 过渡
+ * （逐像素平均绝对差：1.1px → 3.2/255，1px → 15.7/255，1.2px → 11.1/255）。
  */
-export const CAPTION_GLYPH_PATH_MAXIMIZE =
-  'M 1.516 -0.001 L 7.451 0.009 C 8.751 0.019 9 1 8.981 1.477 L 9.002 7.558 M 9.002 7.547 C 8.929 8.669 8 9 7.43 9.015 L 1.464 9.005 C 0.374 8.973 0 8 -0.004 7.484 L -0.004 1.477 C 0 1 0.415 0.009 1.527 -0.001'
-
-export const CAPTION_GLYPH_PATH_RESTORE =
-  'M 1.516 -0.001 L 7.451 0.009 C 8.751 0.019 9 1 8.981 1.477 L 9.002 7.558 M 11 6 L 11 2 C 11 0 10 -2 8.011 -1.946 L 7.06 -1.969 L 3 -2 M 9.002 7.547 C 8.929 8.669 8 9 7.43 9.015 L 1.464 9.005 C 0.374 8.973 0 8 -0.004 7.484'
+export const CAPTION_BUTTON_GLYPH_STROKE_WIDTH_CLOSE = 1.1
 
 /**
- * 内联字形定义：`viewBox` 已经把路径边界向外扩 0.5（描边一半），避免 `overflow:hidden`
- * 把描边裁掉。
+ * 最大化字形：10×10 圆角方框（描边 1 ⇒ 墨迹恰好压满 10×10 外框）。
  *
- * 最小化与关闭字形**不在仓库里**：`WindowCaptionButton` 样式把 `Data` 绑到
- * `Content`（由非托管代码以字符串注入），原生 chrome 源码（`CWindowChrome.cpp` /
- * `WindowHelpers.cpp`）里没有任何字形数据。故这两条按参考图实测几何自绘：
- *   - 最小化：10×1 水平线（参考图 y = 按钮竖直中心那一行）
- *   - 关闭：10×10 叉，`butt` 端头（参考图两端无圆头）
- * 属**证据缺口**，实现时已用参考图交叉验证（见文档页《证据缺口》）。
+ * 几何来源与实测校准（`winui3/release/2.5.1` + Windows 11 参考图 1:1 实测，
+ * 测量脚本 temp/glyph-lab.mjs / temp/glyph-lab-compare.py）：
+ *   - 遗留 chrome 样式（`generic.xaml:15697-15786` 的 `WindowCaptionButton`，
+ *     `WindowStateNormal`）给的是**同一拓扑**的路径，但其角部是 r≈1.5/9（≈16.7%）的
+ *     大圆角：按 10px 外框渲染时角像素覆盖 72%，且上边被切短约 1px。
+ *   - 参考图实测：方框外框 10×10、四边 1px 实心、**四角像素覆盖 58%**（= 极小的
+ *     圆角），对应中线圈半径 ≈0.25。候选扫描的平均绝对差：r0.25 → **2.51**、
+ *     r0.5 → 2.60、r0（直角）→ 3.38、遗留大圆角 → 9.72（越接近参考图越小）⇒ 取 0.25。
+ *   - 参考图里方框内侧还有约 6% 的灰度溢出（像素 217/255），Chrome 描边不复刻该溢出；
+ *     差值 <1 个灰度级，忽略。
+ */
+export const CAPTION_GLYPH_PATH_MAXIMIZE =
+  'M0.75 0.5H9.25A0.25 0.25 0 0 1 9.5 0.75V9.25A0.25 0.25 0 0 1 9.25 9.5H0.75A0.25 0.25 0 0 1 0.5 9.25V0.75A0.25 0.25 0 0 1 0.75 0.5Z'
+
+/**
+ * 还原字形：前置方框（与最大化字形**同一条路径**）+ 后置方框可见部分。
+ *
+ * 拓扑逐字取自遗留 chrome 样式的 `WindowStateMaximized`（`M 11 6 L 11 2 C 11 0 10 -2
+ * 8.011 -1.946 L 7.06 -1.969 L 3 -2`）—— 即「后置方框只画右边缘 + 顶边缘」的经典
+ * 还原造型；坐标沿用遗留自然空间（前置方框 9×9、后置方框 8×8 偏移 (3,−2)，
+ * 总边界 11.008×11.016），故 `viewBox` 与置信比例保持原样。
+ * 角部曲率按最大化字形的实测口径收紧（遗留 r≈1.5 → 0.3 自然单位，渲染后同为 ≈0.25px），
+ * 使两个状态下的方框观感一致；仅此一处偏离遗留数据，理由是参考图实测（见上）。
+ * `linecap: round` 是遗留样式的显式声明（`StrokeStartLineCap`/`StrokeEndLineCap` = Round）。
+ */
+export const CAPTION_GLYPH_PATH_RESTORE_FRONT =
+  'M0.3 0H8.7A0.3 0.3 0 0 1 9 0.3V8.7A0.3 0.3 0 0 1 8.7 9H0.3A0.3 0.3 0 0 1 0 8.7V0.3A0.3 0.3 0 0 1 0.3 0Z'
+
+export const CAPTION_GLYPH_PATH_RESTORE_BACK = 'M11 6L11 2C11 0 10 -2 8.011 -1.946L7.06 -1.969L3 -2'
+
+/**
+ * 字形定义。
+ *
+ * 坐标口径：`viewBox` 与墨迹一一对应 —— 除还原字形（沿用遗留自然空间）外，字形都定义在
+ * `0 0 10 10` 的 10px 方框里，**墨迹恰好压满这个方框**（描边以 0.5 为中心线内缩，
+ * 端点内缩 = 线宽 ÷ 2），这样 1 用户单位 = 1px，且描边不会被 `overflow: hidden` 裁掉。
+ *
+ * 最小化与关闭字形**不在仓库里**：`WindowCaptionButton` 样式把 `Data` 绑到 `Content`
+ * （由非托管代码以字符串注入），原生 chrome 源码（`CWindowChrome.cpp` / `WindowHelpers.cpp`）
+ * 里没有任何字形数据。故这两条按参考图实测几何自绘：
+ *   - 最小化：10×1 实心横条，**墨迹落在方框第 6 行**（y 5..6，即比外框中心低 0.5px ——
+ *     系统光栅化把 1px 横条取整到像素行的结果）。逐像素与参考图**完全一致**（Δ = 0.00）。
+ *   - 关闭：10×10 叉，端点 (±0.55, ±0.55)（= 线宽 ÷ 2 ⇒ 圆头外缘正好贴满外框），
+ *     `round` 端头（遗留样式的显式声明，参考图那 4 个角像素的高覆盖也与之吻合）。
  */
 export interface CaptionGlyph {
-  /** SVG viewBox（含描边余量） */
+  /** SVG viewBox（与墨迹外框一一对应） */
   viewBox: string
   /** 一条或多条 `d` 数据 */
   paths: readonly string[]
+  /** 描边宽度（用户单位，= px）；缺省 `CAPTION_BUTTON_GLYPH_STROKE_WIDTH` */
+  strokeWidth?: number
+  /** 端头样式；缺省 `butt` */
+  linecap?: 'butt' | 'round'
 }
 
 export const CAPTION_GLYPH_MINIMIZE: CaptionGlyph = {
   viewBox: '0 0 10 10',
-  paths: ['M0.5 5H9.5'],
+  paths: ['M0 5.5H10'],
+  linecap: 'butt',
 } as const
 
 export const CAPTION_GLYPH_MAXIMIZE: CaptionGlyph = {
-  // 自然边界：x -0.004..9.002（9.006）、y -0.001..9.015（9.016），各向外扩 0.5
-  viewBox: '-0.504 -0.501 10.01 10.018',
+  viewBox: '0 0 10 10',
   paths: [CAPTION_GLYPH_PATH_MAXIMIZE],
+  linecap: 'butt',
 } as const
 
 export const CAPTION_GLYPH_RESTORE: CaptionGlyph = {
-  // 自然边界：x -0.004..11（11.008）、y -2..9.015（11.016），各向外扩 0.5
+  // 遗留自然空间：x -0.004..11（11.008）、y -2..9.015（11.016），各向外扩 0.5
   viewBox: '-0.504 -2.501 12.016 12.018',
-  paths: [CAPTION_GLYPH_PATH_RESTORE],
+  paths: [CAPTION_GLYPH_PATH_RESTORE_FRONT, CAPTION_GLYPH_PATH_RESTORE_BACK],
+  linecap: 'round',
 } as const
 
 export const CAPTION_GLYPH_CLOSE: CaptionGlyph = {
   viewBox: '0 0 10 10',
-  paths: ['M0.5 0.5 9.5 9.5', 'M9.5 0.5 0.5 9.5'],
+  paths: ['M0.55 0.55 9.45 9.45', 'M9.45 0.55 0.55 9.45'],
+  strokeWidth: CAPTION_BUTTON_GLYPH_STROKE_WIDTH_CLOSE,
+  linecap: 'round',
 } as const
