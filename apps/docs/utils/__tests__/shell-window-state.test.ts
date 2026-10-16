@@ -12,9 +12,9 @@ import { describe, expect, it } from 'vitest'
 import {
   SHELL_BLANK_TAB_ID,
   SHELL_DEFAULT_TAB_ID,
-  clampWindowOffset,
   closeTab,
   closeWindow,
+  containWindowOffset,
   createShellWindowState,
   isBlankTab,
   maximize,
@@ -24,6 +24,7 @@ import {
   restore,
   selectTab,
 } from '../shell-window-state'
+import type { ShellWindowGeometry } from '../shell-window-state'
 
 describe('createShellWindowState', () => {
   it('初始为常规档、未最大化、无位移、停在默认标签', () => {
@@ -92,50 +93,134 @@ describe('窗口状态档位', () => {
   })
 })
 
-describe('clampWindowOffset', () => {
-  const windowSize = { width: 1000, height: 600 }
-  const desktop = { width: 1600, height: 1000 }
-  const taskbar = 48
-
-  it('左右各可移动到「窗口贴边」为止', () => {
-    // (1600 - 1000) / 2 = 300
-    expect(clampWindowOffset({ x: 999, y: 0 }, windowSize, desktop, taskbar).x).toBe(300)
-    expect(clampWindowOffset({ x: -999, y: 0 }, windowSize, desktop, taskbar).x).toBe(-300)
+describe('containWindowOffset', () => {
+  /**
+   * 基准几何：1600×1000 桌面、48 任务栏、1000×600 窗口、顶端条带 32。
+   * 静止位置 = 水平居中（(1600-1000)/2 = 300）+ 距顶 24（`--shell-desktop-margin`）。
+   * ⇒ 工作区 = 1600×952，窗口左上角 = (300+dx, 24+dy)。
+   *
+   * 真实值里条带是 **33**（1px 描边 + 32 标题栏，见 `ShellWindowGeometry.titleBarBottom`）；
+   * 这里用 32 只是让算式好读，两条边界（工作区底 − 条带 − 基准上边距）不受影响。
+   */
+  const geometry: ShellWindowGeometry = {
+    windowSize: { width: 1000, height: 600 },
+    desktopSize: { width: 1600, height: 1000 },
+    base: { x: 300, y: 24 },
+    taskbarHeight: 48,
+    titleBarBottom: 32,
+  }
+  /** 收敛后窗口左上角（桌面坐标系） */
+  const topLeft = (offset: { x: number; y: number }) => ({
+    x: geometry.base.x + offset.x,
+    y: geometry.base.y + offset.y,
   })
 
-  it('纵向可用区扣掉任务栏高度', () => {
-    // (1000 - 48 - 600) / 2 = 176
-    expect(clampWindowOffset({ x: 0, y: 999 }, windowSize, desktop, taskbar).y).toBe(176)
-    expect(clampWindowOffset({ x: 0, y: -999 }, windowSize, desktop, taskbar).y).toBe(-176)
+  it('向下拖到底：标题栏下缘停在任务栏上缘，窗口本体挂在桌面之外', () => {
+    const offset = containWindowOffset({ x: 0, y: 9999 }, geometry)
+    // 952(工作区高) - 32(顶端条带) - 24(基准上边距) = 896
+    expect(offset.y).toBe(896)
+
+    const box = topLeft(offset)
+    expect(box.y + geometry.titleBarBottom).toBe(952) // 标题栏下缘 = 任务栏上缘
+    expect(box.y).toBeGreaterThan(0) // 标题栏整条可见
+    // 窗口下缘 920 + 600 = 1520 > 1000 - 48：本体挂在任务栏之下（这正是本次要放开的行为）
+    expect(box.y + geometry.windowSize.height).toBeGreaterThan(952)
   })
 
-  it('区间内原样返回', () => {
-    expect(clampWindowOffset({ x: 10, y: -20 }, windowSize, desktop, taskbar)).toEqual({
-      x: 10,
-      y: -20,
-    })
+  it('条带按「描边 + 标题栏」量（真实值 33），不会让标题栏压进任务栏', () => {
+    const withBorder: ShellWindowGeometry = { ...geometry, titleBarBottom: 33 }
+    const offset = containWindowOffset({ x: 0, y: 9999 }, withBorder)
+    // 952 - 33 - 24 = 895 ⇒ 窗口上缘 919、顶端条带下缘 952
+    expect(offset.y).toBe(895)
+    expect(withBorder.base.y + offset.y + withBorder.titleBarBottom).toBe(952)
   })
 
-  it('窗口比可用区还大时位移收敛为 0（小视口不产生负位移）', () => {
-    const big = { width: 2000, height: 1200 }
-    expect(clampWindowOffset({ x: 100, y: 100 }, big, desktop, taskbar)).toEqual({ x: 0, y: 0 })
+  it('向上拖到底：标题栏上缘停在桌面顶端，窗口本体可推出桌面上缘', () => {
+    const offset = containWindowOffset({ x: 0, y: -9999 }, geometry)
+    expect(offset.y).toBe(-24)
+    expect(topLeft(offset).y).toBe(0)
+  })
+
+  it('区间内原样返回（不吸附、不吃位移）', () => {
+    expect(containWindowOffset({ x: 10, y: -20 }, geometry)).toEqual({ x: 10, y: -20 })
+  })
+
+  it('横向：标题栏横跨整宽 ⇒ 窗口整块留在桌面内（不做「挂出左右边缘」）', () => {
+    // 静止位置 x = 300，窗口宽 1000 ⇒ 左缘最小 0（offset −300）、右缘最大 1600（offset +300）
+    expect(containWindowOffset({ x: -9999, y: 0 }, geometry).x).toBe(-300)
+    expect(containWindowOffset({ x: 9999, y: 0 }, geometry).x).toBe(300)
+
+    const left = containWindowOffset({ x: -9999, y: 0 }, geometry)
+    const right = containWindowOffset({ x: 9999, y: 0 }, geometry)
+    expect(geometry.base.x + left.x).toBe(0)
+    expect(geometry.base.x + right.x + geometry.windowSize.width).toBe(1600)
+  })
+
+  it('窗口比桌面还宽（区间反转）时贴左缘，不把窗口推出桌面外', () => {
+    const narrow: ShellWindowGeometry = {
+      ...geometry,
+      desktopSize: { width: 800, height: 1000 },
+    }
+    // 左缘贴 0（offset = −base.x = −300），而不是贴右缘或返回中间值
+    expect(containWindowOffset({ x: 0, y: 0 }, narrow).x).toBe(-300)
+  })
+
+  it('窗口比桌面还大时：横向贴左缘、纵向仍只由标题栏决定', () => {
+    const big: ShellWindowGeometry = {
+      ...geometry,
+      windowSize: { width: 2000, height: 1200 },
+      base: { x: -200, y: 24 },
+    }
+    // 1600 − 2000 − (−200) = −200 < leftMin(−(−200) = 200) ⇒ 区间反转，贴左缘
+    expect(containWindowOffset({ x: 100, y: 100 }, big).x).toBe(200)
+    // 纵向与窗口高无关：向下到底 = 952 − 32 − 24
+    expect(containWindowOffset({ x: 0, y: 9999 }, big).y).toBe(896)
   })
 
   it('非有限值归零（防 NaN / Infinity 污染内联 style）', () => {
-    expect(clampWindowOffset({ x: Number.NaN, y: 0 }, windowSize, desktop, taskbar).x).toBe(0)
-    expect(
-      clampWindowOffset({ x: 0, y: Number.POSITIVE_INFINITY }, windowSize, desktop, taskbar).y,
-    ).toBe(0)
+    expect(containWindowOffset({ x: Number.NaN, y: 0 }, geometry).x).toBe(0)
+    expect(containWindowOffset({ x: 0, y: Number.POSITIVE_INFINITY }, geometry).y).toBe(0)
   })
 
-  it('桌面高度小于任务栏时不产生负的纵向可用区', () => {
-    const result = clampWindowOffset(
-      { x: 0, y: 0 },
-      { width: 100, height: 100 },
-      { width: 1600, height: 40 },
-      taskbar,
-    )
-    expect(result.y).toBe(0)
+  it('几何量缺失（NaN）时不产生 NaN 位移', () => {
+    const broken: ShellWindowGeometry = {
+      ...geometry,
+      base: { x: Number.NaN, y: Number.NaN },
+      taskbarHeight: Number.NaN,
+    }
+    const offset = containWindowOffset({ x: 10, y: 10 }, broken)
+    expect(Number.isFinite(offset.x)).toBe(true)
+    expect(Number.isFinite(offset.y)).toBe(true)
+  })
+
+  it('桌面比任务栏还矮（区间反转）时保留下界：标题栏顶端贴桌面顶端', () => {
+    const tiny: ShellWindowGeometry = {
+      ...geometry,
+      desktopSize: { width: 1600, height: 40 },
+    }
+    expect(containWindowOffset({ x: 0, y: 0 }, tiny).y).toBe(-24)
+  })
+
+  it('幂等：收敛过的位移再收敛不变（resize 修复不会来回抖）', () => {
+    const once = containWindowOffset({ x: 9999, y: 9999 }, geometry)
+    expect(containWindowOffset(once, geometry)).toEqual(once)
+  })
+
+  it('视口（宿主）缩小：同一份位移被重新收敛，标题栏仍在工作区内', () => {
+    const shrunk: ShellWindowGeometry = {
+      ...geometry,
+      desktopSize: { width: 1600, height: 620 },
+    }
+    // 缩小前按 1000 高收敛到的位移（896）在 620 高的桌面里已越界
+    const before = containWindowOffset({ x: 0, y: 9999 }, geometry)
+    expect(before.y).toBe(896)
+
+    const after = containWindowOffset(before, shrunk)
+    const box = topLeft(after)
+    const workHeight = 620 - 48
+    expect(box.y).toBe(workHeight - 32) // 标题栏紧贴任务栏上缘
+    expect(box.y).toBeGreaterThanOrEqual(0) // 标题栏在桌面内 ⇒ 窗口没被缩没
+    expect(box.y + 32).toBeLessThanOrEqual(workHeight)
   })
 })
 

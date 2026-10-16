@@ -17,6 +17,11 @@
  * `apps/docs/README.md`〈构件归属〉：桌面与任务栏的**组装**留在站点，只有通用 WinUI
  * 控件本体在 `@fluere-vue/ui`。本组件因此不是组件库的一部分。
  *
+ * **拖拽位移的收敛**（0.5.8 起）只保证「标题栏完整可见」——窗口本体允许挂在桌面之外。
+ * 规则与来源见 `utils/shell-window-state.ts#containWindowOffset` 与
+ * `docs/design/explorer-layout.md` §1.1；本组件只负责按**增量**位移调用它
+ * （几何量由外壳实测后经 `geometry` prop 传入，不在这里推导第二份 CSS 公式）。
+ *
  * ## 四条实测得来的实现约束（不要"顺手优化"掉）
  *
  * ① **`FluereNavigationView` 根上写 `h-[...]` 无效**：组件根自带 `block-size: 100%`
@@ -59,8 +64,13 @@ import HomeContent from '~/components/home/home-content.vue'
 import { useComponentNav } from '~/composables/use-component-nav'
 import { useDocsI18n } from '~/composables/use-docs-i18n'
 import { SHELL_VIEWS } from '~/utils/shell-views'
-import { SHELL_DEFAULT_TAB_ID, clampWindowOffset, isBlankTab } from '~/utils/shell-window-state'
-import type { ShellTabId, ShellWindowOffset, ShellWindowState } from '~/utils/shell-window-state'
+import { SHELL_DEFAULT_TAB_ID, containWindowOffset, isBlankTab } from '~/utils/shell-window-state'
+import type {
+  ShellTabId,
+  ShellWindowGeometry,
+  ShellWindowOffset,
+  ShellWindowState,
+} from '~/utils/shell-window-state'
 
 /*
  * 关于 `FLUERE_NAVIGATION_SETTINGS_VALUE`：那是组件库导出给消费方判断「选中的是不是
@@ -71,16 +81,14 @@ import type { ShellTabId, ShellWindowOffset, ShellWindowState } from '~/utils/sh
 const props = defineProps<{
   /** 窗口状态机状态（由 desktop-shell.vue 持有） */
   state: ShellWindowState
-  /** 窗口实际尺寸（px，外壳已按视口收缩过） */
-  windowWidth: number
-  /** 窗口实际尺寸（px） */
-  windowHeight: number
-  /** 桌面可视区尺寸（px） */
-  desktopWidth: number
-  /** 桌面可视区尺寸（px） */
-  desktopHeight: number
-  /** 任务栏高度（px，用于拖拽收敛时扣减） */
-  taskbarHeight: number
+  /**
+   * 拖拽 / 视口收敛用的几何量（窗口尺寸、桌面可视区、窗口静止位置、任务栏高、顶端条带高）。
+   *
+   * 由外壳**实测**后传入 —— 窗口尺寸与静止位置都写在 CSS 里（`min(基准值, 视口可用区)`
+   * + 居中 + `--shell-desktop-margin`），在 TS 里推导第二份必然漂移。
+   * 收敛规则见 `containWindowOffset`（apps/docs/utils/shell-window-state.ts）。
+   */
+  geometry: ShellWindowGeometry
 }>()
 
 const emit = defineEmits<{
@@ -126,37 +134,48 @@ const guideLinks = computed(() => [
   },
 ])
 
-/** 拉平拖拽起点，累计位移叠加到它上面（`dragMove` 给的是累计值，不是增量） */
-let dragOrigin: ShellWindowOffset | null = null
+/**
+ * 拖拽锚点：上一次**收敛后**的位移（`null` = 本次拖拽还没产生位移）。
+ *
+ * 收敛按**增量**位移推进，而不是「拖拽起点位移 + 累计位移」：
+ *   - 累计口径会把越界量一直累计下去，撞到边界后反向上拖要先「抵消」越界量窗口才会动
+ *     （Web 里指针能跑到视口任意位置，实测死区可达数百像素，观感是「窗口卡住了」）；
+ *   - 增量口径下越界量被直接丢弃 ⇒ 反向拖拽第一帧就有响应。
+ *
+ * 这与 Win32 move loop 把锚点重置到**已收敛**光标位置同向
+ * （`dlls/win32u/defwnd.c#sys_command_size_move`：`capture_point = pt`（`pt` 已钳过），
+ * 见 `containWindowOffset` 的差异说明），只是 Web 里没有物理光标边界，故取更顺手的一侧。
+ */
+let dragAnchor: ShellWindowOffset | null = null
 
 /**
- * 拖拽中把累计位移收敛到桌面可视区后向上抛。
+ * 拖拽中把位移收敛到「标题栏始终可见」后向上抛。
  *
  * 收敛**必须在这里做**而不是在父组件：父组件拿到的是最终的 `state.offset`，
  * 若先把越界值写进 state 再收敛，拖拽过程中窗口会先"抖出"桌面一帧。
- * `roundToInteger` 已在 `FluereAppWindow` 上打开，因此这里拿到的位移是整数。
+ * `roundToInteger` 已在 `FluereAppWindow` 上打开，因此这里拿到的增量是整数
+ * （`delta` 是「取整后的累计位移」之差，逐帧相加恰好等于起点 + 总位移）。
  */
-const onDragMove = (args: { totalDeltaX: number; totalDeltaY: number }): void => {
+const onDragMove = (args: { deltaX: number; deltaY: number }): void => {
   // 最大化时不响应拖拽：铺满状态下没有可移动的空间，且 Win11 里最大化标题栏也不拖动窗口
   if (props.state.maximized) {
     return
   }
-  const origin = dragOrigin ?? { x: props.state.offset.x, y: props.state.offset.y }
-  const next = clampWindowOffset(
-    { x: origin.x + args.totalDeltaX, y: origin.y + args.totalDeltaY },
-    { width: props.windowWidth, height: props.windowHeight },
-    { width: props.desktopWidth, height: props.desktopHeight },
-    props.taskbarHeight,
+  const from = dragAnchor ?? props.state.offset
+  const next = containWindowOffset(
+    { x: from.x + args.deltaX, y: from.y + args.deltaY },
+    props.geometry,
   )
+  dragAnchor = next
   emit('update:offset', next)
 }
 
 const onDragStart = (): void => {
-  dragOrigin = { x: props.state.offset.x, y: props.state.offset.y }
+  dragAnchor = { x: props.state.offset.x, y: props.state.offset.y }
 }
 
 const onDragEnd = (): void => {
-  dragOrigin = null
+  dragAnchor = null
 }
 
 /** 双击标题栏 = 切换最大化（Win11 系统行为；组件只抛事件，是否响应由外壳决定） */

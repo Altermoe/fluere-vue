@@ -69,6 +69,7 @@ pnpm generate     # 静态生成
 - **外壳在页面里显式 `import`**，不依赖 Nuxt 自动导入 —— `components/shell/**` 走默认扫描会得到 `ShellDesktopShell` 这类前缀名，读起来像组件库的 `Fluere*`。
 - **窗口里的视图内容由窗口层渲染**（`explorer-window.vue` 按标签 id 分派：首页 = `home-content.vue`、组件 = 注册表卡片网格、指南 = 两个起步入口）。0.5.5 曾由页面经 `DesktopShell` 的 `#home` / `#guide` 插槽注入，迁移到 `/os` 时删掉了这条链路：知道「有哪些标签、当前激活哪个」的是窗口层，页面层只负责挂外壳。
 - **视口相关一律用 CSS 断点**（`@media (max-width: 63.999rem)`），不用 `useMediaQuery` 参与渲染：它在 SSR 下恒为 `false`，用来决定渲染什么会导致水合不匹配。`useMediaQuery` 只做副作用（退到移动档时复位拖拽位移、升到桌面档时收起导航下拉）。
+- **窗口拖拽位移的收敛只保证「标题栏完整可见」**：规则是 `utils/shell-window-state.ts#containWindowOffset`（纵向放开、窗口本体可挂在任务栏之下；横向不放开），拖拽中（`explorer-window.vue`，按**增量**位移，撞边界后反向无死区）与视口变化后（`desktop-shell.vue#containOffset`，`ResizeObserver` + `window.resize`）**共用同一条**。几何量（窗口尺寸 / 静止位置 / 标题栏下缘）一律**实测**，不要在 TS 里重算 CSS 的 `min(...)` / 居中公式 / 标题栏高度。规则、来源与实测数据见 `docs/design/explorer-layout.md` §1.1。
 - **层级只引用 `--zIndex*` 刻度**，不写裸 `z-index`；`--zIndexShell`(1500) 是任务栏专用档，`--zIndexStartMenu`(1600) 是开始菜单档，`--zIndexContent`(100) 用于主页 header 与移动下拉这一档应用层 chrome。
 - **色值 / 圆角 / 阴影一律走令牌**：窗口的圆角与阴影归 `FluereAppWindow`（`maximized` 时自行归零），外壳不得再写一份。
 - **不把 `h-[...]` 写在 `FluereNavigationView` 根上**：该组件根自带 `block-size: 100%`，特异性压过工具类 ⇒ 高度静默失效。给它一个确定高度的父容器 + `flex-1 min-h-0`。

@@ -63,6 +63,7 @@ import {
   SHELL_DEFAULT_TAB_ID,
   closeTab,
   closeWindow,
+  containWindowOffset,
   createShellWindowState,
   maximize,
   minimize,
@@ -71,7 +72,13 @@ import {
   restore,
   selectTab,
 } from '~/utils/shell-window-state'
-import type { ShellTabId, ShellWindowOffset, ShellWindowState } from '~/utils/shell-window-state'
+import type {
+  ShellTabId,
+  ShellWindowBase,
+  ShellWindowGeometry,
+  ShellWindowOffset,
+  ShellWindowState,
+} from '~/utils/shell-window-state'
 import DesktopWallpaper from './desktop-wallpaper.vue'
 import ExplorerWindow from './explorer-window.vue'
 import ShellTaskbar from './shell-taskbar.vue'
@@ -105,6 +112,9 @@ const rootRef = ref<HTMLElement | null>(null)
  */
 let shellLayer: ReturnType<typeof acquireLayer> | null = null
 
+/** 桌面根的尺寸观察器（宿主 resize 的通用信号；能力探测失败时为 `null`，见 `onMounted`） */
+let resizeObserver: ResizeObserver | null = null
+
 /*
  * 下面两个 ref 指向的是**子组件实例**（模板 ref 落在组件上时拿到的是公开实例，
  * 不是 DOM 元素），因此必须经过 `$el` 取根节点。
@@ -134,6 +144,37 @@ const elementOf = (target: { $el?: unknown } | null | undefined): HTMLElement | 
  * `null` = 尚未测量（SSR / 首帧），此时用 `fallbackWindowSize` 的公式兜底。
  */
 const measuredWindowSize = ref<{ width: number; height: number } | null>(null)
+
+/**
+ * 窗口**静止位置**（桌面坐标系里的左上角，px）。
+ *
+ * 同样是实测的：静止位置写在 `explorer-window.vue` 的 CSS 里（水平居中 +
+ * `inset-block-start: var(--shell-desktop-margin)`），`transform` 只叠加拖拽位移，
+ * 因此 `rect - offset` 就是静止位置 —— 任何 CSS 侧的改动（改留白 / 改居中口径）
+ * 都会自动反映到收敛边界上，不需要在 TS 里同步第二份公式。
+ *
+ * `null` = 尚未测量，此时不做任何收敛（首帧位移恒为 0，越界无从谈起）。
+ */
+const measuredWindowBase = ref<ShellWindowBase | null>(null)
+
+/**
+ * 「窗口顶端条带」高度（px）：从窗口上缘量到**标题栏下缘**。
+ *
+ * 收敛只保证这段条带始终可见（`containWindowOffset`），所以它是收敛公式的必需入参。
+ * 量到标题栏下缘而不是标题栏自身的 `height`：`FluereAppWindow` 根有 1px 描边、
+ * 标题栏在描边之内 ⇒ 按 `height`(32) 收敛会让标题栏下缘（caption 按钮那一行）
+ * 压进任务栏 1px（真实浏览器实测：标题栏下缘 953 / 任务栏上缘 952）。
+ *
+ * 标题栏高度本身由 `FluereAppWindow` 按 `TitleBarCompactHeight`(32) /
+ * `TitleBarExpandedHeight`(48) 决定（A 级 `TitleBar_themeresources.xaml` +
+ * `TitleBar.cpp#UpdateHeight`），本外壳**不复制这两个档位**：0.5.7 起标题栏里没有任何
+ * 站点 chrome ⇒ 当前恒为 compact，但将来放回控件（0.6+ 地址栏）就会变 48，
+ * 复制常量必然漂移。
+ *
+ * `33`（1px 描边 + 32）只是挂载前的兜底：此刻窗口还没渲染，量不到，
+ * 而拖拽只可能发生在挂载之后。
+ */
+const measuredTitleBarBottom = ref(33)
 
 /**
  * 桌面档媒体查询：**只用于副作用**（退到移动档时复位位移），不参与渲染。
@@ -201,7 +242,73 @@ const measure = (): void => {
     const rect = frame.getBoundingClientRect()
     if (rect.width > 0 && rect.height > 0) {
       measuredWindowSize.value = { width: rect.width, height: rect.height }
+      /*
+       * 静止位置 = 实测矩形 − 当前位移（窗口的 `transform` 只叠加 `state.offset`）。
+       * 减去桌面根自身的视口坐标，得到「桌面坐标系」；越界时 `rect` 依然是完整的
+       * 变换后矩形（`getBoundingClientRect` 不受父级裁剪影响），所以越界状态下
+       * 反推出来的基准位置同样正确 —— resize 收敛因此不需要先「摆正」窗口。
+       */
+      const rootRect = root?.getBoundingClientRect()
+      measuredWindowBase.value = {
+        x: rect.left - (rootRect?.left ?? 0) - state.value.offset.x,
+        y: rect.top - (rootRect?.top ?? 0) - state.value.offset.y,
+      }
     }
+    /*
+     * 顶端条带：从窗口上缘量到标题栏下缘（含 1px 描边，见 `measuredTitleBarBottom`）。
+     * 两个 rect 都被同一个 `transform` 平移，差值不受拖拽位移影响。
+     *
+     * 选 `.fui-app-window__titlebar`（组件内置标题栏）：本外壳用的是内置标题栏，
+     * 没有走 `#titlebar` 自定义插槽；量不到时保留上一次的有效值（初始 33）。
+     */
+    const titleBar = frame.querySelector('.fui-app-window__titlebar')
+    const titleBarBottom = titleBar ? titleBar.getBoundingClientRect().bottom - rect.top : 0
+    if (titleBarBottom > 0) {
+      measuredTitleBarBottom.value = titleBarBottom
+    }
+  }
+  /* 尺寸 / 基准位置都拿到之后，才谈得上收敛（见下方 `containOffset`） */
+  containOffset()
+}
+
+/**
+ * 收敛用的几何量（拖拽中与视口变化后共用同一份）。
+ *
+ * 未测量（SSR / 首帧）时 `base` 退回 `{ 0, 0 }`：此时 `measuredWindowBase` 尚未填上，
+ * 而拖拽只可能发生在挂载之后（`measure()` 在 `onMounted` 第一帧就跑过），
+ * 因此这个兜底值不会被真实的拖拽消费到。
+ */
+const windowGeometry = computed<ShellWindowGeometry>(() => ({
+  windowSize: windowSize.value,
+  desktopSize: { width: desktopWidth.value, height: desktopHeight.value },
+  base: measuredWindowBase.value ?? { x: 0, y: 0 },
+  taskbarHeight: taskbarHeight.value,
+  titleBarBottom: measuredTitleBarBottom.value,
+}))
+
+/**
+ * 把当前位移重新收敛到「标题栏可见」的范围（拖拽中的收敛在 `explorer-window.vue`）。
+ *
+ * **为什么视口变化后必须收敛**：拖拽允许窗口本体挂在桌面之外，一旦视口（外壳宿主）
+ * 变小，原先合法的位移就可能把标题栏顶到工作区之外 —— 窗口在屏幕上彻底消失，
+ * 而这是 Web 环境独有的风险（实机窗口位置由窗口管理器持有，显示器变化时系统会
+ * 把窗口收回工作区）。收敛后标题栏必定仍在工作区内，用户永远能把窗口拖回来。
+ *
+ * 只在常规档且非最大化时收敛：最大化铺满、最小化/关闭时 `v-show` 隐藏，
+ * 三者的位移语义各由状态机负责（最大化与关闭会归零位移）。
+ *
+ * 幂等：收敛过的位移再收敛不变（`containWindowOffset` 的区间包含），因此
+ * 「量一次 → 写一次 state」不会自激成循环 —— 何况本函数读的是 DOM，
+ * 写 state 只改内联 `transform`，不会反过来改变被观察的尺寸。
+ */
+const containOffset = (): void => {
+  if (state.value.status !== 'normal' || state.value.maximized) {
+    return
+  }
+  const current = state.value.offset
+  const contained = containWindowOffset(current, windowGeometry.value)
+  if (contained.x !== current.x || contained.y !== current.y) {
+    state.value = { ...state.value, offset: contained }
   }
 }
 
@@ -211,6 +318,24 @@ const windowSize = computed(() => measuredWindowSize.value ?? fallbackWindowSize
 onMounted(() => {
   measure()
   globalThis.addEventListener('resize', measure, { passive: true })
+  /*
+   * 宿主尺寸变化还有一条 `window.resize` 收不到的路径：**外壳所在元素**被外层改尺寸
+   * （站点里常是布局容器 / 预览框变化，不改变视口）。桌面根锁的是 `100dvh`，正常情况下
+   * 两者同步；但「窗口所在的视口宿主 resize」这件事的通用信号是 `ResizeObserver`，
+   * 它同时覆盖视口变化与容器变化，且能在同一帧里量到新尺寸（避免窗口先被裁掉一帧）。
+   *
+   * `window.resize` 监听保留：能力探测失败（老浏览器 / jsdom）时它是唯一信号，
+   * 而重复测量是幂等的（见 `containOffset`）。
+   *
+   * 只在 `onMounted` 建观察器：`ResizeObserver` 是浏览器专属 API，SSR 期间不存在
+   * （docs/ssr-guide.md 的 Level 0 —— 浏览器 API 一律进生命周期，本处不需要在
+   * `setup()` 期读值，因此不引 `@fluere-vue/utils` 的探测原语；`apps/docs` 也没有
+   * 该包的 workspace 依赖，`typeof` 兜底只是给老浏览器留的退路）。
+   */
+  if (typeof globalThis.ResizeObserver === 'function' && rootRef.value) {
+    resizeObserver = new globalThis.ResizeObserver(measure)
+    resizeObserver.observe(rootRef.value)
+  }
   /*
    * 外壳登记进**浮层层级栈**（0.5.7，explorer-layout.md §4 方案① 的正解）：
    * 任务栏是 `--zIndexShell`(1500) 档，而 `--zIndexTooltip`(1400) 低于它 —— 外壳内
@@ -233,13 +358,15 @@ onScopeDispose(() => {
   if (import.meta.client) {
     globalThis.removeEventListener('resize', measure)
   }
+  resizeObserver?.disconnect()
+  resizeObserver = null
   shellLayer?.release()
   shellLayer = null
 })
 
 /*
  * 窗口尺寸会随「视口宽度」变（CSS 里是 `min(基准值, 视口可用区)`），
- * 而视口变化只有 `window.resize` 一个信号 —— 上面已接。
+ * 而视口变化只有 `window.resize` / `ResizeObserver` 两个信号 —— 上面已接。
  * 但**状态切换**（最大化 / 还原）也会改变窗口尺寸，而它不触发 resize，
  * 因此这里补一个 watch：还原后重新测量，让下一次拖拽用新的边界。
  */
@@ -371,11 +498,7 @@ const isClosableVisible = computed(() => state.value.status === 'closed')
       <ExplorerWindow
         ref="windowRef"
         :state="state"
-        :window-width="windowSize.width"
-        :window-height="windowSize.height"
-        :desktop-width="desktopWidth"
-        :desktop-height="desktopHeight"
-        :taskbar-height="taskbarHeight"
+        :geometry="windowGeometry"
         @update:offset="onUpdateOffset"
         @update:maximized="onUpdateMaximized"
         @minimize="onMinimize"

@@ -454,6 +454,39 @@ describe('桌面外壳：SSR 与水合安全', () => {
   })
 })
 
+describe('桌面外壳：窗口拖拽收敛（0.5.8）', () => {
+  /*
+   * 这组断言守的是**两条会被「顺手优化」掉的实现选择**（都是真实浏览器实测才暴露的）：
+   *   ① 拖拽按**增量**位移收敛（`deltaX/deltaY`）而不是「起点 + 累计位移」：
+   *      累计口径下撞到边界后反向拖拽要先抵消越界量，Web 里指针能跑很远 ⇒ 死区可达数百像素。
+   *   ② 视口（宿主）变化后必须**重新收敛**：拖拽允许窗口本体挂出桌面，
+   *      视口一变小就可能把标题栏顶出工作区（窗口彻底消失）—— 这是 Web 独有风险。
+   * 收敛公式本身（边界算式）由 shell-window-state.test.ts 覆盖，这里只守调用方式。
+   */
+  it('拖拽按增量位移收敛（不用累计位移，避免回拖死区）', () => {
+    const explorer = read(join(shellDir, 'explorer-window.vue'))
+    expect(explorer).toContain('containWindowOffset')
+    expect(explorer).toContain('args.deltaX')
+    expect(explorer).not.toContain('totalDeltaX')
+  })
+
+  it('拖拽 / 视口变化共用同一个收敛函数，且视口变化确实接了两条 resize 信号', () => {
+    const desktop = read(join(shellDir, 'desktop-shell.vue'))
+    expect(desktop).toContain('containWindowOffset')
+    expect(desktop).toContain('containOffset')
+    expect(desktop).toContain('ResizeObserver')
+    expect(desktop).toContain("addEventListener('resize', measure")
+  })
+
+  it('收敛用的几何量一律实测（尺寸 / 静止位置 / 标题栏下缘），不重算 CSS 公式', () => {
+    const desktop = read(join(shellDir, 'desktop-shell.vue'))
+    // 静止位置 = 实测矩形 − 当前位移
+    expect(desktop).toMatch(/measuredWindowBase\.value = \{/)
+    // 顶端条带量到标题栏下缘（含 1px 描边），不是标题栏自身的 height
+    expect(desktop).toMatch(/getBoundingClientRect\(\)\.bottom - rect\.top/)
+  })
+})
+
 describe('桌面外壳：仿真边界文案可见', () => {
   /*
    * 落点口径（0.5.6 迁移后）：仿真整体在 `/os`，主页回到常规营销页。
