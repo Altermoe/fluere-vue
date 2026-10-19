@@ -4,6 +4,7 @@
 > **核心交付基准**：不用手写任何 HTML，即可搭出「设置页 + 数据录入表单 + 带加载 / 提示反馈的页面」的 WinUI 应用。
 > **已落地约束**：SSR 安全（见 [ssr-guide.md](./ssr-guide.md)）、`@fluere-vue/designs` 令牌、`@fluere-vue/hooks` / `utils` 共享原语、`pnpm check`（lint + format + tsc）+ SSR smoke 测试。
 >
+> **索引化（2026-10-19）**：本文档是**收口索引**，只保留版本地图、当前/未来排期、开放事项与发布闸门；**已收口版本（0.1.0-rc.1 / 0.3.0-rc.1 / 0.4.0）的完整实施与验收记录**已移到 [docs/archived/](./archived/)，以降低上下文消耗，归档清单见下方《归档索引》。
 > 本文档只记**进度、结论与验收口径**：规格源路径、资源 → 令牌映射、动效关键帧等技术细节写在对应组件的契约注释与 [style-spec.md](./style-spec.md)，此处不重复。
 > 每个组件改动的合并闸门见《人工校验闸门（0.4.0 起生效）》。
 
@@ -23,306 +24,30 @@
 
 ---
 
-## 0.1.0-rc.1 计划范围（组件 Wave 计划，已收口）
+## 归档索引（已收口版本的完整记录）
 
-> 本节从 README 迁入（2026-10-13），回答「rc.1 按什么顺序做、哪些控件明确不做」。逐项勾选状态与规格源见下一节《0.1.0-rc.1 · 通用 WinUI 控件（已收口）》。
+> 收口原则：《版本地图》标记「已收口」的版本，其实施与验收细节整体归档；**仍需推进的剩余项**统一收敛到下方《开放事项》，不埋在归档里。
 
-实施顺序按「使用频率 × 需求度 × WinUI 还原成本 × `reka-ui` 底座可用性」排列：
-
-- **Wave 1 · 核心表单**：Checkbox、ToggleSwitch、RadioButton / RadioGroup、Slider、NumberBox、Combobox
-- **Wave 2 · 反馈与状态**：ProgressRing、ProgressBar、InfoBar、InfoBadge
-- **Wave 3 · 弹层与微交互**：ContentDialog（含共享弹层原语 `FluereSmokeLayer` / `useDisclosure`）、Tooltip / TooltipProvider
-- **Wave 4 · 加分项（原计划）**：ToggleButton / ToggleGroup、Avatar / Persona、DropDownButton
-- **首次发布未包含、后续版本排期**：NavigationView、ListView / GridView、CommandBar（rc.1 明确不做的清单与去向见下文《rc.1 明确不做》）
-
-### 早期路线图（已被后续排期取代）
-
-以下是项目启动期的四阶段高层规划，**内容已被本文件下半部分的《版本地图》与《0.4.0 – 0.9.0-rc.1 排期》取代**，仅保留作为历史记录，不再维护：
-
-- **阶段一 · 核心表单**：Button 族、CheckBox、RadioButton、TextBox、Slider、ToggleSwitch 等
-- **阶段二 · 导航与容器**：NavigationView、TabView、TreeView、ListView 等
-- **阶段三 · 动效与材质**：整理统一的动画实现，继续完善 Mica / Acrylic 效果
-- **阶段四 · 无障碍与发布**：补充单元测试和视觉回归，发布 npm 包并上线文档站
+| 已收口版本 | 归档文件                                           | 主要内容                                                                                                                                  |
+| ---------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1.0-rc.1 | [archived/0.1.0-rc.1.md](./archived/0.1.0-rc.1.md) | 组件 Wave 计划 + 通用 WinUI 控件清单（含 rc.1 明确不做）与发布检查                                                                        |
+| 0.3.0-rc.1 | [archived/0.3.0-rc.1.md](./archived/0.3.0-rc.1.md) | 目标 1–3：i18n / 文档站 WindowsOS 仿真化 / 自动发版（含人工首发与自动发版记录）                                                           |
+| 0.4.0      | [archived/0.4.0.md](./archived/0.4.0.md)           | 基建（`useFlyout` / z-index 刻度 / `useFocusVisual` / 材质令牌）+ 通用件收尾（Input / `ToggleButton`·`ToggleGroup` / `Select`）+ 开工前置 |
 
 ---
 
-## 0.1.0-rc.1 · 通用 WinUI 控件（已收口）
-
-范围：通用 WinUI 控件。本版回答「组件够不够用」。
-
-- [x] 0. 收尾 Input（password / textarea / 大小与有效性状态）—— **已由 0.4.5 落地**（含 header / description），在此保留仅为编号连续
-
-### Wave 1 · 核心表单（最高频，先形成「数据录入」闭环）
-
-排序依据：① 被依赖程度 ② 还原成本 从低到高。
-
-- [x] 1. `Checkbox`
-- [x] 2. `ToggleSwitch`（WinUI 标志性控件，自定义实现）
-- [x] 3. `RadioButton` / `RadioGroup`
-- [x] 4. `Slider`
-- [x] 5. `NumberBox`
-- [x] 6. `Combobox`（下拉箭头动画、popup 定位、选中态最费劲，故放队尾）
-
-### Wave 2 · 反馈与状态
-
-- [x] 7. `ProgressRing`
-- [x] 8. `ProgressBar`
-- [x] 9. `InfoBar`（信息横幅，自定义实现）
-- [x] 10. `InfoBadge`（三态 Value / Icon / Dot 按显示属性实时推导）
-
-### Wave 3 · 必要弹层与微交互
-
-> 先补齐共享原语，再实现弹层，避免后续所有弹层组件返工。
-
-- [x] 11. 共享原语：`useDisclosure` / 门户 / 遮罩层
-- [x] 12. `Tooltip`
-- [x] 13. `ContentDialog`
-
-> 9–13 的规格源统一为 `microsoft-ui-xaml` tag `winui3/release/2.5.1`（与 WinUI3 Gallery v2.9.3 所用 WASDK 逐字节核对）；资源 → 令牌映射、动效关键帧与几何判据逐条写在对应组件的契约注释里。
-
-### 加分项（原 Wave 4）
-
-- [ ] 14. `ToggleButton` / `ToggleGroup` → **0.4.0**
-- [ ] 15. `Avatar` / `Persona` → 未进 0.4–0.9 范围，待重排
-- [ ] 16. `DropDownButton` → **0.6.0**
-
-### rc.1 明确不做
-
-> 以下控件工程量大、还原风险高，硬塞进 0.1.0-rc.1 会稀释核心质感，该判断保持不变。
-
-- **已排入后续版本**：`NavigationView`（0.5.0）、`ListView` / `GridView`（0.7.0）、`CommandBar`（0.8.0）
-- **继续推后**：`TreeView`、`DataGrid`、`CalendarDatePicker` / `TimePicker`、`MenuBar` 完整版、`RatingControl`
-
-注：本节判断针对 **0.1.0-rc.1 的范围**；这些控件是否交付、排在哪个版本，一律以《0.4.0 – 0.9.0-rc.1 排期》为准。
-
-### 发布检查
-
-- [x] `pnpm check`（lint + format + tsc）
-- [x] `pnpm test` / SSR smoke（`packages/ui/src/__tests__/ssr-smoke.test.ts`）
-- [x] 用 Wave 1 子集在 `apps/playground` 搭一个真实设置页做视觉回归（rest / hover / pressed / selected / focus / disabled）—— **已由 0.4.8 落地**：`apps/playground` 从占位包变为可跑的 Vite 视觉回归页（`pnpm --filter @fluere-vue/playground dev`，默认 60728），一屏陈列 Wave 1 表单 + 按钮族（含 ToggleButton 三态 / ToggleGroup 单选多选）+ 反馈 + 浮层 + 明暗切换，《视觉自检清单》见该包 README
-- [x] 为每个新组件补文档页 + 更新 README「组件进度」索引
-
-> 自 0.4.0 起，发布检查按**每个 minor 版本**执行，清单见《发布检查（0.4.0 起）》。
-
----
-
-## 0.3.0-rc.1 · i18n / 文档站仿真化 / 自动发版流程（进行中）
-
-> **分工**：0.1.0-rc.1 回答「组件够不够用」，本版回答「能不能被用起来」——多语言可读、文档站能体现 WinUI 质感，并且真正发到 npm 线上。
-> **发版口径（2026-10-13 收敛）**：**人工首发已完成**（六个包 `0.3.0-alpha.2` 已上 npm），0.3 余下的发版目标改为**把自动发版流程跑通**（Trusted Publisher + `release.yml` 的 `pack` / `publish`），不再重复人工发版。
-> 三条主线可并行，但发布前必须一次性收口：版本号、README / 文档站版本展示、CHANGELOG、本文件勾选状态。
-> **交付基准**：`pnpm add @fluere-vue/ui@0.3.0-alpha.2` 在 npm 上可用（**已达成**）；文档站中英双语可读且呈现 WinUI 质感；自动发版流程由 `release.yml` 在线发布一次（OIDC + provenance）；三个消费场景（Vite SPA / Nuxt SSR / 纯类型引用）全部验证通过。
-
-### 目标 1 · 集成 i18n（一期：简体中文 + 英语）
-
-> 范围（已确认）：**文档站全站 + 组件库内建文案通道与语言包导出**。
-> 一期语言：`zh-Hans`（默认，兼容 `zh-CN`）与 `en`。
-
-**进度速览（2026-10-10）**：文档站一期基本收口——1.1 的 per-page title / description / og 已接入 head（sitemap / robots 见 1.1，已接入）、1.2 的 demo 预览文案（93 个文件里 81 个含中文）与英文正文代码样例全部抽 key 双语对齐、硬编码中文扫描升级为**阻断项**（另新增「key 引用存在性」检查）；`pnpm docs:generate` 双语言产物已复核，浏览器实测 `/` 与 `/en` 全 18 页通过（300 项断言 0 失败，见 1.5 验收）。**组件库 i18n 通道（1.4）已落地**（见下方 1.4：`@fluere-vue/hooks` 增 `provide-locale`/`use-locale`/`useScopeMessages`，`@fluere-vue/ui` 增 `FluereConfigProvider`，首批 6 组件 locale 切片，回退链 `zh-Hans→zh→en` 与并发 SSR 隔离已单测覆盖）。仍未收口：1.5 的 Lighthouse / axe 实跑、目标 3 的 `@fluere-vue/ui/locales/*` 子路径导出（1.4 已在组件目录内布好 `locale.ts` 切片，聚合入口随 0.3 构建落地）。
-
-#### 1.1 选型与基建
-
-- [x] 落地 `@nuxtjs/i18n`（锁定 `10.6.0`）：`strategy: 'prefix_except_default'` + `@nuxt/content` 双 collection + `nuxt generate` 三者组合可用，产物同时含 `/` 与 `/en`
-- [x] locale 约定：`defaultLocale: 'zh-Hans'`，`zh-Hans` 以 `language: 'zh-CN'` 呈现；产物 `<html lang>` 实测为 `zh-CN` / `en`
-- [x] 目录约定：界面串 `apps/docs/i18n/locales/{zh-Hans,en}.json`；正文 `apps/docs/content/{zh-Hans,en}/**`
-- [x] 首帧语言恢复：**未采用内联脚本方案**，改为「语言由路由前缀决定」——`<html lang>` 与路由一致，故无「先 zh 后切 en」闪烁，也不存在水合不匹配；浏览器偏好仅在根路径做服务端重定向
-- [x] `hreflang` alternate 与 `og:locale` / `og:url` 由 `useLocaleHead({ seo: true })` 输出，实测四组 alternate 齐备
-- [x] 每语言独立的 `title` / `description` / `og:title` / `og:description`：**已落地**——组件页取 content frontmatter（`pages/components/[...slug].vue` 的 `useSeoMeta`，回退态随正文为中文）、Overview 与首页取 i18n key；`<title>` 模板在 `app.vue`（`<页面标题> · FluereVue`，首页回落品牌名）。实测：`/components/checkbox` → `Checkbox 复选框 · FluereVue`，`/en/components/checkbox` → `Checkbox · FluereVue`，og 与 description 随语种
-- [x] sitemap 按语言拆分 + robots.txt：**已落地**（接入 `@nuxtjs/sitemap` `9.1.0` + `@nuxtjs/robots` `7.0.2`，随 nuxt 升级到 `4.6.1` 一并引入；`nuxt generate` 产出 `/sitemap.xml` 索引 → `/__sitemap__/zh-CN.xml` / `/__sitemap__/en.xml` 两份按语言拆分、各带 `hreflang`（zh-CN / en / x-default）alternate 的子 sitemap，以及 `/robots.txt`（全站 Allow + `Sitemap: /sitemap_index.xml`）。配置见 `apps/docs/nuxt.config.ts` 的 `site` 段与 `robots` 配置（sitemap 走模块缺省））
-
-#### 1.2 界面串与导航
-
-- [x] 全部可见文案抽为 key（71 个）：首页 feature 卡片 / stats / ctLinks / `navLinks` / 主题切换 / 布局 header / 移动端 nav / 页脚；`pages/` 与 `layouts/` 下已无硬编码可见中文
-- [x] `components-nav.ts` 改为「结构化事实 + i18n key」，显示名与摘要按当前 locale 运行期解析，消除中英混写的双字段
-- [x] 语言切换控件 + 记住上次选择（cookie）。**当前落位在文档页 header**，迁到目标 2 的托盘 / 任务栏属目标 2 范围
-- [x] 组件文档页内示例标题、说明、提示框文案双语：正文与示例标题已双语；**demo 预览内的可见文案已全部抽 key**（结构 `demos.<目录>.<示例>.<角色>`，跨组件通用短语收敛 `demos.common.*`，script 侧取值一律包 `computed`），`en` 正文 `#code` 围栏译文与 `en.json` 逐字一致。证据：zh 值与 HEAD 逐字比对 434/434 且逐文件归属正确；浏览器实测 `/en` 全 18 页正文与代码样例无汉字
-- [x] 站点内新增文案一律走 key：`pnpm i18n:check`（接入 `pnpm check` / CI）现**阻断三件事**——key 集合一致、剥注释后残留硬编码中文、`t()` / `tm()` 字面量引用不存在的 key；语言切换按钮的目标语种可访问名与缩写为有意硬编码，已入 `scripts/i18n-check.mjs` 的 `HARDCODED_ALLOW` 白名单（带理由）
-
-#### 1.3 内容双语
-
-- [x] 组件文档 + 首页正文译为英文：16 个组件在 `content/zh-Hans/components/` 与 `content/en/components/` 各一份，中英行数基本等量
-- [x] 英文缺失回退：`fallbackLocale: 'zh-Hans'`，英文版缺失时展示中文并提示「该页暂无英文版」，不做静默混杂
-- [x] 双语边界：进文档站的内容双语；`docs/ssr-guide.md`、`docs/design/*`、本文件等仓库内部文档保持中文
-
-#### 1.4 组件库 i18n 通道（一期只建通道 + 首批文案）
-
-> **状态：已落地**（2026-10-10）。`@fluere-vue/hooks` 增 `provide-locale` / `use-locale` / `useScopeMessages`（实例级 provide/inject，复用 `@intlify/core-base`，无 `vue-i18n` 运行时）；`@fluere-vue/ui` 增 `FluereConfigProvider`。首批 6 组件接入 locale 切片；回退链与并发 SSR 隔离已单测覆盖（见 1.5）。
-
-- [x] `packages/hooks` 增 `provide-locale` / `use-locale`，`packages/ui` 增 `FluereConfigProvider`：基于 provide/inject 的**实例级** locale，禁止全局可变单例（否则 SSR 多请求间会串语言）——`provideLocale` / `useLocale` / `useScopeMessages` 在 `packages/hooks/src/use-locale.ts`，`FluereConfigProvider` 在 `packages/ui/src/config-provider/config-provider.vue`
-- [x] 语言包形态：`@fluere-vue/ui/locales/zh-Hans`、`@fluere-vue/ui/locales/en`，按组件分组、可 tree-shaking；解析优先级：组件 `locale` prop → provider → 内置默认——采用「每组件一个 `locale.ts` 切片、组件自 import」（如 `packages/ui/src/input/locale.ts`）；包级子路径导出 `@fluere-vue/ui/locales/*` 的聚合入口随 0.3 目标 3 构建落地（已记录）
-- [x] 首批纳入的文案：内置 a11y 可访问名（loading / close / 显示密码 / 增减 / 滚动条 方向/拇指）、后续 ProgressRing / InfoBar 的默认文案——`input` / `number-box` / `scroll-view` / `infobar` / `progress-ring` / `progress-bar` 六组；日期与数字一律走 `Intl`（NumberBox 的 `locale` / `formatOptions` prop，不并入文案通道）
-- [x] 组件库不引入 `vue-i18n` 运行时依赖，由 provider 注入 message resolver，并在 `packages/ui/README` 与文档站说明用法——复用 `@intlify/core-base`（`createCoreContext` / `translate` / `resolveValue` / `fallbackLocale`）；`packages/ui/README.md` 增 i18n 节；文档站新增 `config-provider` 双语页
-- [x] 回退链明确：`zh-Hans → zh → en`，缺 key 时落到 `en` 并只在开发环境告警——`packages/utils/src/locale.ts` 的 `normalizeLocale` / `resolveFallbackChain`；hooks 层 `onMissing` 在开发环境告警
-
-#### 1.5 质量与验收标准
-
-- [x] 单测：locale 解析与回退链、provider 隔离（同进程两个 app 实例互不污染）——`packages/utils/src/__tests__/locale.test.ts`（`normalizeLocale` / `resolveFallbackChain`）、`packages/hooks/src/__tests__/use-locale.test.ts`（回退链、Provider 覆盖、组件 `locale` prop 优先级、并发 SSR 隔离、客户端切 locale 即时更新）
-- [x] SSR 冒烟：`packages/ui/src/__tests__/ssr-smoke.test.ts` 在 `zh-Hans` / `en` 两种 locale 下均通过——新增「locale 内建文案 + 并发不串语言」describe：NumberBox / InfoBar / ProgressRing / ProgressBar 在两种 locale 下 SSR 直出对应文案，并覆盖同进程两请求并发隔离
-- [x] 文案完整性检查脚本：已从「key 集合对比」扩展为**三项**——key 集合一致、剥注释后的硬编码中文扫描、`t()` / `tm()` 引用存在性，任一缺失即失败；已接入根 `pnpm check` / CI
-- **验收（2026-10-10 复核）**：
-  - 文档站任意页面在 `/`（中文）与 `/en` 下无遗漏串（专有名词、代码、API 名除外）：**已达成**（Playwright 实测 `/` 与 `/en` × 18 页共 300 项断言 0 失败：`/en` 正文与代码样例无汉字、无 `demos.*` key 泄漏、title / description / og 随语种；中文站抽查串逐条保留）；控制台无 i18n 警告：**已实机核对**（开发环境 `missingWarn` / `fallbackWarn` 打开，全部页面 0 条 intlify 告警、0 条 hydration 告警）
-  - `pnpm docs:generate` 产出两种语言的静态页面：**已达成**（2026-10-10 复核：78 条路由，`dist/` 与 `dist/en/` 各含 16 个组件页，`<html lang>` 分别为 `zh-CN` / `en`，alternate 四组齐备；`/en` 产物剥除 script / style 后无汉字，`<title>` / `og:*` / description 按页与语种独立，中文页 demo 抽查串保留）；切换语言为**客户端路由跳转**（`setLocale()` + `navigateTo(switchLocalePath())`），非整页重载。**注**：本机 Node 默认 2 GB 堆上限下 nitro prerenderer 初始化即 OOM，已在干净树（`git stash` 后）复现——属**既有环境问题**、非本次改动引入；`NODE_OPTIONS=--max-old-space-size=4096` 后通过
-  - provider 切换 locale 时组件内建文案即时更新、两个并发 SSR 请求不串 locale：**已达成**（hooks 单测覆盖同进程两 app 互不污染 + 客户端切 locale 即时更新；ssr-smoke 覆盖两种 locale 的并发 SSR 隔离）
-  - Lighthouse / axe 不出现 `lang` 相关告警，`<html lang>` 与水合结果一致：`<html lang>` 已与产物一致，Lighthouse / axe **尚未实跑**
-- **非目标（推后）**：RTL、第三种语言、翻译平台（Crowdin / Locize）工作流、组件文档逐页人工润色（一期允许机翻 + 术语表人工过一遍）。
-
-### 目标 2 · 优化文档站（往 WindowsOS 仿真方向完善）
-
-> **判定基准**：以 **WinUI 3 Gallery + Windows 11 实机**为参照——一个「桌面」承载**多扇应用窗口**（仿真应用系统，0.5.9 起），窗口内有标题栏、NavigationView、内容区；底部任务栏承载开始、应用入口、语言 / 主题 / 时钟（搜索按 2.3 的 `Ctrl+K` 排期，见 0.6）。
-> **边界（必须标注，与 README「不夸大承诺」一致）**：**做**窗口之间的层级（z 序）与焦点切换、每应用独立的最小化 / 最大化 / 关闭 / 位置；**不做**边缘吸附、贴边顶满、窗口吸附、任务视图（Win+Tab）、高级多窗口布局，以及系统级动画复刻；移动端不仿桌面，走简洁响应式。
->
-> ⚠️ **2026-10-16 范围变更（经人类明确授权，仅此一处口径）**：原文写「不做多窗口」，现按需求扩为「做层级与焦点、不做吸附 / 总览 / 高级布局」。改写范围仅限本段的判定基准与边界、本文件「目标 2」的非目标一行、以及可见文案 `shell.boundary.*` / [apps/docs/README.md](../apps/docs/README.md)〈WindowsOS 仿真边界〉；**验收要点与其余条目的口径不变**（不溢出 / 不重叠 / 移动端降级 / 边界文案可见）。详细口径见 [design/explorer-layout.md](./design/explorer-layout.md) §8。
-
-**现状**：只有 3 个页面与 1 个 layout（顶部 header + 侧栏 + 移动端 nav），全部 UnoCSS 工具类直写，无组件化抽象；无窗口外壳 / 任务栏 / 开始菜单 / 标题栏 / 命令栏，无搜索、无版本选择、无「本页目录」；版本号硬编码 `v0.0.1`。可用素材：`@fluere-vue/ui` 组件、`presetFluere`、已抽取的 Fluent 令牌（Mica / Acrylic 相关令牌需先核对是否齐备，缺的先补进 `packages/designs`）。
-
-#### 2.1 桌面外壳（Shell）
-
-- [x] `DesktopShell` 布局：壁纸层（令牌化的渐变 / Mica 近似）→ 窗口层 → 任务栏层；层级、圆角、阴影一律用 designs 令牌，禁止魔法值 —— **2026-10-16 随 0.5.5 落地**，实现与约束见 [apps/docs/README.md](../apps/docs/README.md#站点主页与桌面外壳的落点056-起) 与 [docs/design/explorer-layout.md](./design/explorer-layout.md)；裸 `z-index` / `#RRGGBB` / 魔法尺寸由 `apps/docs/utils/__tests__/shell-style-contract.test.ts` 守住
-- [x] `FluereAppWindow`：圆角窗口、标题栏（应用图标 + 标题 + 可拖拽区）、caption 按钮（最小化 / 最大化 / 关闭，含关闭键红底 hover）、窗口内独立滚动区 —— **组件本体 2026-10-13 随 0.5.1 / 0.5.2 进 `packages/ui`**（规格 `Microsoft.UI.Xaml.Controls.TitleBar`，tag `winui3/release/2.5.1`）；窗口内独立滚动由外壳的 `FluereScrollView` 提供（`explorer-layout.md` §2）
-- [x] caption 按钮**真实可用**：最小化 / 最大化 / 还原窗口视口；「关闭」不伪装成坏按钮（跳回首页或收起到任务栏），全部键盘可达（Tab + Enter）且 `aria-label` 双语 —— **0.5.5 接通状态机**：最小化 / 关闭后由任务栏入口或桌面中央占位卡片还原（`utils/shell-window-state.ts`），文案走 `shell.taskbarWindow{Minimize,Restore}` / `shell.closed.*` 双语 key
-- [x] 窗口尺寸与位置在桌面尺寸变化时的响应式策略；移动端断点降级为全屏无边框 —— 常规档 1120×720 按视口 `min()` 收缩后居中 + 拖拽经 `clampWindowOffset` 收敛在桌面内（**0.5.8 修订**：收敛口径改为「标题栏始终可见」的 `containWindowOffset`，见下方 0.5.8 条目）；< 1024px（`lg`）降级为全屏无边框、任务栏不渲染。**降级时保留窗口内滚动**（不改为页面滚动），偏离与理由记录在 `explorer-layout.md` §2
-
-#### 2.2 任务栏 / 开始菜单 / 系统托盘
-
-- [x] `Taskbar`：居中图标组（开始、搜索、已固定入口）、hover / active 指示条、点击弹出或还原窗口 —— **2026-10-16 随 0.5.6/0.5.7 落地**：`apps/docs/components/shell/shell-taskbar.vue` 扩成**三段式**（最左开始按钮常驻 / 中间图标区 = 窗口入口 + 首页·组件·指南固定入口 + GitHub / 最右系统托盘），hover = `FluereButton subtle` 底色、active = 16×3 指示条（窗口入口 + 固定入口各自随状态点亮），点击固定入口 / 开始菜单条目走「还原窗口 + 打开标签」统一路径（`desktop-shell.vue` 的 `onOpenTabFromShell`）。**两处按 2026-10-16 评审改口径**：① 布局不是「整条图标居中」而是三段式（开始按钮**必须常驻最左**）；② **搜索按钮不做**——站内搜索属 0.6 的 `Ctrl+K`（2.3），没有可搜的东西时放搜索入口即坏按钮（红线），边界文案已同步去掉「搜索」。另：移动端（< 64rem）图标区由两个箭头按钮左右滚动且**不出现原生滚动条**（`scrollbar-width: none` + webkit 伪元素），箭头仅在实测溢出时可见、始终占位
-- [x] `StartMenu`：Acrylic 面板承载站点信息架构（首页、指南、组件、设计令牌、路线图、GitHub），支持键盘导航与 Esc 关闭 —— **2026-10-16 随 0.5.7 落地**：`components/shell/shell-start-menu.vue`（开始按钮 + 面板自包含），面板形态逐条对齐 A 级 `MenuFlyout_themeresources.xaml`（tag `winui3/release/2.5.1`：`OverlayCornerRadius`=8 → `--borderRadiusXLarge`、`MenuFlyoutItemThemePadding` 11,8,11,9、`MenuFlyoutItemMargin` 4,2,4,2、条目状态色 Subtle* 三档、`SurfaceStrokeColorFlyout` 补成 repo-token）；背景取 `AcrylicBackgroundFillColorDefault` 的 **FallbackColor 纯色近似**（真实 Acrylic 合成 + 噪点归 0.9.2，组件注释记证据缺口）；键盘 = 方向键 / Home / End 移焦点 + Enter 原生激活 + Esc / 点击外部 / 焦点归还（全部走 `useFocusTrap`）。**条目按 2026-10-16 评审收窄**：只放真实可达的「首页 / 指南 / 组件（打开窗口标签）+ GitHub 外链」，设计令牌与路线图页尚不存在（2.4 未做）**不放占位死链**，页面落地后回补（组件注释与契约测试都有留痕）；搜索框同样不做（同上 ②）。**动效（开合过渡 / 缓动对齐）按阶段 5 评审延后**，本期零过渡动画
-- [x] `SystemTray`：时钟（`Intl.DateTimeFormat` 按 locale）、主题切换、语言切换（与目标 1 共用同一控件）、版本号（读 `package.json`，去掉硬编码） —— **2026-10-16 随 0.5.6/0.5.7 落地**：时钟为 `utils/shell-clock.ts` 纯函数（zh 24h / en 12h + 日期两行，**4 条单测**），挂载后每 15s 刷新（SSR 渲染空文本防水合不匹配，`--shell-tray-clock-w` 预留宽度防挂载平移）；主题 / 语言 / 版本复用既有 `theme-toggle` / `locale-switch` / `docs-version-tag`（经 `shell-chrome.vue` 清单，主页 header 同源）。**落点较原设想变化**：托盘在任务栏而非窗口（顺带修复「窗口关闭后主题 / 语言入口消失」）；窄档（< 64rem）**时间必须保留**，其余控件收进展开按钮的弹出菜单（0.5.6 落点变更记录见 `explorer-layout.md` §0 / §6.3）
-- [x] 浮层焦点管理：聚焦陷阱、Esc / 点击外部关闭；通用逻辑优先下沉到 `packages/hooks`（如 `use-disclosure`），避免后续弹层组件重复实现 —— **2026-10-16 落地**：`packages/hooks/src/use-focus-trap.ts`（`useFocusTrap` + `UseFocusTrapOptions/Return`，随包入口导出），一个原语覆盖 Tab 陷阱（聚焦尝试循环跳过不可聚焦项，不依赖 `offsetParent` / `getClientRects`）、Esc（`onEscape` + `preventDefault`）、点击 / 触摸外部（`onOutsidePointer`，触发器排除）、焦点归还（含**外部点击抑制**与键盘再武装）、SSR 无副作用（`hasDocument()` 能力探测，`@fluere-vue/utils` 新增该原语）；**13 条单测**（`packages/hooks/src/__tests__/use-focus-trap.test.ts`：陷阱循环 / Shift+Tab 回绕 / 语义过滤 / Esc / 外部点击 / 抑制与解除 / 归还开关 / document 缺席）。首个消费方 = 0.5.7 的开始菜单与托盘弹层，0.6 `MenuFlyout` 复用同一原语
-
-#### 2.3 应用内导航（NavigationView 化）
-
-- [ ] 把文档站 layout 重构为窗口内 `NavigationView`：可折叠面板、分组（数据源仍是 `components-nav.ts`）、顶部搜索框、底部设置项
-- [ ] 组件页新增右栏「本页目录」，页头带面包屑与「复制链接」
-- [ ] `Ctrl+K` 命令面板式搜索：跨组件与正文（`@nuxt/content` 查询），全键盘可完成「打开 → 输入 → 选中 → 跳转」
-
-#### 2.4 页面与内容呈现
-
-- [ ] 组件文档页模板化：标题区 + 示例卡片（Light / Dark 并排对照）+ 代码块（复制按钮、语言标签、行高亮）+ Props / Events / Slots 表格
-- [ ] 示例的明暗对照与 `use-color-mode` 打通（示例级切换或跟随站点，二选一并记录理由）
-- [ ] 新增站点页：入门 / 安装（真实可用的 `pnpm add` 指引，配合目标 3）、设计令牌浏览页、路线图 / 更新日志、404 空态（可读、可操作，不做成死胡同）
-- [ ] 所有新增页面文案走 i18n key（与目标 1 同步，不新增硬编码中文）
-
-#### 2.5 动效、性能与无障碍
-
-- [ ] 动效全部走 designs 的时长 / 缓动令牌，并遵循 `use-reduced-motion`（`prefers-reduced-motion` 下关闭窗口与菜单过渡）
-- [ ] SSR 安全：`window` / `matchMedia` / `localStorage` 一律按 `docs/ssr-guide.md` 分级处理，外壳不得引入水合不匹配
-- [ ] 性能预算：限制首屏 JS / CSS 体积与 `backdrop-filter` 覆盖面积（避免「为了像 Windows 而卡」）
-- [ ] 无障碍：窗口 / 任务栏 / 开始菜单的语义角色与 `aria-modal`；还原 WinUI 焦点矩形；对比度达标；装饰元素 `aria-hidden`；全部仿真控件可键盘操作
-- **验收**：
-  - 1280 / 1440 / 1920 与移动端均不溢出、不重叠，窗口内容可滚动到底
-  - Light / Dark 下所有新表面（窗口、任务栏、Acrylic 面板）对比度达标且无「白闪」
-  - 全站键盘可达：Tab 顺序合理、Esc 关闭浮层、`Ctrl+K` 打开搜索，焦点不被外壳吞掉
-  - `pnpm check` / `pnpm test` / `pnpm docs:generate` 全绿，SSR 冒烟覆盖新布局
-  - 视觉自检清单（rest / hover / pressed / focus / disabled × 明暗）写入站点 README 或 `docs/`，作为回归依据
-- **非目标（一期）**：窗口拖拽吸附 / 贴边顶满 / 任务视图（Win+Tab）/ 高级多窗口布局（**0.5.9 起已实现层级与焦点切换，不再是「不做多窗口」**，见本节顶部的范围变更说明）、动态壁纸、系统级动画复刻、移动端仿桌面。
-
-### 目标 3 · 集成 npm 发布基建并完成自动发版流程
-
-**首发前的阻塞项（2026-10-10 记录，现已全部解除；保留以说明后续版本不再受制于这些前提）**：
-
-- 6 个包版本均为 `0.0.1`、从未发布过 → **2026-10-13 六包首发 `0.3.0-alpha.2` 上 npm**
-- 包入口指向源码（无 `dist` / `.d.ts`）、`packages/themes` 连 `exports` 都没有 → 3.1 / 3.2 落地 `dist` 产物 + `publishConfig` 覆盖
-- 无 `files` / `publishConfig` / `peerDependencies` / `engines`、无库构建脚本 / CI / Changesets / 根 `LICENSE` → 3.1 – 3.4 逐条补齐
-- README「快速开始」标注「尚未发布」、文档站页脚硬编码 `v0.0.1` → 页脚已改为读根 `package.json`（版本单一事实源）；**README 文案尚未收口**（属 3.5）
-
-> **进度速览（2026-10-10）**：**3.1 / 3.2 / 3.3 已全部落地**——六包补齐 `files` / `exports` / `types` / `sideEffects` / `publishConfig` / `repository` / `engines` / `peerDependencies`；构建改为 Vite 8 lib mode（纯 ESM，`pnpm -r --filter "./packages/*" build` 按拓扑产出 `dist`），`ui` 的 `.d.ts` 用 `vue-tsc` 生成；接入 Changesets（fixed 统一版本）+ 版本单一事实源（文档站读根 `package.json`）；新增“从 dist 引入并渲染”冒烟。验收脚本全绿：`pnpm check` / `pnpm test`（920） / `pnpm lint:ssr` / 全包 build / `publint`、attw（bundler 入口）。未做（截至该日）：3.4（CI/CD）与 3.5（首发），README「尚未发布」按 3.5 收口时移除。**补正（2026-10-12）**：3.3 的「CHANGELOG 自动生成」当时只有配置、从未真正跑通——`.changeset/config.json` 的 `changelog` 指向不存在的子路径（`@changesets/cli/changelog-git`）且 `fixed` 混入了 workspace 根包名，`changeset version` 直接退出 1，逐包 `CHANGELOG.md` 一个都没生成；现已修复并在一次性副本里演练通过，记录见 [docs/release.md](./release.md#版本流程演练记录2026-10-12)。
-
-> **首发记录（2026-10-13，全程实测）**：六个 `@fluere-vue/*` 首次上 npm，版本 **`0.3.0-alpha.2`**（发布提交 `8dfa64f`）。
-> 首发走**人工 bootstrap**：先用 `0.0.0-stage` 占位包预定六个包名（registry 上无入口、解包仅数百字节，description 为 “Temporary package placeholder for staged publishing”），再用粒度 token / 本机登录发布真实版本。
->
-> - `dist-tags`：`alpha` 与 `latest` **同时指向 `0.3.0-alpha.2`**（当时的实测值）。**注意**：这与 2026-10-13 发 `0.4.0-alpha.1` 时的行为不同——那次 `latest` 没有移动。两次差异的成因没有证据留存，本仓库不再沿用"预发布会占 `latest`"的说法，见下方 3.5 前置约束 2。
-> - 公网消费验证（本机干净目录实测）：`npm add @fluere-vue/ui@0.3.0-alpha.2 vue` 成功；`renderToString` 渲染 `FluereButton` / `FluereProgressRing` 通过；`dist/style.css` 存在（194 kB）；无 peer 警告。
-> - tarball 体积（registry 元数据实测）：`ui` 104 文件 / 1.90 MB、`designs` 0.49 MB、`themes` 0.14 MB、`hooks` 0.04 MB、`utils` 0.02 MB、**`icons` 42.96 MB**（体积异类未处理）；`ui` tarball 顶层只有 `dist` + `package.json` + README / LICENSE，源码未随包发布。
-> - `dist.attestations` **不存在**：首发是 token 人工发布、无 provenance，与「首次不能走 OIDC」的判断一致。
-> - 版本产物**不是 changeset 消费出来的**：本次是 `pnpm release:manual` 不带参数、对已 seed 的 `0.3.0-alpha.2` **原样发布**（`.changeset/` 里 3 条 changeset 当时未消费，故 `0.3.0-alpha.2` 没有 CHANGELOG 条目）。踩坑与纠正——部署 tag `v0.3.0-alpha.2` 先指 seed 提交 `6345d74`、后移到发布提交 `8dfa64f`——见 [docs/release.md](./release.md) 的「踩坑记录：seed 版本被原样发布」。
-
-#### 3.1 包元数据与发布体检
-
-- [x] 逐包补齐：`files`、完整 `exports`（`import` / `require` / `types`，外加 `./style.css`、按需子路径）、`types`、`sideEffects`（CSS 例外）、`publishConfig.access: "public"`、`repository.directory`、`engines.node`、`peerDependencies: { vue: "^3.5" }`（**已落地**，含 `@fluere-vue/ui` 的 `./locales/zh-Hans` / `./locales/en` 子路径）
-- [x] 根目录补 `LICENSE`（MIT © 夕云葛城）；为 `ui` / `designs` / `themes` / `icons` 补包级 README（用法与相互依赖关系）——**LICENSE 已存在**；四个包 README 已有，本轮补齐了 `utils` / `hooks` 占位 README，并为 `ui` README 增加「安装与按需引入」节（`style.css` / locales 子路径）
-- [x] 版本矩阵决策：所有 `@fluere-vue/*` 统一版本号（建议统一，便于用户理解与文档站展示）——**统一**：Changesets `fixed` 分组 + `scripts/version.mjs` 双重约束，结论与操作写入 `docs/release.md`
-
-#### 3.2 构建管线
-
-- [x] 选定构建器（Vite 8 lib mode / tsdown / unbuild 三选一），**先做 spike 对比**：`.d.ts` 质量、Vue SFC 处理、CSS 产出、SSR 友好性、构建耗时；结论以 ADR 形式记录——**Vite 8 lib mode（纯 ESM）**，spike 与理由见 `docs/adr/0001-library-build-tooling.md`
-- [x] 构建顺序按拓扑：`designs`（先跑令牌生成）→ `themes` / `icons` / `hooks` / `utils` → `ui`；`pnpm -r build` 保证依赖顺序——**已落地**（`pnpm -r --filter "./packages/*" build`）
-- [x] 产物形态：ESM 为主、CJS 兼容策略明确、`.d.ts` 完整、`tokens.css` 与图标按需导入可用；`vue` / `reka-ui` / `unocss` **外部化**——**纯 ESM**（用户已确认），`.d.ts` 完整（`ui` 用 `vue-tsc` 保精确 SFC Props），`tokens.css` / 图标按需可用，`vue`/`reka-ui`/`@fluere-vue/*` 外部化
-- [x] tree-shaking 验证：`sideEffects` 正确，按需引入单组件后的体积符合预期并记录基线——`// temp/treeshake` 实测：仅引 `FluereButton + useDisclosure + 1 图标` 消费产物体积 **62.13 kB（gzip 19.13 kB）**（对比全量 ui 297 kB / icons 12 MB）
-- [x] 扩展 `pnpm check` / `pnpm test`：至少新增一条「从 `dist` 引入并渲染」的冒烟用例——**`packages/ui/src/__tests__/dist-smoke.test.ts`**（从 dist 按 SSR 渲染多组件 + 纯 TS 包 dist 导入；未构建时自动跳过；已纳入 `vue-tsc` 类型检查——该文件用 `node:fs` / `node:path` / `node:url` 与 `process.env`，故 `packages/ui/tsconfig.json` 显式引入 Node 环境类型）
-
-#### 3.3 版本与变更日志
-
-- [x] 接入 Changesets：包间依赖联动 + `rc` 预发布模式（`changeset pre enter rc` / `pre exit`）——**已接入**（`.changeset/config.json`：`fixed` 六包统一版本 + `privatePackages.version`；根脚本 `changeset` / `version:packages` / `release`；首个 changeset `.changeset/dry-pumas-build.md`）
-- [x] CHANGELOG 自动生成 + 逐包 `CHANGELOG.md`；沿用现有 emoji conventional commit 规范并固化到 `CONTRIBUTING`——**已跑通**（changelog 提供方 `@changesets/cli/changelog`，`changeset version` 生成逐包 CHANGELOG）；起初误写成不存在的 `@changesets/cli/changelog-git` 子路径，导致 `changeset version` 退出 1、CHANGELOG 从未生成，2026-10-12 修复并实测通过；操作流程写进 `docs/release.md`
-- [x] 版本单一事实源：文档站页脚、README、`docs/todo.md` 标题一律从 `package.json` 读取或由发布流程注入，禁止硬编码——**已达成**：文档站经 `nuxt.config.ts` 读根 `package.json` 注入版本（`use-docs-version` 归一）；`scripts/version.mjs` 改为「统一到最大版本」以配合 Changesets
-
-#### 3.4 发布流水线（CI/CD）
-
-- [x] `.github/workflows/ci.yml`：PR 上跑 install（frozen lockfile）+ `pnpm check` + `pnpm test` + `pnpm build` + `pnpm docs:generate`——**已线上验证**（`.github/workflows/ci.yml`：check / test / docs / package-smoke 四个 job；pnpm 版本由 `pnpm/action-setup` 读 `packageManager`）。2026-10-12 推 `main` 后两次运行 [38214181292](https://github.com/Altermoe/fluere-vue/actions/runs/38214181292) / [38214601263](https://github.com/Altermoe/fluere-vue/actions/runs/38214601263) **四个 job 全绿**。
-- [x] `.github/workflows/release.yml`：Changesets action 开 release PR；合并后按预发布 tag（`.changeset/pre.json`，现为 `alpha`）发布（`latest` 的归属与 pre 模式无关，见 3.5 前置约束 2），启用 npm provenance（OIDC trusted publishing 或 `NPM_TOKEN` secret，二选一并记录）——**方案已定为 OIDC trusted publishing，`version` 与 `pack` / `publish` 三条路径均已线上验证**（`.github/workflows/release.yml`：`select-mode` / `version` / `pack` / `publish` 四个 job，顶层 `permissions: {}`，`id-token: write` 只给 publish job；`pack` 内有 `pnpm check && pnpm test` 自证 + `pnpm build` + `pnpm smoke:dist`，publish 只上传 pack 出来的 tarball）。2026-10-12 实测：`select-mode` 判定 `version`、`version` job 成功开出 [release PR #2](https://github.com/Altermoe/fluere-vue/pull/2)（15 个文件、无 `apps/*`），`pack` / `publish` 按预期 skipped；首轮 [38214181271](https://github.com/Altermoe/fluere-vue/actions/runs/38214181271) 曾因 `version.mjs sync` 改动 `apps/*` 而让 action 去找不存在的 `apps/docs/CHANGELOG.md`（ENOENT），已修复。另发现 release PR 分支由 `github-actions[bot]` 推送，其 `pull_request` 触发的 CI run 会被挂成 `action_required`（需维护者手动批准，实测 run [38215064332](https://github.com/Altermoe/fluere-vue/actions/runs/38215064332)），因此 PR 上默认没有跑完的检查，已在 `pack` 里加自证步骤兜底，详见 [docs/release.md](./release.md#发布流水线github-actions)。落地过程中确认的两条硬约束：① **首次发布无法走 OIDC**——npm 的 trusted publisher 只能挂在已存在的包上，没有 pending publisher，六个包从未发布过，第一个版本必须先用 token / 本机 `pnpm login` 人工 bootstrap；② pnpm v11 下 publish job 的 `setup-node` 必须显式给 `registry-url`，否则 OIDC 换取失败且报错具有误导性。**更新（2026-10-13）**：`version` 路径随首发再次线上验证——run [38335726761](https://github.com/Altermoe/fluere-vue/actions/runs/38335726761) 的 `select-mode` / `version` 成功、`pack` / `publish` 仍 skipped，release PR #2 被更新为 `0.3.0-alpha.3` + 逐包 CHANGELOG；首发已由 `pnpm release:manual` 人工完成、六包在 registry 上存在 ⇒ **硬约束 ① 已解除**，给六包配好 Trusted Publisher 后 `pack` / `publish` 即可自动发布下一版（这是 3.5 的剩余目标）。**更新（2026-10-16 回写）**：该剩余目标已于 2026-10-14 达成——`0.4.0-alpha.1` / `0.4.1-alpha.1` 两次自动发布全绿（run 38387428783 / 38529743664），OIDC provenance 已实测存在；逐条事实见下方〈已完成 · 自动发版流程〉。
-- [ ] 发布前质量闸：`publint` + `@arethetypeswrong/cli` 全绿；`npm pack --dry-run` 复核 tarball 内容与体积（不含源码、测试、未生成物）——**前两项已在 CI 落地**：`ci.yml` 的 `package-smoke` job 与 `release.yml` 的 `pack` job 都跑 `pnpm smoke:dist`（`pnpm pack` 出六个 tarball → publint / attw → fixture 消费方安装与 SSR 渲染）。**彩排实测暴露两处 tarball 卫生问题（见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)）**：① `ui` / `designs` / `icons` / `themes` 的 `files` 曾带顶层 `src/`（`ui` 安装后 1.5 MB，约 `dist` 的 70%），与「不含源码」不符——**已修复**：从这四包 `files` 移除顶层 `src`，消费方入口全部由 `publishConfig` 指向 `dist`；`dist/src/**`（`.d.ts`）是 `dist/index.d.ts` 的类型图依赖，随 `dist` 保留（`ui` tarball 250→102 文件、790→471 kB，`pnpm smoke:dist` 复验通过）；② `icons` 解包后 ~43 MB（主要是 `generated/` 图标数据），是唯一体积异类——**上线版本实测确认**（registry 元数据：`icons` 解包 **42.96 MB**，`ui` 1.90 MB、`designs` 0.49 MB、`themes` 0.14 MB、`hooks` 0.04 MB、`utils` 0.02 MB；`ui` tarball 104 项、顶层仅 `dist` + `package.json` + README / LICENSE，无源码）。体积异类已复核但**未做处理**，作为已知项跟踪。
-- [x] 发布彩排：本地 verdaccio 或 `--dry-run` 走通全流程（含 dist 安装、SSR 渲染、CSS 引入）——**已完成**：本地 verdaccio 上完整发布 `0.3.0-rc.1` 六个包，逐项验收「干净目录安装 / SSR `renderToString` / Vite 构建带 CSS / `vue-tsc` 类型引用」全通过，并实测记录空 registry 首发时 `dist-tags` 的 `rc` 与 `latest` 同时指向首个版本（该现象与 2026-10-13 线上结果不一致，成因未留存证据，见 3.5 前置约束 2）；抓出并修正了「pre 模式下不许显式 `--tag`」的文档错误，tarball 卫生与 `icons` 体积问题记入上一条。全过程与数据见 [docs/release.md](./release.md#发布彩排记录2026-10-12本地-verdaccio)。
-- [x] 回滚与补救预案：`npm deprecate`、撤销 tag、`latest` 回指上一版的具体步骤写入 `docs/release.md`——**已写入**（[回滚与补救](./release.md#回滚与补救)：deprecate / `dist-tag rm|add` / `gh release delete --cleanup-tag` 撤销 tag 与 Release / 同 commit 重跑的幂等说明）。
-
-#### 3.5 首发（已完成）与自动发版流程（进行中）
-
-> **目标已收敛（2026-10-13）**：原目标「正式发布线上 `0.3.0-rc.1`」中的**人工首发已完成**——六个 `@fluere-vue/*` 已于 2026-10-13 以 `0.3.0-alpha.2` 上 npm（见上方「首发记录」）。0.3 余下的发版目标改为**把自动发版流程跑通**：配好 npm Trusted Publisher，让 `release.yml` 的 `pack` / `publish` 在线真实发布一次（OIDC + provenance），此后不再人工发版。版本号推进的操作手册见 [docs/release.md](./release.md)。
-
-**已完成 · 人工首发（bootstrap）**
-
-- [x] 用 `0.0.0-stage` 占位包预定六个包名——trusted publisher 只能挂在已存在的包上，这是绕开「首次不能走 OIDC」的前置动作
-- [x] 人工发布首发版本：`pnpm release:manual`（不带版本参数，对已 seed 的 `0.3.0-alpha.2` 原样发布）→ 六包全部成功，发布提交 `8dfa64f`
-- [x] 发布后验证（干净目录、走公网 npm 安装，2026-10-13 实测）：安装成功、组件正常渲染、样式已随包发布（`dist/style.css`）、`renderToString` 不抛错、无 peer 警告
-- [x] 部署 tag 与逐包 tag：`v0.3.0-alpha.2`（由 seed 提交 `6345d74` 移到发布提交 `8dfa64f`）+ 六个 `@fluere-vue/<pkg>@0.3.0-alpha.2`，GitHub 与 onedev 均已推送
-
-**已完成 · 自动发版流程（2026-10-14 收口，2026-10-16 回写记录）**
-
-> 本组四条原为「未完成」，实际已于 2026-10-14 随 `0.4.1-alpha.1` 全部跑通；本轮按人类授权（2026-10-16「修补文档记录」）只把**已发生的事实**回写为勾选状态，未改动任何验收要点与验收口径。
-
-- [x] 在 npmjs.com 给六个包各配一次 Trusted Publisher（Repository `Altermoe/fluere-vue`、Workflow `release.yml`、Environment 留空）——包已存在，原「硬约束 ①」已解除；**已生效**：`0.4.0-alpha.1`（run [38387428783](https://github.com/Altermoe/fluere-vue/actions/runs/38387428783)）与 `0.4.1-alpha.1`（run [38529743664](https://github.com/Altermoe/fluere-vue/actions/runs/38529743664)）两次 `pack` + `publish` 全绿，全程无 `NPM_TOKEN`
-- [x] 合并 release PR（分支 `changeset-release/main`）——`0.3.0-alpha.3` 那次 PR #2 最终承载的是 `0.4.0-alpha.1`：`version` run [38387183343](https://github.com/Altermoe/fluere-vue/actions/runs/38387183343) bump 后合并为发布提交 `6a0ba67`；`0.4.1-alpha.1` 走 `version` run 38528831348 → 发布提交 `b5941d4`
-- [x] 线上确认自动发布产物：tarball 与首发一致（不含源码 / 测试）、provenance 存在、全程无 `NPM_TOKEN`——registry 的 `/-/npm/v1/attestations` 实测：`0.4.0-alpha.1` / `0.4.1-alpha.1` 每包 **2 份证明**（npm publish v0.1 + SLSA provenance v1），而人工 bootstrap 的 `0.3.0-alpha.2` 为 **404**，对比即证 OIDC 生效
-- [x] 自动发布后核对 `dist-tags`：预发布只落 `alpha`，`latest` 停在 `0.3.0-alpha.2`（占位版 `0.0.0-stage` 使 `only-pre` 判定恒为假）。**实测（2026-10-16）**：六包 `alpha` = `0.4.1-alpha.1`、`latest` = `0.3.0-alpha.2`，与判定一致；文档站部署 tag `v0.4.1-alpha.1` 已上线（`/` 与 `/en` 的 `docsVersion` 均为 `v0.4.1-alpha.1`）
-- **仍未自动化**：`v<version>` 部署 tag 不由 `release.yml` 生成，仍由 `pnpm release:manual` / 手工 `git tag -a` 补推（口径见 [docs/release.md](./release.md)〈尚未自动化〉）
-
-**未完成 · 其它 0.3 收口项**
-
-- [ ] 冻结范围：确认本次发版包含的组件与文档（与 0.1.0-rc.1 组件清单对齐），未完成项明确移出并记录
-- [ ] 收口文档：README 去掉「尚未发布」、补安装与按需引入示例、更新组件进度表与版本号；文档站展示线上版本与更新日志
-- [ ] GitHub Release：首发只推了 tag、**未建 Release**（API 实测 releases 为空）；改由自动发版链路的 `publish` job 建，附破坏性变更与已知问题清单
-- **验收（按「自动发版流程」口径）**：
-  - `release.yml` 的 `pack` / `publish` 在线上真实跑通一次，发布产物带 provenance，无需人工 token
-  - 自动发布的版本号由 changeset 从当前版本 bump 得出（不再原样发布 seed 版本，避免 `v*` 部署 tag 与发布版本同号）
-  - 三个独立消费场景验证通过：Vite SPA、Nuxt SSR、纯类型引用（`vue-tsc` 无错）
-  - 同一 commit 重跑发布不产生脏状态；发布手册与回滚步骤齐备
-- **前置约束的当前状态（2026-10-12 提出 → 2026-10-13 更新）**：
-  1. ~~**首次发布不能用 OIDC**~~ —— **已解除**：六个包已由人工 bootstrap 上 npm（连同 `0.0.0-stage` 占位版本），现在可以给每个包配 Trusted Publisher，「从第二个版本起自动发布」的条件已具备。配好后 pnpm v11 下 publish job 的 `setup-node` 仍必须显式给 `registry-url`。
-  2. **`latest` 与预发布的关系（2026-10-13 更正）**：changesets 只在 `only-pre` 判定成立时才把版本发到 `latest`，而该判定要求**所有**已发布版本的 `prerelease[0]` 都等于当前 pre tag。本仓库六包带着占位版 `0.0.0-stage`（`prerelease[0] === "stage"`），判定恒为 `false` ⇒ 预发布一律落在 pre tag、`latest` 原地不动。实测：`0.4.0-alpha.1` 发布后 `latest` **仍停在** `0.3.0-alpha.2`、`alpha` 指向新版，**用户不带版本号安装会拿到旧版，这不是事故**，但也**不会自动回指**——`latest` 要改指须显式 `npm dist-tag add`（六个包各一次），或等非 pre 的稳定版发布（**发布后要实测 `latest` 是否确实更新**，未更新就手工改指）。判定代码与实测数据见 [docs/release.md](./release.md#dist-tag-判定规则实测2026-10-13对真实-registry)。
-- **非目标（一期）**：自动化视觉回归发布门、GitHub Packages 等多 registry 同步、CDN / unpkg 体积门、0.3.0 稳定正式版（0.3 收口后再定）
-
-### 依赖关系与建议顺序
-
-1. **先做两个 spike**：i18n 选型（影响文档站结构）与构建器选型（影响所有包入口），各控制在 1 天内出结论。**两个 spike 均已完成并落地**：i18n 见 1.1，构建器见 3.2（结论写入 [ADR-0001](./adr/0001-library-build-tooling.md)）。
-2. **目标 2 依赖目标 1 的 key 约定**：顺序为 i18n 基建 → 外壳（2.1 / 2.2）→ 页面（2.3 / 2.4）→ 打磨（2.5）。
-3. **目标 3 的 3.1 / 3.2 可与目标 2 并行**（只改包元数据与构建，不碰文档站页面）；3.4 流水线已随 CI 跑通接入，剩余的是 3.5 的自动发版流程。
-4. **发布前统一冻结**：版本号、README / 文档站版本展示、CHANGELOG、本文件勾选状态一次性收口。
-
-### 与 0.4.0+ 排期的衔接
-
-- **目标 1 的 key 约定是 0.5.0 起的硬约束**：**两侧均已落地** —— 文档站侧见 1.1；**组件库侧（1.4）已随 0.4.x 建立并常驻校验**（每组件 `locale.ts` 切片 + `FluereConfigProvider`，`pnpm i18n:check` 逐切片比对两侧 key），0.5.0 起新增文案必须走该通道，不得再散装硬编码。（原「组件库侧尚未建立」的结论已过时，2026-10-16 更正。）
-- **目标 2 是 Explorer 骨架的布局基建**：0.5.0 的 `DesktopShell` / `Taskbar` / `StartMenu` 直接复用 2.1 / 2.2 的产出。
-- **目标 3 是 0.9.0-rc.1 对外可用的前提**：包已首次上线（`0.3.0-alpha.2`），消费方入口指向 `dist`；把自动发版流程跑通后，0.4–0.8 的每个 minor 才能稳定对外发版。
-
-### 风险与对策
-
-| 风险                                   | 影响                     | 对策                                                                                                                                                                                                                         |
-| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 文档站「仿真」过度                     | 首屏慢、移动端卡顿       | 令牌化动效 + 性能预算 + 移动端降级全屏，仿真范围写入 README                                                                                                                                                                  |
-| i18n 与 `@nuxt/content` + SSG 组合踩坑 | 双语路由与内容查询返工   | **文档站侧已消除**（spike 收口并落地，demo 抽 key 亦已收口）；残余风险仅剩 1.4 组件库通道                                                                                                                                    |
-| 纯 TS 源码入口被发布                   | 消费方无法使用、口碑受损 | **已消除**：3.2 强制 `dist` + `types`，发布闸用 `publint` / `attw` 拦截；首发 tarball 实测顶层仅 `dist` + 包元数据                                                                                                           |
-| 预发布占用 `latest`                    | 用户误装预发布版         | 预发布走 changeset pre tag（现为 `alpha`）而非 `latest`，发布后核对 `dist-tags`；`only-pre` 判定因占位版 `0.0.0-stage` 恒为假 ⇒ 预发布不会移动 `latest`，要改指需显式 `npm dist-tag add` 或等稳定版发布（见 3.5 前置约束 2） |
-| 双语文案长期不同步                     | 英文页无人维护           | 缺失回退 + CI key 完整性校验 + 页面标注英文状态                                                                                                                                                                              |
-| 组件清单与发布范围脱节                 | 发布内容与 README 不一致 | 发布前冻结范围，同步 README 与 `docs/todo.md`                                                                                                                                                                                |
+## 开放事项（仍需推进 / 收口）
+
+> 以下是**版本「已收口」但仍需继续推进**的剩余项，按现状去向整理；每条验收要点以对应归档 / 排期表的原文为准。
+
+- [ ] **0.6.0 承接 · 文档站 NavigationView 化（2.3）**：窗口内 `NavigationView` 重构布局、组件页右栏「本页目录」+ 面包屑 + 「复制链接」、`Ctrl+K` 命令面板式搜索
+- [ ] **页面与内容呈现（2.4）**：组件文档页模板化、示例明暗对照、新增站点页（入门 / 安装 / 设计令牌 / 路线图·更新日志 / 404 空态）、全站新文案走 i18n key
+- [ ] **动效 / 性能 / 无障碍（2.5）**：动效走令牌 + `prefers-reduced-motion`、SSR 安全分级、性能预算、无障碍语义与全键盘可达；对应「验收」见归档
+- [ ] **目标 1 · Lighthouse / axe 实跑**：`<html lang>` 已与水合一致，Lighthouse / axe 尚未实跑
+- [ ] **目标 3 · 发布前质量闸剩余**：publint / attw / `npm pack --dry-run` 已在 CI 落地；**仅 `icons` tarball 体积异类（~43 MB）已知、未处理**
+- [ ] **目标 3 · 其它 0.3 收口项**：冻结发布范围；README 去「尚未发布」并收口版本展示；GitHub Release 改由 `publish` job 建立（含破坏性变更与已知问题清单）
+- [ ] **已知非自动化**：`v<version>` 部署 tag 仍由 `pnpm release:manual` / 手工补推（见 [release.md](./release.md)）
+- [ ] **推后项（记账）**：RTL、第三种语言、翻译平台工作流、组件文档逐页人工润色
 
 ---
 
@@ -362,36 +87,6 @@
 | **L** 自定义绘制 / 动效 / 键盘 | 自定义绘制或完整键盘   | Slider / NumberBox / InfoBadge            | 3 – 5     |
 | **XL** 自持核心 + 多 hook 拆分 | 自持核心逻辑、多 hook  | Combobox / ContentDialog / ScrollView     | 5 – 8     |
 | **基建** 跨组件复用、无视觉    | 跨组件复用、无视觉产出 | `useDisclosure` / Portal / SmokeLayer     | 1 – 2     |
-
-### 0.4.0 · 基建 + 通用件收尾（≈ 12 点）
-
-> 本版是整条链路上**唯一一处「现在做能省掉后面所有返工」**的地方：仓库现有三套各写一遍的浮层实现（Tooltip、Combobox popup、ContentDialog），若不先统一，后续 MenuFlyout / DropDownButton / Select / NavigationView 溢出会把定位与关闭语义再写四遍。
-
-| #     | 内容                                                                                                              | 档位     | 验收要点                                                                                                                        |
-| ----- | ----------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 0.4.1 | `useFlyout` 统一浮层原语（触发器 + Portal + 定位 + 关闭语义 + 焦点归还）                                          | 基建 2   | 关闭路径覆盖 Esc / 外部点击 / 焦点移出；`role=menu` / `menuitem` / `aria-expanded` 契约明确；同时给出**现有三套实现的迁移步骤** |
-| 0.4.2 | z-index 分层刻度（落到 designs 或 themes，禁止组件内硬编码）                                                      | 基建 1   | 刻度显式覆盖：窗口 < 内容区 < 导航浮层 < 菜单 < 子菜单 < 模态遮罩 < 开始菜单 / 任务栏                                           |
-| 0.4.3 | `useFocusVisual` 双层焦点矩形原语（WinUI `FocusVisualPrimary/Secondary`）                                         | 基建 1.5 | 内层 / 外层双层矩形；明暗两态；`NavigationView` / `ListView` 接入时无需各写一套                                                 |
-| 0.4.4 | designs 补令牌：Mica / Acrylic / `SubtleFillColor*` / `LayerFillColorDefault`                                     | 基建 1.5 | 进 `packages/designs` 事实源并写映射注释；禁止组件内就地 `backdrop-filter` 魔法值                                               |
-| 0.4.5 | Input 收尾（password / textarea / header / description）                                                          | M 2      | 勾掉本文档第 0 项；补齐 password 显示按钮与 textarea 形态                                                                       |
-| 0.4.6 | `ToggleButton` / `ToggleGroup`（Button 的 `selected` / `aria-pressed` 可直接迁移）                                | S 1      | 键盘可达；分组单选 / 多选语义                                                                                                   |
-| 0.4.7 | `Select`（复用 reka Select / Listbox）                                                                            | M 2.5    | 与 Combobox 的差异（不可编辑、无文本搜索）写入文档                                                                              |
-| 0.4.8 | 收尾：刷新 `packages/ui/README.md`（现仅列 Button / Input / Combobox，已严重过期）；处理 `apps/playground` 占位包 | 0.5      | —                                                                                                                               |
-
-> **0.4.5 已落地**：Input 收尾（password / textarea / header / description，含「显示」按钮、按住 `Alt+F8` 显示与掩码状态下的复制拦截）。规格源与 Web 取舍见组件契约注释，示例与 API 表见 `apps/docs/content/components/input.md`；本文档第 0 项已勾掉。
-
-> **0.4.0 进展（2026-10-13）**：四件基建 + 一个通用件已落地，逐条要点与证据如下；未做项明确列在末尾。
->
-> - **0.4.2 z-index 刻度（已落地）**：新增 `packages/designs/data/repo-tokens.json`——**仓库自有令牌的旁路事实源**（`extract-tokens.mjs` 只重写 `fluent-tokens.json`，手写值不会再被上游抽取冲掉；重名由 `generate.mjs` 直接抛错拦截）。落 `--zIndexWindow/Content/NavFlyout/Menu/Submenu/Modal/Tooltip/Shell` + `--zIndexStep` 九档，刻度顺序由 `packages/designs/src/repo-tokens.test.ts` 守住。原先四处硬编码（Combobox 下拉 1000、SmokeLayer 1000、ContentDialog 1000、ToolTip 1100）全部改引刻度；`packages/ui/src/__tests__/z-index-tokens.test.ts` 扫描组件样式，禁止再出现裸的浮层 z-index（组件内部局部 stacking 的 `1/2/-1` 白名单放行）。档位口径同步进 AGENTS.md。
-> - **0.4.3 `useFocusVisual`（已落地）**：`packages/ui/src/focus-visual/`（CSS 原语 + composable）。几何与配色逐条对齐 A 级源码：`FocusRectManager.cpp`（primary=外描边、secondary=内描边、连续双环、内层 bounds 收进 firstThickness ⇒ **紧贴无间隙**、`FocusVisualMargin = -3`）+ `Common_themeresources_any.xaml`（亮 外 `#E4000000`/内 `#B3FFFFFF`，暗 外 `#FFFFFF`/内 `#B3000000`），映射到 `--colorStrokeFocus2`（外）/ `--colorStrokeFocus1`（内），alpha 差异记录在文件头；含 `forced-colors` 分支（→ `CanvasText`/`Canvas`）。Button 已试点：原单层 brand outline 换成双层矩形。
-> - **0.4.1 `useFlyout`（已落地）**：`packages/ui/src/flyout/`（`use-flyout.ts` + `layer-stack.ts`）。关闭路径 Esc / 外部 pointerdown / 焦点移出全覆盖并带 `FlyoutCloseReason`；焦点归还、`aria-expanded` / `aria-haspopup` / `role` / `aria-modal` 契约齐备；**层级栈**解决平面刻度表达不了的「模态里的下拉必须盖过模态」——z 表达式全程引用 token（`var(--zIndexNavFlyout)` / `calc(var(--zIndexModal) + var(--zIndexStep))`）。Tooltip / Combobox / ContentDialog 三套实现已接上层级栈，接线与「关闭语义仍由 reka / 自研逻辑负责」的分工由 `packages/ui/src/__tests__/flyout-migration.test.ts` 与组件注释固定。SSR 侧刻意**不在 setup 期登记层级**（避免模块级栈跨请求污染与首帧水合不匹配），服务端与首帧由组件样式表缺省值兜底，`use-flyout.test.ts` 有断言。
-> - **0.4.4 材质令牌（已落地）**：Mica / Acrylic / Layer / Subtle / Smoke 共 20 个 token 进 `repo-tokens.json`，值取 `Common_themeresources_any.xaml` 与 `Materials/Acrylic/AcrylicBrush_themeresources.xaml`（tag `winui3/release/2.5.1`），AARRGGBB → CSS 的换算与原值逐条写在 token 的 `note` 里；`kind: 'color'` 的令牌同时进 UnoCSS 颜色刻度（`bg-micaBackgroundFillColorBase` 可用）。Mica 本体由系统 DWM 绘制、公开源码树没有对应 Color 资源这一事实已记录（纯色基准取 `SolidBackgroundFillColor*`），真正的材质合成属 0.9.1 / 0.9.2。
-> - **0.4.6 `ToggleButton`（已落地）**：SFC + 契约测试（19）+ 中英文档页 + 3 个示例 + i18n key + 组件索引/导航条目。状态表逐条对齐 `CommonStyles/ToggleButton_themeresources.xaml`（未选中 `ControlFillColor*`、选中 `AccentFillColor*` → `--colorBrandBackground` 三档、选中前景 `TextOnAccentFillColorPrimaryBrush` → `--colorNeutralForegroundOnBrand`、不确定态与未选中同源）；三态循环对齐 `ToggleButton_Partial.cpp#OnToggleImpl`（`Indeterminate → Unchecked`、`Checked + IsThreeState → Indeterminate`）；过渡只走背景 83ms（模板 `BrushTransition Duration=0:0:0.083`，前景 / 描边是 `DiscreteObjectKeyFrame` 瞬切）；Fluent 无同值档的 `AccentFillColorDisabledBrush` / `TextOnAccentFillColorDisabledBrush` / `TextOnAccentFillColorSecondaryBrush` 落三个组件局部变量并记 WinUI 原值；焦点复用 0.4.3 原语。
-> - **0.4.6 `ToggleGroup`（已落地）**：`FluereToggleGroup` / `FluereToggleGroupItem`（reka `ToggleGroup` + `RovingFocusItem` 底座）、22 个契约测试、中英文档页、4 个示例。WinUI **没有** ToggleGroup 控件（`git ls-tree` 实测 34 个 ToggleButton、0 个 ToggleGroup），所以视觉以 WinUI `ToggleButton` 为准、分组语义按 WAI-ARIA + reka 契约，容器间距 4px 为库内自定——取舍逐条写进组件注释与文档；单选「再点取消」沿用 reka/ARIA 语义，文档给了「必须选中一项」的一行回退配方。
-> - **真实浏览器实测（0.4.0 的新增证据，脚本与截图为过程产物，留在 `temp/`）**：① 焦点矩形 Button 上 `:focus-visible` 命中，亮色 = 外 2px `rgb(0,0,0)` + 内 1px `rgb(255,255,255)`、暗色相反，`outline-offset: 1px`（紧贴无间隙）；② 三处浮层 inline 层级生效——Combobox 下拉 `z-index: var(--zIndexNavFlyout)` → 计算值 1000、Tooltip `var(--zIndexTooltip)` → 1400、ContentDialog 根 `var(--zIndexModal)` → 1300（遮罩 1300）；③ ToggleButton 选中态底色实测 `rgb(15, 108, 189)` = `--colorBrandBackground`。**这次实测抓到一个单测抓不到的真 bug**：`useFlyout` 返回的是 ref 对象，模板里写 `:style="flyout.layerStyle"` 不会自动解包嵌套 ref，Combobox / ContentDialog 的层级其实一直没生效（只有 CSS 回退值在兜底，肉眼与测试都像对的）；已改为解构到顶层 ref，并在 `flyout-migration.test.ts` 加了「模板不得直接引用 `flyout.layerStyle`」的守卫。
-> - **0.4.7 `Select`（已落地）**：`packages/ui/src/select/`——不可编辑下拉，底座 reka `Select`，视觉规格取 WinUI `ComboBox` **非编辑形态**（`src/controls/dev/ComboBox/ComboBox_themeresources.xaml`，该文件不在稀疏检出里，用 `git -C temp/winui-src show <tag>:<path>` 取）；14 个契约测试 + 中英文档页 + 3 个示例 + 组件索引/导航条目。触发面 / 下拉项 / 面板全部复用 `FluereCombobox` 非编辑形态的 token 口径，层级走 0.4.1 的 `useFlyout`、焦点走 0.4.3 的 `useFocusVisual`；面板样式写在**非 scoped** 块（Teleport 拿不到 `data-v-*`）。与 Combobox 的差异（不可编辑 / 无文本搜索 / 事件载荷）写进文档表格。
-> - **0.4.8 收尾（已落地）**：① `packages/ui/README.md` 组件索引补齐 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect`，并新增《共享原语（0.4.0 基建）》表；② `apps/playground` 从占位包落地为可跑的 Vite 视觉回归页（`pnpm --filter @fluere-vue/playground dev`，默认 60728）——一屏陈列 Wave 1 表单 + 按钮族（含 ToggleButton 三态 / ToggleGroup 单选多选）+ 反馈 + 浮层 + 明暗切换，并把《视觉自检清单》写进该包 README；③ 新增 changeset `.changeset/forty-jars-float.md` 记录 0.4.0 全部变更。实测：playground 页面无控制台错误、ContentDialog 打开时 `z-index` 计算值 1300、Esc 可关闭、主题切换生效。
-> - **0.4.8 → 0.5.0 遗留项收尾（2026-10-14）**：① 组件进度表**逐条复核已完成**——根 [README.md](../README.md) 补上此前缺失的 `FluereToggleButton` / `FluereToggleGroup` / `FluereSelect` 三行（并把 `FluereButton` 的 WinUI 映射由「Button / ToggleButton」收敛为「Button」，ToggleButton 归其独立组件），`packages/ui/README.md` 索引与 `index.ts` 导出逐条核对一致；② `FluereButton` 过渡**已统一到 A 级口径**——由 `--durationFast`(150ms) 三项改为 `background-color 83ms linear`（A 级来源 `src/controls/dev/CommonStyles/Button_themeresources.xaml`，与 `FluereToggleButton` 同款，契约测试守住），并删掉 `FluereToggleButton` 里「FluereButton 与 A 级有偏差（待统一）」的过时注释；③ 发布动作（changeset 消费 / 版本号推进 / 打 tag）**仍未执行**——本轮范围只到代码与文档收尾，发布按《发布检查（0.4.0 起）》单独走。
 
 ### 0.5.0 · Explorer 骨架（≈ 17 点组件 + 11 点文档站）
 
@@ -518,14 +213,6 @@
 | `useFocusVisual`                       | 双层矩形的明暗 / 高对比度表现                                        | 0.4.0    |
 | `ItemContainer`                        | 状态表与 WinUI `ListViewItem` 模板逐条对照                           | 0.7.0    |
 | `useSelection` / `useMarqueeSelection` | 与自动滚动、Shift 区间、键盘选择的叠加行为                           | 0.7.0    |
-
-### 0.4.0 开工前置（必做，否则整条排期不成立）
-
-- [x] **核对 WinUI 源码快照**：本地 `temp/winui-src` 已固定 tag `winui3/release/2.5.1`（commit `ba3a8d5`），与 [style-spec §2](./style-spec.md#2-版本地图先对版本再读代码) 的版本地图一致；本仓库是**稀疏检出**（`CommonStyles/` + `ProgressBar/` + `ProgressRing/`），0.4.4 需要的 `src/controls/dev/Materials/Acrylic/AcrylicBrush_themeresources.xaml` 已按需 `git show <tag>:<path>` 取到并落成 token（见 `packages/designs/data/repo-tokens.json` 的 `sources.materials`）。**风险记录**：本机到 github.com 的连通性不稳定（partial clone 补 blob 曾报 GnuTLS 失败），遇到取不到的 blob 时按「证据缺口」流程标注，不猜值。
-- [x] **确认 0.3 版本的三条主线状态**（结论，2026-10-13）：① i18n **基本收口**，仅剩 sitemap 按语言拆分与 Lighthouse / axe 实跑，均不阻塞 0.4.0；② 文档站 WindowsOS 仿真化**未开工**，按排期它就是 0.5.0 的布局基建（`DesktopShell` / `Taskbar` / `StartMenu`），不属于 0.4.0；③ 自动发版流程差**人工动作**（npmjs.com 给六个包配 Trusted Publisher + 合并 release PR），与 0.4.0 编码并行，不作为组件 PR 的合并前置。构件归属与 i18n key 约定不受影响。
-- [x] **确定文档站仿真的范围边界文案**：已写入 [apps/docs/README.md](../apps/docs/README.md) 的《WindowsOS 仿真边界（0.4.0 起，呈现在文档站可见处）》——仿真到什么程度 / 明确不做 / 移动端降级 / 构件归属 / 工作量口径五条，与根 README「不夸大承诺」一致
-- [x] **明确构件归属**：窗口外壳 / caption 按钮组合 / 任务栏 / 开始菜单 / 系统托盘属**应用级组合**，落在 `apps/*`；只有通用 WinUI 控件才进 `@fluere-vue/ui`（`FluereAppWindow` / `FluereCaptionButtons` 的组件本体在库内，桌面与任务栏的组装留在站点）——已记入 `apps/docs/README.md`
-- [x] **文档站工作量单独统计**：0.5.0 表已分列「≈ 17 点组件 + 11 点文档站」，口径继续沿用（本次未新增站点外壳工作）
 
 ### 发布检查（0.4.0 起，每个 minor 版本执行）
 

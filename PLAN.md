@@ -90,7 +90,7 @@
 
 ## 阶段 7 · 发版 0.5.0
 
-1. 执行《发布检查（0.4.0 起，每个 minor 版本执行）》8 项清单（`docs/todo.md` 492–502 行）。
+1. 执行《发布检查（0.4.0 起，每个 minor 版本执行）》8 项清单（见 [docs/todo.md《发布检查》](docs/todo.md#发布检查040-起每个-minor-版本执行)）。
 2. 发版走 `fluere-release` 技能十步链路（README 版本指引 → seed 基版本 + changeset → `pnpm check && pnpm test` → 推 GitHub → Actions 验证 → 合并 release PR → npm 验证 → OneDev 分支先推 / 部署 tag 后推 → 发布后验证），版本策略与回滚以 `docs/release.md` 为准。
 3. 关键红线：**seed ≠ 发布**（`v*` 部署 tag 不复用已发布版本号）；预发布只落 `alpha`、不动 `latest`；`v<VERSION>` 部署 tag 手工注解打在发布提交上；OneDev **分支先推、tag 后推**。
 

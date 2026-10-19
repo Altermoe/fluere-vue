@@ -2,7 +2,7 @@
 
 > 状态：**0.5.0 已锁定**（2026-10-14）。本文档是 `docs/todo.md`《0.5.0 · Explorer 骨架》明文要求「必须先在 0.5.0 定下来」的五项布局假设的**唯一事实源**。
 >
-> 依据：`docs/todo.md` 0.5.0 节（第 391–409 行）、[AGENTS.md](../../AGENTS.md)〈交互与弹层组件约定〉、[docs/style-spec.md](../style-spec.md)、[docs/ssr-guide.md](../ssr-guide.md)。规格源 = `microsoft-ui-xaml` tag **`winui3/release/2.5.1`**（commit `ba3a8d5`）。
+> 依据：[docs/todo.md《0.5.0 · Explorer 骨架》](../todo.md#050--explorer-骨架-17-点组件--11-点文档站)、[AGENTS.md](../../AGENTS.md)〈交互与弹层组件约定〉、[docs/style-spec.md](../style-spec.md)、[docs/ssr-guide.md](../ssr-guide.md)。规格源 = `microsoft-ui-xaml` tag **`winui3/release/2.5.1`**（commit `ba3a8d5`）。
 >
 > **变更流程**：五项假设一旦改动，必须**先回写本文档**（含新的证据出处）再改代码；实现对不上本文档时以本文档为准，除非同时给出 A 级源码反证。
 
