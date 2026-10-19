@@ -50,6 +50,8 @@ pnpm lint:ssr       # SSR 兼容性扫描
 pnpm release:manual # 本地手动发布 @fluere-vue/*（首发 bootstrap；CI 自动发布走 .github/workflows/release.yml）
 ```
 
+> **✅ 每次任务后必须全检查通过再收工 / 提交**：任何改动（代码 / 文档 / 测试 / 样式，含纯格式调整）落盘后，**必须**完整跑一遍 `pnpm check`（lint + format + tsc + i18n:check + version:check）与 `pnpm test`、`pnpm lint:ssr`，**三条全绿才算完成**，然后才能提交。`lint` 有警告、`format --check` 有非 0、`tsc` 有类型错误都不能提交——先修复再提交，不允许用 `--no-verify` / 跳过检查的方式绕过。
+
 ## 标准开发流程（新增 / 修改组件）
 
 1. **定规格**：按 [style-spec §2/§3](./docs/style-spec.md#2-版本地图先对版本再读代码) 对齐版本，再按 §4 顺序读 `*.xaml` / `*_themeresources.xaml` / `*.idl` / `*.cpp` / `AnimatedVisuals/*.cpp`，把状态表、尺寸、动效关键帧抄成注释里的"对照清单"。**模板结构也是规格**：源模板里有几层、有没有箭头/Pointer、内容是否换行，都要照抄（ToolTip 就是"模板只有一个 `ContentPresenter`，所以不画箭头"）。

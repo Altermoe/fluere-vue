@@ -431,6 +431,21 @@
 
 **里程碑**：能打开一个空 Explorer 窗口，导航可折叠、视图可切换，`/os` 可挂载桌面外壳。
 
+> **0.5.0 发布记录（2026-10-16，`0.5.0-alpha.1`，全程实测）**：代码侧完成后按 [fluere-release 技能](../../.dsh/skills/fluere-release/SKILL.md) 收口，版本算术先用一次性副本演练（seed `0.5.0-alpha.0` + `patch` changeset → 根与六包同为 `0.5.0-alpha.1`）。
+>
+> | 环节              | 实测结果                                                                                                                                                                                                                                                                                                                         |
+> | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | 前置记录修补      | 3.5〈自动发版流程〉回写为已完成（含 0.4.0 / 0.4.1 两次 CI 自动发布与 OIDC provenance 证据）；版本地图与本章 0.5.8 / 0.5.9 两行补齐                                                                                                                                                                                               |
+> | changeset         | `.changeset/bright-walls-cheer.md`（六包 `patch`，正文 = 0.5.0 对外变更），已随 release 分支消费进 `.changeset/pre/`                                                                                                                                                                                                             |
+> | GitHub release PR | [PR #6](https://github.com/Altermoe/fluere-vue/pull/6)（`changeset-release/main`）；`version` run [38892736249](https://github.com/Altermoe/fluere-vue/actions/runs/38892736249) bump 六包到 `0.5.0-alpha.1`，分支上根 + 六包版本逐条核对一致 ⇒ 快进合并为发布提交 **`d08d55c`**                                                 |
+> | npm 自动发布      | `Release` run [38893392741](https://github.com/Altermoe/fluere-vue/actions/runs/38893392741)：`select-mode` 判 `publish` → `pack` + `publish` 全绿（OIDC，无 `NPM_TOKEN`）；六包 `0.5.0-alpha.1` 版本端点全 **200**，`alpha` dist-tag 指向它，`latest` 仍停在 `0.3.0-alpha.2`（预期）；每包 `/-/npm/v1/attestations` 各 2 份证明 |
+> | git tag           | 六个逐包 tag `@fluere-vue/<pkg>@0.5.0-alpha.1` 由 `changeset publish` 建于 `d08d55c`；部署注解 tag `v0.5.0-alpha.1` 手工打于同一提交                                                                                                                                                                                             |
+> | OneDev CI/CD      | 分支 4 job（build #104 / test #105 / package-smoke #106 / check #107）与 tag 5 job（build #108 / check #109 / test #110 / package-smoke #111 / deploy #112）**全绿**；`deploy` 日志含 `[deploy] 健康检查通过：v0.5.0-alpha.1 已上线`                                                                                             |
+> | 文档站            | `https://fluere-vue.nahida.space/` 与 `/en` 均 200，`docsVersion:"v0.5.0-alpha.1"`                                                                                                                                                                                                                                               |
+> | git refs          | GitHub 与 OneDev 的 `main`、`v0.5.0-alpha.1`、六个逐包 tag 全部指向 `d08d55c`                                                                                                                                                                                                                                                    |
+>
+> 本次新踩到的两个 OneDev push 陷阱（403 的两种成因：`GIT_ASKPASS` 用户名非真实用户、反代拒绝带 `Content-Length` 的 POST 体）已记进 [docs/release.md](./release.md) 与技能踩坑清单。
+
 ### 0.6.0 · 地址栏 + 命令层（≈ 17 点）
 
 | #     | 内容                                                                    | 档位  | 验收要点                                                                                             |

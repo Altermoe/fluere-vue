@@ -43,6 +43,16 @@ const sfcStyle = styleBlock(sfc)
 const itemsStyle = styleBlock(itemsSfc)
 const cssStripped = stripComments(css)
 
+/**
+ * 读取面板开关按钮的宽度（`--fui-navigation-view-toggle-button-width`）。
+ * 该值按 UpdatePaneToggleSize 的三条分支取值（上游 NavigationView.cpp:4605-4645），
+ * 放模块作用域以契合 consistent-function-scoping。
+ */
+const widthOf = (host: VueWrapper): string =>
+  (host.find('.fui-navigation-view').element as HTMLElement).style.getPropertyValue(
+    '--fui-navigation-view-toggle-button-width',
+  )
+
 let wrapper: VueWrapper | undefined = undefined
 afterEach(() => {
   // attachTo 的用例不要在体内清空 document.body（Vue 卸载会找不到宿主）
@@ -313,10 +323,6 @@ describe('pane 开合状态机', () => {
   it('开关按钮宽按 UpdatePaneToggleSize 规则：无标题 = CompactPaneLength，有标题 = 面板宽', () => {
     // 真实浏览器实测发现的偏差：原实现恒 40，带 pane-title 时标题被挤扁。
     // 上游 NavigationView.cpp:4605-4645 的三条分支（见组件内 toggleButtonWidth 的注释）。
-    const widthOf = (host: VueWrapper): string =>
-      (host.find('.fui-navigation-view').element as HTMLElement).style.getPropertyValue(
-        '--fui-navigation-view-toggle-button-width',
-      )
 
     // ① 无 paneTitle ⇒ TemplateSettings.PaneToggleButtonWidth = CompactPaneLength(48)
     wrapper = makeHost({ viewProps: { paneDisplayMode: 'left', defaultIsPaneOpen: true } })
@@ -494,7 +500,7 @@ describe('折叠态（ListSizeCompact）UI 回归', () => {
     expect(divider).toMatch(/inline-size:\s*var\(--strokeWidthThin\)/)
     expect(divider).toMatch(/background-color:\s*var\(--dividerStrokeColorDefault\)/)
     // 物理方向属性会画错边 —— 负面断言守住这条
-    expect(divider).not.toMatch(/(^|[^-])right:\s*0;/)
+    expect(divider).not.toMatch(/(?:^|[^-])right:\s*0;/)
     // 浮层态仍要有 --shadow16
     expect(sfcStyle).toMatch(
       /\.fui-navigation-view__pane\.is-overlaying\s*\{[^}]*var\(--shadow16\)/,
