@@ -79,6 +79,15 @@ export default defineNuxtConfig({
   content: {
     // 用 Node 原生 sqlite（v22.5+），避免 pnpm 原生构建脚本被禁导致的 better-sqlite3 绑定问题
     experimental: { sqliteConnector: 'native' },
+    // 正文标题锚点：文档站正文区由 ScrollView（transform 表达偏移）承载滚动，
+    // 原生 hash 锚点（URL `#…`）在这里不会触发滚动（`scrollTop` 恒为 0），
+    // 故关闭 h2 一级的锚点链接，让其渲染为普通文本；h3 / h4 仍保留锚点。
+    // （scroll-view 文档顶部有 InfoBar 说明该缺陷，详见该页。）
+    renderer: {
+      anchorLinks: {
+        h2: false,
+      },
+    },
     build: {
       markdown: {
         highlight: {

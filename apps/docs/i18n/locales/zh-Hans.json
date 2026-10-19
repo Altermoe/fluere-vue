@@ -555,6 +555,10 @@
         "labelVisible": "visible（常驻）",
         "labelHidden": "hidden（仍可滚动）"
       },
+      "hashWarning": {
+        "title": "正文标题的 hash 锚点暂不可用",
+        "message": "本站正文区由 ScrollView（transform 表达偏移）承载滚动，原生 hash 锚点（#…）因此失效，点击 h2 小节标题不会跳转到对应位置。此问题暂不修复，标题已改为普通文本。"
+      },
       "horizontal": {
         "label": "卡片 {index}"
       },

@@ -122,15 +122,19 @@
   border-radius: var(--borderRadiusSmall);
 }
 
-/* 标题锚点：MDC 默认给 h1~h4 生成锚点链接（`heading.anchorLinks` 默认
-   h1~h4 为 true，本项目未覆盖该默认值），渲染成
-   `<h2><a href="#…">标题文字</a></h2>`。锚点必须与标题同色、去掉下划线，
-   否则 h2 会整条变成链接蓝、把刚刚建立的标题层级又打乱。
+/* 标题锚点：锚点由 MDC 的 `headings.anchorLinks`（@nuxt/content 通过
+   `content.renderer.anchorLinks` 透传）决定。文档站正文区由
+   ScrollView（transform 表达偏移、非原生滚动容器）承载，原生 hash 锚点
+   （URL `#…`）不会触发滚动（`scrollTop` 恒为 0），因此 h2 的锚点已在
+   nuxt.config.ts 关闭（`anchorLinks.h2: false`），h2 渲染为**普通文本**；
+   h3 / h4 仍保留锚点，渲染成 `<h3><a href="#…">标题文字</a></h3>`。
+   锚点必须与标题同色、去掉下划线，否则标题会整条变成链接蓝、把刚建立的层级打乱。
 
    注意**规则顺序**：`:where()` 权重为 0，这条与上面的 `.docs-prose :where(a)`
    权重完全相同，全靠源码先后决胜 —— 所以必须写在链接规则**之后**。
    颜色交给 `color: inherit` 从标题继承（标题已由上面的 h1~h6 规则着色），
-   因此也不会被上面 `a:hover` 的品牌色带跑。 */
+   因此也不会被上面 `a:hover` 的品牌色带跑。选择器保留 h1 ~ h4 全表覆盖，
+   以免未来某级重新开启锚点时样式漏掉。 */
 .docs-prose :where(h1 a, h2 a, h3 a, h4 a) {
   color: inherit;
   text-decoration-line: none;

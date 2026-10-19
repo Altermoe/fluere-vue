@@ -10,6 +10,8 @@ nav:
 A container control aligned with the WinUI 3 `ScrollView`: when content exceeds the viewport it scrolls, pans, and zooms, with scrollbars styled like WinUI 3's
 overlay style (a 2px thin thumb that appears once the pointer enters the container; when the pointer moves onto the scrollbar the thumb thickens to 6px, the pill-shaped track expands along with the step buttons at both ends, then collapses when the pointer leaves, and the whole thing fades out after 2s without interaction).
 
+:ScrollViewHashWarning
+
 ## Basic usage (vertical)
 
 By default `content-orientation="vertical"`; the wheel / touch panning / dragging the scrollbar can all scroll.

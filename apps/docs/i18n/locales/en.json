@@ -565,6 +565,10 @@
         "labelVisible": "visible (always shown)",
         "labelHidden": "hidden (still scrollable)"
       },
+      "hashWarning": {
+        "title": "Section heading hash anchors are unavailable",
+        "message": "The page body scrolls in a ScrollView driven by transform offsets, so native hash anchors (#…) do not work and a section heading link cannot jump to its position. This issue is not fixed for now; the h2 headings have been changed to plain text."
+      },
       "horizontal": {
         "label": "Card {index}"
       },
