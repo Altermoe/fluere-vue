@@ -25,7 +25,8 @@
   ],
   "type": "module",
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "./index.ts"
   ],
   "main": "./index.ts",
   "module": "./index.ts",

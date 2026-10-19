@@ -201,6 +201,18 @@ jobs:
             pnpm install --frozen-lockfile --store-dir .pnpm-store
             NUXT_PUBLIC_DOCS_VERSION="$CI_TAG" pnpm docs:generate
             du -sh apps/docs/.output/public
+            # 全局 CSS 防回归：`@fluere-vue/ui` 入口的 bare CSS 副作用导入一度被 Rolldown
+            # tree-shake（`sideEffects` 只写 "**/*.css" 时），产物里全局样式全丢 ——
+            # 症状是 `/os` 仿真桌面的侧边栏（NavigationView 行视觉）与全站焦点环静默退回
+            # 浏览器默认样式，而 dev 完全正常。这里直接对产物断言这两段非 scoped 视觉存在。
+            # 判据与修法见 docs/adr/0001-library-build-tooling.md §4.2。
+            for needle in fui-navigation-view__item fui-focus-visual; do
+              if ! cat apps/docs/.output/public/_nuxt/*.css | grep -q "$needle"; then
+                echo "[ci] docs 产物 CSS 缺少全局样式 $needle（包入口全局 CSS 被 tree-shake？见 ADR-0001 §4.2）" >&2
+                exit 1
+              fi
+            done
+            echo "[ci] global CSS present in docs build"
             # tag 构建顺带断言版本号真的注入了产物，避免「tag 打了、页面还是旧版本」；
             # 第二条防回归：徽标曾渲染成 vv0.0.1（NUXT_PUBLIC_* 的覆盖绕过 config 里的去前缀），
             # 现在归一在 useDocsVersion()，产物里不允许再出现重复前缀。

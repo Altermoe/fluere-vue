@@ -76,6 +76,33 @@ tsdown / unbuild），**先做 spike 再以 ADR 定结论**。
 
 `ui` 的 `./style.css` 是例外：它只存在于构建产物，仓库内仍指向 `./dist/style.css`；
 开发态样式由 Vite 直接从各 SFC 注入（含 `designs/generated/tokens.css`），无需该入口。
+源码入口的**全局 CSS 副作用导入**另有一套 `sideEffects` 要求，见 §4.2。
+
+### 4.2 源码入口的全局 CSS：入口文件必须写进 `sideEffects`（Vite 8 / Rolldown）
+
+`ui` 的入口 `index.ts` 顶部有三个「只为副作用」的 CSS 导入
+（`@fluere-vue/designs/tokens.css`、`./src/focus-visual/focus-visual.css`、
+`./src/navigation-view/navigation-view.css`）。只声明 `sideEffects: ["**/*.css"]` 不够：
+
+- Rolldown（Vite 8 的打包器）的 DCE 语义（[docs/in-depth/dead-code-elimination.md](https://rolldown.rs/in-depth/dead-code-elimination.md)）：
+  `sideEffects` 只说明「该文件被当作有副作用」；而 `index.ts` 的导出**全部是 re-export**，
+  消费方只 `import { FluereButton }` 时，Rolldown 判定入口模块「自己的导出没有被使用」，
+  于是把入口的语句（**含 bare CSS import**）按无副作用消除 —— CSS 自身的 `sideEffects`
+  标记不参与入口这一层判定，救不回来。
+- 症状：**dev 正常、生产构建静默丢样式**。2026-10-19 实测 `pnpm docs:generate` 产物里
+  三个全局 CSS 一个都没进产物；`/os` 仿真桌面的侧边栏（`FluereNavigationView` 行视觉）
+  与全站焦点环退回浏览器默认样式，而组件 scoped 样式仍在（scoped 由 SFC 自导入，不经包入口）。
+  修复前实测：行 `min-block-size: 0px` / `font-size: 16px` / 无选中底色；修复后
+  `36px` / `14px` / `rgba(0, 0, 0, 0.035)`（= `--subtleFillColorSecondary`）。
+- 修法：`"sideEffects": ["**/*.css", "./index.ts"]` —— 入口因为加载全局 CSS 本来就有副作用。
+  **不要**改成 `true`（关掉整包 JS tree-shake），也**不要**去掉 `**/*.css`（显式
+  `import '@fluere-vue/ui/style.css'` 的消费方仍依赖它被标记为有副作用）。
+- 回退防线：`packages/ui/src/__tests__/package-side-effects.test.ts` 守包元数据；
+  CI 的 `generate docs site` 步骤在产物上断言 CSS 确实含
+  `.fui-navigation-view__item` 与 `.fui-focus-visual`（端到端，防「元数据对了但构建仍丢」）。
+- 已知代价：docs 站的 token 另经 UnoCSS `presetFluere` preflight 注入，修复后产物里
+  token 定义出现两份（`entry.*.css` + `ui.*.css`，≈ +30 KB 未压缩 / +5.3 KB gzip）。
+  与「样式丢失」相比可接受；要省掉这一份需让 docs 停用 preflight 的 token 注入，另案处理。
 
 ### 5. 版本策略：所有 `@fluere-vue/*` 统一版本号
 
@@ -96,4 +123,5 @@ tsdown / unbuild），**先做 spike 再以 ADR 定结论**。
   运行时 JS 为单文件 bundle（相对导入已内联或带 `.js` 扩展），故本仓库把它记为**已知、可接受**的技术债，
   不作为发布阻断；若未来要 Node16 原生类型消费，改为源码用显式 `.js` 扩展名（破坏面大，暂缓）。
 - **CSS**：`ui` 的组件 scoped 样式 + `designs/tokens.css` 在构建时被抽成 `dist/style.css`，
-  消费端需 `import '@fluere-vue/ui/style.css'`（`sideEffects: ["**/*.css"]` 保证 JS 可 tree-shake）。
+  消费端需 `import '@fluere-vue/ui/style.css'`（`sideEffects: ["**/*.css", "./index.ts"]`
+  保证 JS 可 tree-shake，同时保住源码入口的全局 CSS 副作用导入，理由见 §4.2）。
