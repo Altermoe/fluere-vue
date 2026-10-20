@@ -25,6 +25,11 @@ import { FOCUS_VISUAL_CLASS, useFocusVisual } from './src/focus-visual/use-focus
 import FluereInfoBadge from './src/info-badge/info-badge.vue'
 import FluereInfoBar from './src/infobar/infobar.vue'
 import FluereInput from './src/input/input.vue'
+import FluereMenuFlyoutItem from './src/menu-flyout/menu-flyout-item.vue'
+import FluereMenuFlyoutSeparator from './src/menu-flyout/menu-flyout-separator.vue'
+import FluereMenuFlyoutSubItem from './src/menu-flyout/menu-flyout-sub-item.vue'
+import FluereMenuFlyoutToggleItem from './src/menu-flyout/menu-flyout-toggle-item.vue'
+import FluereMenuFlyout from './src/menu-flyout/menu-flyout.vue'
 // 内置「设置」项的保留哨兵值（消费方需要它来判断「选中的是不是设置项」，见 types.ts）
 import { FLUERE_NAVIGATION_SETTINGS_VALUE } from './src/navigation-view/context'
 import FluereNavigationViewItemHeader from './src/navigation-view/navigation-view-item-header.vue'
@@ -61,6 +66,11 @@ export {
   FluereInfoBadge,
   FluereInfoBar,
   FluereInput,
+  FluereMenuFlyout,
+  FluereMenuFlyoutItem,
+  FluereMenuFlyoutSeparator,
+  FluereMenuFlyoutSubItem,
+  FluereMenuFlyoutToggleItem,
   FluereNavigationView,
   FluereNavigationViewItem,
   FluereNavigationViewItemHeader,
@@ -159,6 +169,15 @@ export type {
 } from './src/infobar/types'
 export type { FluereInputProps } from './src/input/input.vue'
 export type { FluerePasswordRevealMode } from './src/input/types'
+export type {
+  FluereMenuFlyoutCloseReason,
+  FluereMenuFlyoutItemProps,
+  FluereMenuFlyoutPlacement,
+  FluereMenuFlyoutProps,
+  FluereMenuFlyoutSelectEventArgs,
+  FluereMenuFlyoutSubItemProps,
+  FluereMenuFlyoutToggleItemProps,
+} from './src/menu-flyout/types'
 export type {
   FluereNavigationDisplayMode,
   FluereNavigationDisplayModeChangedEventArgs,

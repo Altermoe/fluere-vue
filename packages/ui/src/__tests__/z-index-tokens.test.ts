@@ -79,6 +79,10 @@ describe('z-index 分层刻度契约', () => {
       ['/overlay/smoke-layer.vue', ['--fui-smoke-z: var(--zIndexModal)']],
       ['/content-dialog/content-dialog.vue', ['--fui-content-dialog-z: var(--zIndexModal)']],
       ['/tooltip/tooltip-fixture.vue', ['--fui-tooltip-z: var(--zIndexTooltip)']],
+      [
+        '/menu-flyout/menu-flyout.vue',
+        ['z-index: var(--zIndexMenu)', 'z-index: var(--zIndexSubmenu)'],
+      ],
     ]
     for (const [file, snippets] of expectations) {
       const css = readFileSync(join(srcDir, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')

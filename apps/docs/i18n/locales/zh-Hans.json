@@ -38,7 +38,8 @@
       "toggle-group": "一组切换按钮：单选 / 多选，方向键在组内移动焦点，视觉以 WinUI ToggleButton 为准。",
       "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。",
       "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。",
-      "navigation-view": "左侧可折叠导航面板：分组、选中指示条、内置设置项，键位对齐 WinUI NavigationView。"
+      "navigation-view": "左侧可折叠导航面板：分组、选中指示条、内置设置项，键位对齐 WinUI NavigationView。",
+      "menu-flyout": "命令菜单浮层：条目 / 子菜单 / 勾选项 / 分隔线，键盘与层级对齐 WinUI MenuFlyout。"
     }
   },
   "theme": {
@@ -198,6 +199,55 @@
         "none": "不可更改",
         "emptyHeader": "空列表",
         "emptyHint": "没有可选项"
+      }
+    },
+    "menu-flyout": {
+      "common": {
+        "on": "开",
+        "off": "关"
+      },
+      "basic": {
+        "menuLabel": "新建",
+        "trigger": "新建 ▾",
+        "folder": "文件夹",
+        "document": "文本文档",
+        "image": "图片",
+        "more": "更多…",
+        "statusLine": "最近一次命令：{action}",
+        "hint": "点击触发器展开菜单；条目支持图标、分隔线与选中回调。"
+      },
+      "submenu": {
+        "menuLabel": "视图",
+        "trigger": "视图 ▾",
+        "refresh": "刷新",
+        "sort": "排序方式",
+        "sortByName": "按名称",
+        "sortByDate": "按日期",
+        "more": "更多",
+        "sortBySize": "按大小",
+        "sortByType": "按类型",
+        "details": "详细信息",
+        "statusLine": "最近一次命令：{action}",
+        "hint": "悬停子项或按 → / Enter 展开；子菜单内按 ← / Esc 只关当前层。"
+      },
+      "toggle": {
+        "menuLabel": "显示",
+        "trigger": "显示 ▾",
+        "hidden": "显示隐藏文件",
+        "extensions": "显示文件扩展名",
+        "refresh": "刷新",
+        "properties": "属性（禁用）",
+        "statusLine": "隐藏文件：{hidden} · 扩展名：{extensions}"
+      },
+      "anchor": {
+        "menuLabel": "更多操作",
+        "primary": "新建",
+        "more": "更多新建选项",
+        "folder": "文件夹",
+        "document": "文本文档",
+        "archive": "压缩文件",
+        "statusLine": "最近一次命令：{action}",
+        "hint": "无触发器模式：由父组件在锚点处调用 showAt()（SplitButton 的消费姿势）。"
       }
     },
     "toggle-button": {

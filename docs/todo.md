@@ -152,6 +152,12 @@
 | 0.6.5 | `BreadcrumbBar`（`> _ >` 折叠规则 + 下拉可展开）                        | L 3.5 | 折叠判据按实际测量而不是固定断点                                                                     |
 | 0.6.6 | `SearchBox`（Input + 内嵌图标位）                                       | S 1   | 可访问名与清除按钮行为明确                                                                           |
 
+> **0.6.1 进度记录（`MenuFlyout` 族已落地，2026-10-20；用户当日会话授权更新进度，未改验收口径）**
+>
+> - **交付**：`packages/ui/src/menu-flyout/` —— `FluereMenuFlyout` + `FluereMenuFlyoutItem` / `…SubItem` / `…Separator` / `…ToggleItem`（对 WinUI `MenuFlyoutItem` / `MenuFlyoutSubItem` / `MenuFlyoutSeparator` / `ToggleMenuFlyoutItem`）。根组件支持**触发器模式**（默认插槽 = 触发元素，内容走 `#content`）与**锚点模式**（`anchor` Prop / `showAt(el)`，SplitButton / DropDownButton 的消费姿势），受控 / 非受控开合都支持。规格逐条对齐 A 级 tag `winui3/release/2.5.1`：presenter 几何（`OverlayCornerRadius` 8 / Padding 0,2,0,2 / MinWidth 96 / MinHeight 32 / 纵向滚动）、条目 Padding 11,8,11,9 + Margin 4,2,4,2、分隔线 1px `DividerStrokeColorDefault`、面板级图标 / 勾选列占位（28 / 56px，每个 presenter 独立统计）、状态画刷（`SubtleFillColorSecondary/Tertiary` + `TextFillColorDisabled`），以及 `MenuPopupThemeTransition_Partial.h` 的两个公开时长常量（83ms / 250ms）。键盘按 `MenuFlyoutKeyPressProcess.h` / `MenuFlyoutPresenter_Partial.cpp` / `CascadingMenuHelper.cpp` 落地：↑↓ 循环（跳过 disabled）、Tab 吞掉、Enter / Space 激活、→ / Enter / Space 展开子菜单、子菜单内 ← / Esc 只关当前层、根 Esc 关整个浮层；**Home / End 为 0.6.1 验收补充**（WinUI 公开 keypress 处理无此键，负面证据，按 WAI-ARIA menu 补齐）。层级：根 `--zIndexMenu`(1100) / 子菜单 `--zIndexSubmenu`(1200) 经 `useFlyout` 层级栈登记，父菜单不会盖住子菜单。浮层内容全部走非 scoped 的 `.fui-menu-flyout__*` 私有前缀（Teleport + reka 根节点拿不到 `data-v-*`）。
+> - **证据与闸门**：契约测试 **20 条**（开合 / 受控 / 选中 / Toggle 非受控勾选 / 键盘 / 子菜单层级 / 面板级占位 / 样式源码断言）+ SSR smoke **1 条**；真实浏览器实测 **35/35**（`temp/pw-menu-flyout.mjs`：亮暗两套计算样式、条目几何 / hover 色、↑↓ / Home / End / Tab / Esc、子菜单 z 与只关当前层、锚点模式与焦点归还；截图 `temp/visual-menu-flyout/`）。期间修掉一处单测抓不到的 SSR 崩溃（`elementOf` 在服务端引用 `HTMLElement` 全局，`nuxt generate` 预渲染 500）。
+> - **已知缺口**：`MenuPopupThemeTransition` 的关键帧实现不在公开源码树（只有 `s_OpacityChangeDuration=83` / `s_OpenDuration=250` 与 `ClosedRatio` / `Direction` 字段）——本实现用 `scaleY` + opacity 近似，收起时长取 `--durationNormal` 200ms 并记为证据缺口，三个量均可覆写；材质取 `DesktopAcrylicTransparentBrush` 的 FallbackColor 近似（真实 Acrylic 合成 + 噪点归 0.9.2）；高对比度未适配；reka 底座自带按字符 typeahead（WinUI 无此前缀匹配）；加速键文本「传了就显示」（Web 无硬件键盘探测）；`SplitMenuFlyoutItem` / `RadioMenuFlyoutItem`、浮层内部再嵌任意复杂控件均不在本版范围。
+
 **里程碑**：地址栏面包屑可点、命令栏下拉可打开、右键能出菜单。
 
 ### 0.7.0 · 数据层 ①：项基座 + 列表（≈ 20.5 点）

@@ -38,7 +38,8 @@
       "toggle-group": "A group of toggle buttons with single / multi select and arrow-key focus movement; visuals follow WinUI ToggleButton.",
       "select": "A non-editable dropdown: shows the current option only, with no text input or search.",
       "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling.",
-      "navigation-view": "Collapsible left navigation pane: groups, selection indicator, built-in settings item; keys aligned with WinUI NavigationView."
+      "navigation-view": "Collapsible left navigation pane: groups, selection indicator, built-in settings item; keys aligned with WinUI NavigationView.",
+      "menu-flyout": "Command menu flyout with items, submenus, toggle items and separators; keyboard and layering aligned with WinUI MenuFlyout."
     }
   },
   "theme": {
@@ -203,6 +204,55 @@
         "none": "Not changeable",
         "emptyHeader": "Empty list",
         "emptyHint": "No options"
+      }
+    },
+    "menu-flyout": {
+      "common": {
+        "on": "on",
+        "off": "off"
+      },
+      "basic": {
+        "menuLabel": "New",
+        "trigger": "New ▾",
+        "folder": "Folder",
+        "document": "Text document",
+        "image": "Image",
+        "more": "More…",
+        "statusLine": "Last command: {action}",
+        "hint": "Click the trigger to open the menu; items support icons, separators and a select callback."
+      },
+      "submenu": {
+        "menuLabel": "View",
+        "trigger": "View ▾",
+        "refresh": "Refresh",
+        "sort": "Sort by",
+        "sortByName": "Name",
+        "sortByDate": "Date",
+        "more": "More",
+        "sortBySize": "Size",
+        "sortByType": "Type",
+        "details": "Details",
+        "statusLine": "Last command: {action}",
+        "hint": "Hover a sub-item or press → / Enter to open; ← / Esc inside a submenu closes only that level."
+      },
+      "toggle": {
+        "menuLabel": "Show",
+        "trigger": "Show ▾",
+        "hidden": "Hidden files",
+        "extensions": "File name extensions",
+        "refresh": "Refresh",
+        "properties": "Properties (disabled)",
+        "statusLine": "Hidden files: {hidden} · Extensions: {extensions}"
+      },
+      "anchor": {
+        "menuLabel": "More actions",
+        "primary": "New",
+        "more": "More new options",
+        "folder": "Folder",
+        "document": "Text document",
+        "archive": "Archive",
+        "statusLine": "Last command: {action}",
+        "hint": "Trigger-less mode: the parent calls showAt() on an anchor (how SplitButton consumes it)."
       }
     },
     "toggle-button": {

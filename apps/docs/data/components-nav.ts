@@ -26,6 +26,7 @@ import {
   FluentIconDualScreenVerticalScroll24Regular,
   FluentIconGlobe24Regular,
   FluentIconInfo24Regular,
+  FluentIconNavigation24Regular,
   FluentIconNumberSymbol24Regular,
   FluentIconOptions24Regular,
   FluentIconPanelLeft24Regular,
@@ -261,7 +262,6 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'context-menu', name: 'Context Menu', implemented: false },
       { slug: 'dialog', name: 'Dialog', implemented: false },
       { slug: 'drawer', name: 'Drawer', implemented: false },
-      { slug: 'dropdown-menu', name: 'Dropdown Menu', implemented: false },
       { slug: 'hover-card', name: 'Hover Card', implemented: false },
       {
         slug: 'info-badge',
@@ -276,6 +276,13 @@ const componentNavGroups: ComponentNavGroup[] = [
         implemented: true,
         summaryKey: 'infobar',
         icon: FluentIconInfo24Regular,
+      },
+      {
+        slug: 'menu-flyout',
+        name: 'Menu Flyout',
+        implemented: true,
+        summaryKey: 'menu-flyout',
+        icon: FluentIconNavigation24Regular,
       },
       { slug: 'menubar', name: 'Menubar', implemented: false },
       {

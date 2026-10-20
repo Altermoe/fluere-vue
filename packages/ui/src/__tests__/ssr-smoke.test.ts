@@ -24,6 +24,8 @@ import FluereContentDialog from '../content-dialog/content-dialog.vue'
 import FluereInfoBadge from '../info-badge/info-badge.vue'
 import FluereInfoBar from '../infobar/infobar.vue'
 import FluereInput from '../input/input.vue'
+import FluereMenuFlyoutItem from '../menu-flyout/menu-flyout-item.vue'
+import FluereMenuFlyout from '../menu-flyout/menu-flyout.vue'
 import FluereNavigationViewItem from '../navigation-view/navigation-view-item.vue'
 import FluereNavigationView from '../navigation-view/navigation-view.vue'
 import FluereNumberBox from '../number-box/number-box.vue'
@@ -499,5 +501,24 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     expect(en).toContain('Loading')
     expect(zh).not.toContain('Loading')
     expect(en).not.toContain('加载中')
+  })
+  it('FluereMenuFlyout 可服务端渲染（关闭态只直出触发器，无浏览器 API 依赖）', async () => {
+    const app = createSSRApp({
+      render: () =>
+        h(
+          FluereMenuFlyout,
+          { label: '菜单' },
+          {
+            default: () => h('button', { type: 'button' }, '菜单'),
+            content: () => h(FluereMenuFlyoutItem, { text: '新建' }),
+          },
+        ),
+    })
+    const html = await renderToString(app)
+    expect(html).toContain('aria-haspopup="menu"')
+    expect(html).toContain('aria-expanded="false"')
+    expect(html).toContain('菜单')
+    // 关闭态不直出菜单面板（面板由客户端交互后挂载）
+    expect(html).not.toContain('role="menu"')
   })
 })
