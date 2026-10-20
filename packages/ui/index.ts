@@ -123,6 +123,7 @@ export type { FluereToggleButtonProps } from './src/toggle-button/toggle-button.
 export type {
   FluereSplitButtonFlyoutSlotProps,
   FluereSplitButtonProps,
+  FluereSplitButtonSelectEventArgs,
   FluereToggleSplitButtonProps,
 } from './src/split-button/types'
 export type {

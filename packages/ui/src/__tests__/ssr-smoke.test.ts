@@ -508,13 +508,15 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     const split = await renderServer(FluereSplitButton, '新建')
     expect(split).toContain('fui-split-button')
     expect(split).toContain('新建')
-    // SSR 期不 Teleport：预开状态下也只渲染控件本体，浮层面板要等 mounted 后
+    // SSR 期没有锚点元素（`anchor` = 控件根 ref 尚未赋值），菜单族不渲染面板：
+    // 预开状态下也只直出控件本体，面板要等客户端挂载后才有锚点
     const preOpened = await renderServer(
       h(FluereSplitButton, { open: true, label: '新建' }),
       '新建',
     )
     expect(preOpened).toContain('fui-split-button')
-    expect(preOpened).not.toContain('fui-split-button__flyout')
+    expect(preOpened).not.toContain('role="menu"')
+    expect(preOpened).not.toContain('fui-menu-flyout__presenter')
 
     const toggle = await renderServer(
       h(FluereToggleSplitButton, { checked: true, label: '固定' }),

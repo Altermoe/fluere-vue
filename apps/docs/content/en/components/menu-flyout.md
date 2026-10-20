@@ -78,7 +78,9 @@ The **default slot** of `FluereMenuFlyoutSubItem` is the submenu content; the ro
 
 ## Trigger-less mode: anchor and `showAt()`
 
-`FluereSplitButton` / `FluereDropDownButton` decide **when** to open the flyout themselves. Leave the default slot empty and use the `anchor` prop or the exposed `showAt(element)`; `placement` uses kebab-case WinUI `FlyoutPlacementMode` values (SplitButton's A-level implementation uses `bottom-edge-aligned-left`). On open, focus moves to the first item; on close (select / Esc / outside click) it returns to the element that was focused before opening.
+`FluereSplitButton` / `FluereDropDownButton` decide **when** to open the flyout themselves. Leave the default slot empty and use the `anchor` prop or the exposed `showAt(element)`; `placement` uses kebab-case WinUI `FlyoutPlacementMode` values (SplitButton's A-level implementation uses `bottom-edge-aligned-left`). On open, focus moves to the first item; on close (select / Esc, etc.) it returns to the element that was focused before opening, while an outside click goes through `outside-pointer` and does **not** restore focus (so it never steals focus back from the element the user just clicked).
+
+Since 0.6.4 `FluereSplitButton` is built on this mode: its `#flyout` slot content is the item family described here — see [Split Button](./split-button).
 
 ::demo-block{title="Anchor mode (SplitButton consumption)"}
 #preview

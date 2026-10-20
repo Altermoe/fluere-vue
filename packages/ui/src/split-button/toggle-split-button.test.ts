@@ -12,6 +12,8 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
+import { h } from 'vue'
+import FluereMenuFlyoutItem from '../menu-flyout/menu-flyout-item.vue'
 import FluereToggleSplitButton from './toggle-split-button.vue'
 
 const mountedWrappers: { unmount: () => void }[] = []
@@ -21,10 +23,17 @@ afterEach(() => {
   }
 })
 
-const mountToggleSplit = (props: Record<string, unknown> = {}, slots = {}) => {
+const mountToggleSplit = (
+  props: Record<string, unknown> = {},
+  slots: Record<string, unknown> = {},
+) => {
   const wrapper = mount(FluereToggleSplitButton, {
     props,
-    slots,
+    slots: {
+      // 箭头区必须有 #flyout 才会打开（见 split-button-base.vue 的 hasFlyout 契约）
+      flyout: () => h(FluereMenuFlyoutItem, { text: '固定项（示例）', value: 'pin' }),
+      ...slots,
+    },
     attachTo: document.body,
   })
   mountedWrappers.push(wrapper)

@@ -8,12 +8,16 @@
  * 与 WinUI 的对应：`Microsoft.UI.Xaml.Controls.SplitButton`（tag `winui3/release/2.5.1`）。
  * 勾选变体是独立的 `FluereToggleSplitButton`（对应 `ToggleSplitButton`）。
  */
-export type { FluereSplitButtonFlyoutSlotProps, FluereSplitButtonProps } from './types'
+export type {
+  FluereSplitButtonFlyoutSlotProps,
+  FluereSplitButtonProps,
+  FluereSplitButtonSelectEventArgs,
+} from './types'
 </script>
 
 <script setup lang="ts">
 import SplitButtonBase from './split-button-base.vue'
-import type { FluereSplitButtonProps } from './types'
+import type { FluereSplitButtonProps, FluereSplitButtonSelectEventArgs } from './types'
 
 defineOptions({
   name: 'FluereSplitButton',
@@ -34,6 +38,8 @@ const emit = defineEmits<{
   'opened': []
   /** 浮层已关闭（对应 `Flyout.Closed`） */
   'closed': []
+  /** 菜单条目被激活（由内建 `FluereMenuFlyout` 的 `select` 冒泡） */
+  'select': [args: FluereSplitButtonSelectEventArgs]
 }>()
 </script>
 
@@ -45,6 +51,7 @@ const emit = defineEmits<{
     @update:open="emit('update:open', $event)"
     @opened="emit('opened')"
     @closed="emit('closed')"
+    @select="emit('select', $event)"
   >
     <slot />
     <template

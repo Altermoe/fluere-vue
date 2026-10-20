@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FluereSplitButton } from '@fluere-vue/ui'
+import { FluereMenuFlyoutItem, FluereSplitButton } from '@fluere-vue/ui'
 import { computed, ref } from 'vue'
 
 const { t } = useDocsI18n()
@@ -17,9 +17,9 @@ const runDefault = (): void => {
   lastAction.value = actions.value[0]?.label ?? ''
 }
 
-const pick = (label: string, close: () => void): void => {
-  lastAction.value = label
-  close()
+/** `#flyout` 里放 MenuFlyout 条目：选中后菜单族自动关闭，并把条目冒泡为 `select` */
+const onSelect = ({ text }: { text?: string }): void => {
+  lastAction.value = text ?? ''
 }
 </script>
 
@@ -28,23 +28,16 @@ const pick = (label: string, close: () => void): void => {
     <FluereSplitButton
       :label="t('demos.split-button.basic.create')"
       @click="runDefault"
+      @select="onSelect"
     >
       {{ t('demos.split-button.basic.create') }}
-      <template #flyout="{ close }">
-        <ul class="m-0 flex w-56 list-none flex-col gap-fluent-xs p-0">
-          <li
-            v-for="action in actions"
-            :key="action.id"
-          >
-            <button
-              type="button"
-              class="w-full cursor-pointer rounded-fluent-md border-0 bg-transparent px-3 py-2 text-start text-sm text-colorNeutralForeground1 hover:bg-colorSubtleBackgroundHover active:bg-colorSubtleBackgroundPressed"
-              @click="pick(action.label, close)"
-            >
-              {{ action.label }}
-            </button>
-          </li>
-        </ul>
+      <template #flyout>
+        <FluereMenuFlyoutItem
+          v-for="action in actions"
+          :key="action.id"
+          :text="action.label"
+          :value="action.id"
+        />
       </template>
     </FluereSplitButton>
 

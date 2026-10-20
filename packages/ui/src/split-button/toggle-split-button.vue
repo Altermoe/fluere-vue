@@ -11,12 +11,16 @@
  *   - 箭头区点击**不**改变勾选状态，只开浮层；
  *   - `checked` 为受控 Prop（沿用本库 `FluereToggleButton` 的口径，点击只回写）。
  */
-export type { FluereSplitButtonFlyoutSlotProps, FluereToggleSplitButtonProps } from './types'
+export type {
+  FluereSplitButtonFlyoutSlotProps,
+  FluereSplitButtonSelectEventArgs,
+  FluereToggleSplitButtonProps,
+} from './types'
 </script>
 
 <script setup lang="ts">
 import SplitButtonBase from './split-button-base.vue'
-import type { FluereToggleSplitButtonProps } from './types'
+import type { FluereSplitButtonSelectEventArgs, FluereToggleSplitButtonProps } from './types'
 
 defineOptions({
   name: 'FluereToggleSplitButton',
@@ -41,6 +45,8 @@ const emit = defineEmits<{
   'opened': []
   /** 浮层已关闭（对应 `Flyout.Closed`） */
   'closed': []
+  /** 菜单条目被激活（由内建 `FluereMenuFlyout` 的 `select` 冒泡） */
+  'select': [args: FluereSplitButtonSelectEventArgs]
 }>()
 </script>
 
@@ -54,6 +60,7 @@ const emit = defineEmits<{
     @update:open="emit('update:open', $event)"
     @opened="emit('opened')"
     @closed="emit('closed')"
+    @select="emit('select', $event)"
   >
     <slot />
     <template

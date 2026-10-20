@@ -99,45 +99,72 @@
  *   - 本实现用两段 CSS keyframes 复刻；两个时长与两条缓动都落组件局部变量，
  *     注明「无同值 token」的取值来源。`prefers-reduced-motion` 下关闭动画。
  *
- * 浮层（`#flyout` 插槽 + 临时面板）：
+ * 浮层（`#flyout` 插槽 + 内建 `FluereMenuFlyout`；0.6.1 接入，替换 0.6.4 首版的
+ * 「临时 FlyoutPresenter 面板」）：
+ *   - 宿主：`#flyout` 插槽的内容交给 `../menu-flyout/menu-flyout.vue` 的**锚点模式**
+ *     （`anchor` Prop = 控件根节点，等价 WinUI `FlyoutBase.ShowAt(*this)`）。菜单族自己
+ *     负责 Teleport、定位、焦点陷阱 / 归还、层级与开合动效，本组件只决定何时开 / 关。
  *   - 定位：A 级 `SplitButton.cpp#OpenFlyout` 固定
- *     `FlyoutPlacementMode::BottomEdgeAlignedLeft`，对应 reka `PopoverContent`
- *     的 `side="bottom"` + `align="start"`（偏移 0，A 级没有 offset 资源）。
- *   - 面板：0.6.1 `MenuFlyout` 之前先按通用 `FlyoutPresenter` 资源给一层轻量面板，
- *     `FlyoutPresenter_themeresources.xaml`：Background = AcrylicInAppFillColorDefaultBrush
- *     → `--acrylicInAppFillColorDefault`（FallbackColor，真实 Acrylic 合成归 0.9.2）；
- *     Border = SurfaceStrokeColorFlyoutBrush → `--surfaceStrokeColorFlyout`；
- *     CornerRadius = OverlayCornerRadius(8) → --borderRadiusXLarge；
- *     Padding = FlyoutContentPadding 16,15,16,17；MinWidth 96 / MaxWidth 456 /
- *     MinHeight 40 / MaxHeight 758；阴影取 `--shadow16`（**证据缺口**：FlyoutBase 的
- *     `ApplyElevationEffect` baseElevation 不在本快照的公开源码内，工具提示用的是 16，
- *     这里暂取同档并允许消费方覆写 `--fui-split-button-flyout-shadow`）。
- *   - 关闭路径：Esc / 外部 pointerdown / 焦点移出由 reka `DismissableLayer` 负责，
- *     层级由 `useFlyout`（`--zIndexMenu` + 嵌套提升）负责；焦点归还由 reka
- *     `FocusScope` 负责 —— 与 Combobox / Select 在 0.4.1 定下的分工一致。
- *     落在触发区（主区 / 箭头区）内的 pointerdown / focusout 会被显式 `preventDefault`，
- *     否则「点击箭头区关闭」会先被 light dismiss 关掉、再被 click 重新打开。
- *   - 退出动效：临时面板暂无，关闭即卸载（菜单族动效归 0.6.1）。因此本组件不用
- *     `isClosing`，`closed` 事件在 `isOpen` 变 false 时立即抛。
+ *     `FlyoutPlacementMode::BottomEdgeAlignedLeft` → `placement="bottom-edge-aligned-left"`
+ *     （菜单族的 WinUI `FlyoutPlacementMode` 映射）。
+ *   - 间距：菜单族 `sideOffset` 缺省 4，取自 A 级
+ *     `src/dxaml/xcp/dxaml/lib/FlyoutBase_partial.cpp` 的 `FlyoutMargin = 4`
+ *     （见 `menu-flyout/types.ts` 默认值表）。0.6.4 首版临时面板误按「快照无 offset 资源」
+ *     取了 0，本次接入一并修正为 4。
+ *   - 面板几何 / 画刷 / 动效：全部由 `FluereMenuFlyout` 的 presenter 负责
+ *     （`MenuFlyout_themeresources.xaml`：Background ≈ Acrylic FallbackColor、
+ *     Border = `SurfaceStrokeColorFlyout`、CornerRadius = OverlayCornerRadius 8、
+ *     Padding = 0,2,0,2、MinWidth 96 / MinHeight 32；展开 250ms / 收起 200ms 的
+ *     证据缺口见菜单族文件头）。本组件**不再**复制一份 FlyoutPresenter 样式：
+ *     旧的非 scoped 样式块已删除 —— 面板节点由菜单族渲染，本来也拿不到本组件的
+ *     `data-v-*`，把样式交给宿主比留一块「永远吃不到 scoped」的 CSS 更可维护。
+ *   - 内容契约：`#flyout` 里应放 `FluereMenuFlyoutItem` / `…SubItem` / `…Separator` /
+ *     `…ToggleItem`。菜单族提供 `role=menu` / `menuitem*` 语义、↑↓ 循环 / Home / End /
+ *     Tab 吞掉 / Enter / Space / ←→ 子菜单 / Esc 的键盘，以及子菜单 `--zIndexSubmenu`
+ *     的层级提升；条目激活冒泡为 SplitButton 的 `select` 事件，缺省选中后关闭整菜单。
+ *   - 关闭路径：Esc / 外部 pointerdown / 条目选中 / 箭头区再次点击，全部由菜单族
+ *     （reka DismissableLayer + 关闭原因记录）承担，本组件不再注册任何 document 监听。
+ *     焦点归还在 `outside-pointer` 之外的路径由菜单族记录 / 归还（Esc / 选中 / 键盘
+ *     触发都会回到打开前的元素）。**light dismiss 的真实落点（实测）**：菜单是 reka
+ *     modal 菜单，打开时 `body { pointer-events: none }`，主区 / 箭头区 / 外部点击的
+ *     命中目标都退化为 `<html>`，因此按钮收不到 pointerdown / click，统一由
+ *     DismissableLayer 关闭、焦点落到 `body`；这既不是「主区动作被误触」，也不是
+ *     0.6.4 首版那种「关闭后焦点被抢回箭头区」。`onPrimaryClick` 里保留的
+ *     outside-pointer 关闭分支只作为非 modal 环境 / 直接派发 click 时的兜底。
+ *   - 受控 / 非受控 `open` 仍由本组件持有：`:open="isOpen"` + `@update:open="applyOpen"`，
+ *     菜单族只按受控值渲染；`opened` / `closed` 由菜单族事件上提（`closed` 不带载荷）。
+ *   - `aria-haspopup` 缺省改为 `'menu'`（内建内容就是菜单）；`aria-controls` 不再输出：
+ *     面板由 reka 内部渲染且拿不到稳定 id，WAI-ARIA APG 的 split button / menu button
+ *     模式只要求 `aria-haspopup` + `aria-expanded`（两者仍由箭头区输出）。
+ *   - 未传 `#flyout` 时箭头区点击 / 快捷键不打开浮层，连菜单宿主都不渲染（对齐
+ *     `OpenFlyout` 的 `GetFlyout() == null` 早退分支）；0.6.4 首版的临时面板会弹出一个
+ *     空面板。
  *
- * ── 真实浏览器实测（2026-10-20，Chromium / 1440×1000）─────────────────────────
- * 方法：`node temp/pw-split-button.mjs`（脚本读 computedStyle / getBoundingClientRect，
- * 明暗两套 + 浮层开合 + 键盘路径，50/50 断言通过；截图在 temp/split-button-verify/，
- * temp/ 不提交、也不作为唯一证据 —— 预期值与结论固化在本注释与契约测试里）。
+ * ── 真实浏览器实测（2026-10-20 接入后重测，Chromium / 1440×1000）───────────────
+ * 方法：`node temp/pw-split-button-menu.mjs`（脚本读 computedStyle / getBoundingClientRect，
+ * 明暗两套 + 菜单开合 + 键盘 / 指针全路径，94/94 断言通过；截图在
+ * temp/split-button-verify/，temp/ 不提交、也不作为唯一证据 —— 预期值与结论固化在
+ * 本注释与契约测试里）。
  * 关键预期值（与上方 A 级资源一一对应，均实测命中）：
  *   · 控件高 33px（6 + 20 行高 + 7）、箭头区 35px、分隔线 1px、雪佛龙 12×12；
  *   · 主区 padding 11 / 6 / 7、圆角 4、字号 14 / 行高 20 / 字重 400；
  *   · rest 背景 #ffffff / 前景 #242424；hover #f5f5f5（箭头前景切到 #242424）；
  *     pressed #e0e0e0 / 前景 #424242；打开态箭头前景 #616161；
- *   · 浮层：左对齐控件左边、底边贴控件底边（offset 0），padding 15/16/17，
- *     圆角 8，背景 rgba 等价 #f9f9f9，描边 SurfaceStrokeColorFlyout，阴影非 none，
- *     层级 1100（--zIndexMenu），Teleport 到 body，role=dialog + 箭头区可访问名；
- *   · 键盘：Esc 关闭并把焦点还给箭头区、F4 / Alt+Down 打开、Tab 主区→箭头区、
- *     Space 按住出现 data-keyboard-pressed 且两半 pressed；
- *   · Space/Enter 按住期间只触发一次主区动作（与 WinUI m_isKeyDown 一致）。
- * 修复记录：首轮实测抓到「Esc 后焦点丢到 body」——reka FocusScope 在没有
- * `PopoverTrigger` 时把焦点还原到 body，遂改为 `useFlyout(returnFocus: true)` +
- * `close-auto-focus` preventDefault，由原语负责归还；该结论已写进下方差异 / 关闭路径注释。
+ *   · 菜单：左对齐控件左边（Δ 0.00px）、与控件底边间距 4.00px；presenter padding
+ *     2px 0、圆角 8、描边 1px；背景亮 #f9f9f9 / 暗 #2c2c2c，描边亮
+ *     rgba(0, 0, 0, 0.06) / 暗 rgba(0, 0, 0, 0.2)，阴影非 none；层级 1100
+ *     （--zIndexMenu，与 :root 的 --zIndexMenu 一致）、Teleport 到 body、
+ *     `role=menu` + 箭头区可访问名；条目 padding 8,11,9,11、margin 2,4,2,4、
+ *     圆角 4、hover 亮 #f5f5f5 / 暗 #383838；
+ *   · 键盘：Esc 关闭并把焦点还给箭头区、F4 / Alt+Down 打开并聚焦首项、
+ *     ↑↓ / Home / End 在条目间移动、Tab 不移动焦点、Enter 激活条目（状态行更新）
+ *     并关闭菜单 + 焦点回箭头区；
+ *   · 指针：打开态点击主区 / 箭头区 / 外部都是 light dismiss（按钮 click 不触发，
+ *     关闭后 activeElement = body）；关闭态点主区正常触发默认动作；打开态再点箭头区
+ *     1 次即关闭、不会「关了又开」；Space 按住出现 data-keyboard-pressed 且两半 pressed；
+ *     Space/Enter 按住期间只触发一次主区动作（与 WinUI m_isKeyDown 一致）。
+ * 修复记录（0.6.4 首版 → 本次接入）：① Esc 后焦点丢到 body，已由菜单族的焦点归还接管；
+ * ② 面板几何 / 画刷 / 退出动效不再自绘，交给菜单族 presenter；③ 浮层间距 0 → 4。
  *
  * ── 与 WinUI 的有意差异 ──────────────────────────────────────────────────────
  *   1. **焦点 / Tab 序**（用户 2026-10-20 确认的口径）：WinUI 整个控件只有一个
@@ -146,12 +173,21 @@
  *      `<button>`（todo 0.6.4 验收要求「各自可达」），同时保留 WinUI 的全部快捷键。
  *      每个按钮各自套共享原语 `useFocusVisual`；WinUI 的 `FocusVisualMargin=-1`
  *      在双按钮结构下不再适用，统一走原语的 −3 外扩（0.9.3 会统一焦点矩形）。
- *   2. **浮层面板**：临时 FlyoutPresenter 语义（0.6.1 换 MenuFlyout 内容，API 不变）。
+ *   2. **菜单内容范围**：WinUI 的 `Flyout` 可放任意 `FlyoutBase`（含自定义 Presenter）；
+ *      本库 `#flyout` 固定走 `MenuFlyout`（`role=menu`），语义与键盘按菜单处理。
+ *      需要对话框形态时应改用 `FluereContentDialog`，不要往 `#flyout` 里塞表单。
  *   3. **受控 checked**：`ToggleSplitButton.IsChecked` 在 WinUI 是自管状态；本库沿用
  *      `FluereToggleButton` 的受控口径（点击只抛 `update:checked`，由消费方写回）。
  *   4. **AppBar / CommandBar 风格未实现**：`SplitButtonCommandBarStyle` 与
  *      `SplitButtonInAppBarUnfocusedPointerOver` 属命令栏场景，归 0.8.3 `CommandBar`
  *      （届时作为新变体接入，不改本组件默认外观）。
+ *   5. **菜单键盘能力沿用菜单族**：reka 底座自带按字符 typeahead（WinUI 无前缀匹配），
+ *      Home / End 是 0.6.1 按 WAI-ARIA 补齐的（WinUI 公开 keypress 处理无此键）；
+ *      逐条记在 `../menu-flyout/menu-flyout.vue` 文件头与文档页。
+ *   6. **light dismiss 的焦点落点**：菜单族是 modal 菜单（打开时 body pointer-events
+ *      none），指针点击主区 / 箭头区 / 外部只会关闭菜单，不会把焦点交给被点元素
+ *      （实测 activeElement = body）。WinUI 的 Flyout light dismiss 同样不激活底层
+ *      控件，但焦点落点没有 A 级证据；这里按「不抢焦点」记录为有意差异。
  */
 export type {
   FluereSplitButtonFlyoutSlotProps,
@@ -163,20 +199,21 @@ export type {
 <script setup lang="ts">
 import { useScopeMessages } from '@fluere-vue/hooks'
 import { FluentIconChevronDown12Regular } from '@fluere-vue/icons'
-import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
-import type { FocusOutsideEvent, PointerDownOutsideEvent } from 'reka-ui'
-import { computed, onMounted, ref, useId, watch } from 'vue'
-import { useFlyout } from '../flyout/use-flyout'
-import type { FlyoutCloseReason } from '../flyout/use-flyout'
+import { computed, ref, useSlots } from 'vue'
 import { useFocusVisual } from '../focus-visual/use-focus-visual'
+import FluereMenuFlyout from '../menu-flyout/menu-flyout.vue'
+import type {
+  FluereMenuFlyoutCloseReason,
+  FluereMenuFlyoutSelectEventArgs,
+} from '../menu-flyout/types'
 import { splitButtonLocale } from './locale'
 import type { FluereSplitButtonFlyoutSlotProps, SplitButtonBaseProps } from './types'
 
 defineOptions({
   name: 'FluereSplitButtonBase',
   /**
-   * 关闭属性继承：模板根是 `PopoverRoot`（不产出 DOM），`$attrs` 需要显式落到真正的
-   * 控件根 `<div class="fui-split-button">` 上，否则 class / data-* 会落到浮层上下文中。
+   * 关闭属性继承：模板根是不产出 DOM 的 `FluereMenuFlyout` + 控件根 `<div>`，
+   * `$attrs` 需要显式落到真正的控件根上，否则 class / data-* 会丢在浮层上下文里。
    */
   inheritAttrs: false,
 })
@@ -186,12 +223,14 @@ const props = withDefaults(defineProps<SplitButtonBaseProps>(), {
   label: undefined,
   secondaryLabel: undefined,
   open: undefined,
-  hasPopup: 'dialog',
+  hasPopup: 'menu',
   type: 'button',
   locale: undefined,
   toggleable: false,
   checked: false,
 })
+
+const slots = useSlots()
 
 const emit = defineEmits<{
   /** 主区点击（对应 WinUI `Click`）；浮层打开时点击主区只关闭浮层 */
@@ -202,6 +241,8 @@ const emit = defineEmits<{
   'opened': []
   /** 浮层已关闭（对应 `Flyout.Closed`） */
   'closed': []
+  /** 菜单条目被激活（由内建 `FluereMenuFlyout` 的 `select` 冒泡；载荷见类型） */
+  'select': [args: FluereMenuFlyoutSelectEventArgs]
   /** 勾选状态回写（`v-model:checked`，仅 ToggleSplitButton） */
   'update:checked': [value: boolean]
   /** 勾选状态变化（对应 `ToggleSplitButton.IsCheckedChanged`，载荷为新值） */
@@ -222,7 +263,7 @@ const secondaryRef = ref<HTMLButtonElement | null>(null)
 
 /**
  * 受控 / 非受控：`open === undefined` 时由本组件自管（`innerOpen`），否则只认 Prop。
- * reka `PopoverRoot` 负责定位与关闭路径（DismissableLayer），状态事实源仍在本组件，
+ * 面板交给 `FluereMenuFlyout`（锚点模式）按受控值渲染，开关状态的事实源仍在本组件，
  * 与 Select 的 `applyOpen` 模式一致。
  */
 const innerOpen = ref(false)
@@ -238,94 +279,64 @@ const applyOpen = (value: boolean): void => {
   emit('update:open', value)
 }
 
-/** 浮层层级：`--zIndexMenu` 档 + 嵌套提升（0.4.1）；关闭路径交给 reka，故全部关掉 */
-const flyout = useFlyout({
-  tier: '--zIndexMenu',
-  open: () => isOpen.value,
-  // 关闭路径由 reka DismissableLayer 触发，但**焦点归还**由本原语负责：
-  // reka 的 FocusScope 在没有 PopoverTrigger 的场景会把焦点还到 body（实测），
-  // 这里用原语记录打开前的 activeElement 并在关闭后还回去（见 onFlyoutCloseAutoFocus）。
-  closeOnEscape: false,
-  closeOnOutsidePointer: false,
-  returnFocus: true,
-  onClosed: () => emit('closed'),
-})
 /**
- * 层级样式必须**解构到顶层 ref** 再进模板：Vue 只对顶层绑定做 ref 自动解包，
- * `:style="flyout.layerStyle"` 拿到的是 ComputedRef 本体而不是样式对象，z-index 会静默失效
- * （0.4.1 真实浏览器实测踩过，见 `../combobox/combobox.vue` 同处注释）。
+ * 菜单族实例：只在「需要带关闭原因」的路径上用它调用 `close(reason)`
+ * （reason 决定菜单族是否归还焦点，见文件头「关闭路径」）。挂载前为 null，
+ * 回退到纯受控写回 `applyOpen(false)`。
  */
-const { layerStyle: flyoutLayerStyle } = flyout
+const menuRef = ref<InstanceType<typeof FluereMenuFlyout> | null>(null)
+
+/**
+ * 菜单内容是否存在。对齐 A 级 `SplitButton.cpp#OpenFlyout`：`GetFlyout() == null`
+ * 时箭头区点击 / `Alt+↓` / `F4` 都不打开任何面板（旧临时面板会弹出空面板）。
+ */
+const hasFlyout = computed(() => slots.flyout !== undefined)
 
 /* ------------------------------------------------------------------ */
 /* 打开 / 关闭                                                         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * 打开浮层。菜单族在 `open` 变为 true 后会聚焦首个可聚焦条目
+ * （WinUI `MenuFlyoutPresenter::SetInitialFocus`）。
+ */
 const openFlyout = (): void => {
-  if (props.disabled) {
+  if (props.disabled || !hasFlyout.value) {
     return
   }
   applyOpen(true)
 }
 
-const closeFlyout = (_reason: FlyoutCloseReason = 'programmatic'): void => {
+/**
+ * 关闭浮层并带上关闭原因：
+ *   - `outside-pointer`：不归还焦点（light dismiss / 兜底关闭路径，不把焦点抢回箭头区）；
+ *   - `trigger`：箭头区再次点击（焦点本来就在箭头区，归还无副作用）；
+ *   - `programmatic` / `item-click` / `escape`：由菜单族在关闭后把焦点还给打开前的元素。
+ * 菜单族实例尚未挂载时回退到 `applyOpen(false)`。
+ */
+const closeFlyout = (reason: FluereMenuFlyoutCloseReason = 'programmatic'): void => {
+  if (menuRef.value !== null) {
+    menuRef.value.close(reason)
+    return
+  }
   applyOpen(false)
 }
 
 const toggleFlyout = (): void => {
-  if (props.disabled) {
+  if (props.disabled || !hasFlyout.value) {
     return
   }
-  applyOpen(!isOpen.value)
+  if (isOpen.value) {
+    closeFlyout('trigger')
+    return
+  }
+  openFlyout()
 }
 
 /** `#flyout` 插槽上下文（等价 XAML 里对 `Flyout.Hide()` 的访问） */
 const flyoutSlotProps = computed<FluereSplitButtonFlyoutSlotProps>(() => ({
-  close: closeFlyout,
+  close: (reason) => closeFlyout(reason),
 }))
-
-watch(isOpen, (value) => {
-  if (value) {
-    emit('opened')
-    return
-  }
-  // 临时面板没有退出动画：关闭即已结束，立即收尾（归还焦点 + 抛 closed）。
-  // 0.6.1 菜单族补退出动效后改成 animationend 再调 finishClose。
-  flyout.finishClose()
-})
-
-/* ------------------------------------------------------------------ */
-/* 关闭路径：触发区内的 pointerdown / focusout 不算 light dismiss        */
-/* ------------------------------------------------------------------ */
-
-const isInsideTrigger = (target: EventTarget | null): boolean =>
-  target instanceof Node && rootRef.value?.contains(target) === true
-
-/**
- * 点击主区 / 箭头区时，reka 的 DismissableLayer 会先判成 outside 并关闭浮层；
- * 这里把触发区排除掉，交给按钮自己的 click 判断（主区 = 只关浮层，箭头区 = 切换）。
- */
-const onFlyoutPointerDownOutside = (event: PointerDownOutsideEvent): void => {
-  if (isInsideTrigger(event.target)) {
-    event.preventDefault()
-  }
-}
-
-/** 同上：按下箭头区时焦点会移到按钮上，不能被判成「焦点移出浮层」而关闭 */
-const onFlyoutFocusOutside = (event: FocusOutsideEvent): void => {
-  if (isInsideTrigger(event.target)) {
-    event.preventDefault()
-  }
-}
-
-/**
- * 阻止 reka FocusScope 的 `closeAutoFocus` 默认归还：本组件没有 `PopoverTrigger`，
- * FocusScope 记录的「打开前元素」在真实浏览器里会退化成 `body`（实测 Esc 后焦点丢失）。
- * 焦点归还统一由 `useFlyout(returnFocus: true)` 在 `onClosed` 里完成。
- */
-const onFlyoutCloseAutoFocus = (event: Event): void => {
-  event.preventDefault()
-}
 
 /* ------------------------------------------------------------------ */
 /* 主区 / 箭头区点击                                                    */
@@ -335,9 +346,12 @@ const onPrimaryClick = (event: MouseEvent): void => {
   if (props.disabled) {
     return
   }
-  // WinUI：浮层打开时点击控件本体走 light dismiss，主区 Click 不触发
+  // WinUI：浮层打开时点击控件本体走 light dismiss，主区 Click 不触发。
+  // 真实浏览器里 reka modal 菜单打开时 body pointer-events: none，主区收不到
+  // pointerdown / click，这一分支实际由 DismissableLayer 的 light dismiss 顶替；
+  // 保留它是为了非 modal 环境 / 测试里直接派发 click 时也不误触主区动作。
   if (isOpen.value) {
-    applyOpen(false)
+    closeFlyout('outside-pointer')
     return
   }
   if (props.toggleable) {
@@ -441,124 +455,126 @@ const triggerAttrs = computed<Record<string, string>>(() => ({
   'aria-haspopup': props.hasPopup,
 }))
 
-/** Teleport 延后到 mounted：SSR 与首帧都不产生门户占位（见 docs/ssr-guide.md） */
-const mounted = ref(false)
-onMounted(() => {
-  mounted.value = true
-})
-
 /** `aria-pressed` 的合法取值（`aria-pressed` 只接受 Booleanish / mixed，不接受任意 string） */
 const ariaPressed = computed<boolean | 'true' | 'false' | undefined>(() =>
   props.toggleable ? (props.checked ? 'true' : 'false') : undefined,
 )
 
-/** 浮层容器的可访问名（reka `PopoverContent` 默认 role=dialog） */
-const flyoutAriaLabel = computed(() => secondaryAriaLabel.value)
+/** 菜单面板的可访问名：与箭头区一致（缺省「更多选项 / More Options」） */
+const menuLabel = computed(() => secondaryAriaLabel.value)
 
-/** 预留：浮层 id 供后续 aria-controls 使用（0.6.1 菜单族接管 aria 契约时启用） */
-const flyoutId = useId()
+/**
+ * 与锚点的间距（px）：A 级 `FlyoutBase::FlyoutMargin = 4`。`SplitButton.cpp#OpenFlyout`
+ * 只覆盖 placement，不改间距；菜单族缺省值同为 4，这里显式传一次，避免菜单族默认值
+ * 变化时静默漂移。
+ */
+const FLYOUT_SIDE_OFFSET = 4
+
+/** 菜单族关闭事件不带载荷（reason 只用于决定是否归还焦点，已由菜单族内部消费） */
+const onMenuClosed = (): void => {
+  emit('closed')
+}
+
+/** 菜单条目选中：原样上提，便于 `v-for` 动态条目在 SplitButton 层统一处理 */
+const onMenuSelect = (args: FluereMenuFlyoutSelectEventArgs): void => {
+  emit('select', args)
+}
 </script>
 
 <template>
-  <PopoverRoot
-    :open="isOpen"
-    @update:open="applyOpen"
+  <div
+    ref="rootRef"
+    v-bind="$attrs"
+    class="fui-split-button"
+    :class="{ 'fui-split-button--disabled': disabled }"
+    :data-state="isOpen ? 'open' : 'closed'"
+    :data-checked="toggleable ? String(checked) : undefined"
+    :data-disabled="disabled ? '' : undefined"
+    :data-keyboard-pressed="keyboardPressed ? '' : undefined"
+    @keydown="onKeydown"
+    @keyup="onKeyup"
+    @focusout="onFocusOut"
   >
-    <PopoverAnchor as-child>
-      <div
-        ref="rootRef"
-        v-bind="$attrs"
-        class="fui-split-button"
-        :class="{ 'fui-split-button--disabled': disabled }"
-        :data-state="isOpen ? 'open' : 'closed'"
-        :data-checked="toggleable ? String(checked) : undefined"
-        :data-disabled="disabled ? '' : undefined"
-        :data-keyboard-pressed="keyboardPressed ? '' : undefined"
-        @keydown="onKeydown"
-        @keyup="onKeyup"
-        @focusout="onFocusOut"
+    <button
+      class="fui-split-button__primary"
+      :class="focusVisual.class"
+      :style="focusVisual.style"
+      :type="type"
+      :disabled="disabled"
+      :aria-label="label"
+      :aria-pressed="ariaPressed"
+      @click="onPrimaryClick"
+    >
+      <span class="fui-split-button__content">
+        <slot />
+      </span>
+    </button>
+
+    <span
+      class="fui-split-button__divider"
+      aria-hidden="true"
+    />
+
+    <button
+      ref="secondaryRef"
+      class="fui-split-button__secondary"
+      :class="focusVisual.class"
+      :style="focusVisual.style"
+      type="button"
+      :disabled="disabled"
+      :aria-label="secondaryAriaLabel"
+      v-bind="triggerAttrs"
+      @click="onSecondaryClick"
+      @pointerdown="onChevronPointerDown"
+      @pointerup="onChevronRelease"
+      @pointercancel="onChevronRelease"
+      @pointerleave="onChevronRelease"
+    >
+      <span
+        class="fui-split-button__chevron-box"
+        :class="chevronClass"
+        aria-hidden="true"
+        @animationend="onChevronAnimationEnd"
       >
-        <button
-          class="fui-split-button__primary"
-          :class="focusVisual.class"
-          :style="focusVisual.style"
-          :type="type"
-          :disabled="disabled"
-          :aria-label="label"
-          :aria-pressed="ariaPressed"
-          @click="onPrimaryClick"
-        >
-          <span class="fui-split-button__content">
-            <slot />
-          </span>
-        </button>
+        <FluentIconChevronDown12Regular class="fui-split-button__chevron" />
+      </span>
+    </button>
 
-        <span
-          class="fui-split-button__divider"
-          aria-hidden="true"
-        />
+    <span
+      class="fui-split-button__primary-border"
+      aria-hidden="true"
+    />
+    <span
+      class="fui-split-button__secondary-border"
+      aria-hidden="true"
+    />
+  </div>
 
-        <button
-          ref="secondaryRef"
-          class="fui-split-button__secondary"
-          :class="focusVisual.class"
-          :style="focusVisual.style"
-          type="button"
-          :disabled="disabled"
-          :aria-label="secondaryAriaLabel"
-          :aria-controls="isOpen ? flyoutId : undefined"
-          v-bind="triggerAttrs"
-          @click="onSecondaryClick"
-          @pointerdown="onChevronPointerDown"
-          @pointerup="onChevronRelease"
-          @pointercancel="onChevronRelease"
-          @pointerleave="onChevronRelease"
-        >
-          <span
-            class="fui-split-button__chevron-box"
-            :class="chevronClass"
-            aria-hidden="true"
-            @animationend="onChevronAnimationEnd"
-          >
-            <FluentIconChevronDown12Regular class="fui-split-button__chevron" />
-          </span>
-        </button>
-
-        <span
-          class="fui-split-button__primary-border"
-          aria-hidden="true"
-        />
-        <span
-          class="fui-split-button__secondary-border"
-          aria-hidden="true"
-        />
-      </div>
-    </PopoverAnchor>
-
-    <PopoverPortal :disabled="!mounted">
-      <PopoverContent
-        :id="flyoutId"
-        class="fui-split-button__flyout"
-        :style="flyoutLayerStyle"
-        :aria-label="flyoutAriaLabel"
-        side="bottom"
-        align="start"
-        :side-offset="0"
-        :avoid-collisions="true"
-        :collision-padding="8"
-        :sticky="'partial'"
-        position-strategy="fixed"
-        @pointer-down-outside="onFlyoutPointerDownOutside"
-        @focus-outside="onFlyoutFocusOutside"
-        @close-auto-focus="onFlyoutCloseAutoFocus"
-      >
-        <slot
-          name="flyout"
-          v-bind="flyoutSlotProps"
-        />
-      </PopoverContent>
-    </PopoverPortal>
-  </PopoverRoot>
+  <!--
+    浮层宿主：菜单族锚点模式（`anchor` = 控件根节点，等价 WinUI `FlyoutBase.ShowAt(*this)`）。
+    菜单族不产出根 DOM，面板 Teleport 到 body 并由它自己负责 role=menu / 键盘 / 焦点 /
+    层级 / 开合动效；本组件只持有开关状态并把 `#flyout` 内容转进菜单族的 `#content`。
+  -->
+  <FluereMenuFlyout
+    v-if="hasFlyout"
+    ref="menuRef"
+    :open="isOpen"
+    :anchor="rootRef"
+    :side-offset="FLYOUT_SIDE_OFFSET"
+    placement="bottom-edge-aligned-left"
+    :label="menuLabel"
+    @update:open="applyOpen"
+    @opened="emit('opened')"
+    @closed="onMenuClosed"
+    @select="onMenuSelect"
+  >
+    <template #content>
+      <slot
+        name="flyout"
+        v-bind="flyoutSlotProps"
+      />
+    </template>
+  </FluereMenuFlyout>
 </template>
 
 <style scoped>
@@ -918,55 +934,5 @@ const flyoutId = useId()
   .fui-split-button__chevron-box--releasing {
     animation: none;
   }
-}
-</style>
-
-<style>
-/* ==================================================================== */
-/* 浮层面板（Teleport 到 body，因此**必须**是非 scoped 的样式块）          */
-/*                                                                      */
-/* 为什么非 scoped：面板由 reka `PopoverContent`（DismissableLayer →      */
-/* PopperContent → Primitive）内部渲染，组件拿不到本 SFC 的 `data-v-*`；   */
-/* 写成 scoped 时 `.fui-split-button__flyout[data-v-x]` 永远匹配不上，     */
-/* 整套样式静默失效（与 Tooltip 同一踩坑，见其 fixture 文件头）。          */
-/* `.fui-split-button__flyout` 是本库私有 BEM 前缀，不会与消费方冲突。     */
-/*                                                                      */
-/* 规格：A 级 `CommonStyles/FlyoutPresenter_themeresources.xaml` ——        */
-/*   Background = AcrylicInAppFillColorDefaultBrush（FallbackColor 近似，   */
-/*   真实 Acrylic 合成 + 噪点归 0.9.2）；Border = SurfaceStrokeColorFlyout */
-/*   （亮 #0F000000 / 暗 #33000000）；CornerRadius = OverlayCornerRadius 8；*/
-/*   Padding = FlyoutContentPadding 16,15,16,17；MinWidth 96 / MaxWidth    */
-/*   456 / MinHeight 40 / MaxHeight 758（+ ScrollViewer Auto）。           */
-/* 0.6.1 `MenuFlyout` 到位后由菜单自己的 presenter 接管，本面板退化为内容容器。 */
-/* ==================================================================== */
-.fui-split-button__flyout {
-  /* FlyoutBase 的 ApplyElevationEffect baseElevation 不在快照公开源码内（证据缺口）；
-     Tooltip 用的 16 是同仓先例，消费方可一行覆写回实测值 */
-  --fui-split-button-flyout-shadow: var(--shadow16);
-  /* FlyoutPresenterBackground ← AcrylicInAppFillColorDefaultBrush 的 FallbackColor */
-  --fui-split-button-flyout-background: var(--acrylicInAppFillColorDefault);
-  /* FlyoutBorderThemeBrush ← SurfaceStrokeColorFlyoutBrush（0.5.7 已落 repo-token） */
-  --fui-split-button-flyout-border: var(--surfaceStrokeColorFlyout);
-
-  z-index: var(--zIndexMenu);
-  box-sizing: border-box;
-  min-inline-size: 96px;
-  max-inline-size: min(456px, var(--reka-popper-available-width, 100vw));
-  min-block-size: 40px;
-  max-block-size: min(758px, var(--reka-popper-available-height, 100vh));
-  /* FlyoutContentPadding = 16,15,16,17 */
-  padding: 15px 16px 17px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  background-color: var(--fui-split-button-flyout-background);
-  border: var(--strokeWidthThin) solid var(--fui-split-button-flyout-border);
-  /* OverlayCornerRadius = 8 → --borderRadiusXLarge */
-  border-radius: var(--borderRadiusXLarge);
-  box-shadow: var(--fui-split-button-flyout-shadow);
-  color: var(--colorNeutralForeground1);
-  font-family: var(--fontFamilyBase);
-  font-size: var(--fontSizeBase300);
-  line-height: var(--lineHeightBase300);
 }
 </style>

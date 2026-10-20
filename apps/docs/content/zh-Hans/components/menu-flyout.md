@@ -78,7 +78,9 @@ nav:
 
 ## 无触发器：锚点与 `showAt()`
 
-`FluereSplitButton` / `FluereDropDownButton` 这类组件需要「由父组件决定何时弹出」。此时**不传默认插槽**，改用 `anchor` Prop 或暴露的 `showAt(element)`；`placement` 直接使用 WinUI `FlyoutPlacementMode` 的 kebab-case 值（SplitButton 的 A 级实现是 `bottom-edge-aligned-left`）。打开后焦点进入菜单首项，关闭（选中 / Esc / 外部点击）后归还到打开前的元素。
+`FluereSplitButton` / `FluereDropDownButton` 这类组件需要「由父组件决定何时弹出」。此时**不传默认插槽**，改用 `anchor` Prop 或暴露的 `showAt(element)`；`placement` 直接使用 WinUI `FlyoutPlacementMode` 的 kebab-case 值（SplitButton 的 A 级实现是 `bottom-edge-aligned-left`）。打开后焦点进入菜单首项；关闭（选中 / Esc 等）后归还到打开前的元素，而外部点击走 `outside-pointer`、**不**归还（避免从用户刚点中的元素抢焦点）。
+
+0.6.4 的 `FluereSplitButton` 已按这个姿势内建接入：`#flyout` 插槽内容就是本菜单族的条目，详见 [Split Button 拆分按钮](./split-button)。
 
 ::demo-block{title="锚点模式（SplitButton 消费姿势）"}
 #preview
