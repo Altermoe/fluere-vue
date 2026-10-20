@@ -39,6 +39,7 @@
       "select": "A non-editable dropdown: shows the current option only, with no text input or search.",
       "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling.",
       "navigation-view": "Collapsible left navigation pane: groups, selection indicator, built-in settings item; keys aligned with WinUI NavigationView.",
+      "split-button": "A split button: the primary area runs the default action while the arrow opens a flyout; includes the toggle variant.",
       "menu-flyout": "Command menu flyout with items, submenus, toggle items and separators; keyboard and layering aligned with WinUI MenuFlyout."
     }
   },
@@ -204,6 +205,25 @@
         "none": "Not changeable",
         "emptyHeader": "Empty list",
         "emptyHint": "No options"
+      }
+    },
+    "split-button": {
+      "basic": {
+        "create": "New",
+        "folder": "Folder",
+        "document": "Text document",
+        "archive": "Compressed folder",
+        "statusLine": "Last action: {action}",
+        "hint": "The primary area runs the default action; the arrow opens more options. Both are reachable with Tab."
+      },
+      "states": {
+        "disabledLabel": "Disabled (New)",
+        "toggleLabel": "Pin to Quick access",
+        "toggleStateOn": "Pinned",
+        "toggleStateOff": "Not pinned",
+        "statusLine": "Checked: {state}",
+        "secondaryLabel": "More new options",
+        "flyoutItem": "Pinned item (demo)"
       }
     },
     "menu-flyout": {

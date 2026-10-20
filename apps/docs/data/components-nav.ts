@@ -17,6 +17,7 @@
  */
 import {
   FluentIconAppsListDetail24Regular,
+  FluentIconArrowSplit24Regular,
   FluentIconBadge24Regular,
   FluentIconCheckboxChecked24Regular,
   FluentIconCircleHalfFill24Regular,
@@ -106,6 +107,13 @@ const componentNavGroups: ComponentNavGroup[] = [
         implemented: true,
         summaryKey: 'toggle-button',
         icon: FluentIconToggleRight24Regular,
+      },
+      {
+        slug: 'split-button',
+        name: 'Split Button',
+        implemented: true,
+        summaryKey: 'split-button',
+        icon: FluentIconArrowSplit24Regular,
       },
       {
         slug: 'input',

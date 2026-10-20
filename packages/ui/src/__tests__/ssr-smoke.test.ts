@@ -36,6 +36,8 @@ import FluereRadioButton from '../radio/radio-button.vue'
 import FluereRadioGroup from '../radio/radio-group.vue'
 import FluereScrollView from '../scrollview/scroll-view.vue'
 import FluereSlider from '../slider/slider.vue'
+import FluereSplitButton from '../split-button/split-button.vue'
+import FluereToggleSplitButton from '../split-button/toggle-split-button.vue'
 import FluereTabViewItem from '../tab-view/tab-view-item.vue'
 import FluereTabView from '../tab-view/tab-view.vue'
 import FluereToggleSwitch from '../toggle-switch/toggle-switch.vue'
@@ -501,6 +503,25 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     expect(en).toContain('Loading')
     expect(zh).not.toContain('Loading')
     expect(en).not.toContain('加载中')
+  })
+  it('FluereSplitButton / ToggleSplitButton 可服务端渲染（受控预开也不产生门户占位）', async () => {
+    const split = await renderServer(FluereSplitButton, '新建')
+    expect(split).toContain('fui-split-button')
+    expect(split).toContain('新建')
+    // SSR 期不 Teleport：预开状态下也只渲染控件本体，浮层面板要等 mounted 后
+    const preOpened = await renderServer(
+      h(FluereSplitButton, { open: true, label: '新建' }),
+      '新建',
+    )
+    expect(preOpened).toContain('fui-split-button')
+    expect(preOpened).not.toContain('fui-split-button__flyout')
+
+    const toggle = await renderServer(
+      h(FluereToggleSplitButton, { checked: true, label: '固定' }),
+      '固定',
+    )
+    expect(toggle).toContain('fui-split-button')
+    expect(toggle).toContain('aria-pressed="true"')
   })
   it('FluereMenuFlyout 可服务端渲染（关闭态只直出触发器，无浏览器 API 依赖）', async () => {
     const app = createSSRApp({

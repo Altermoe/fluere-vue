@@ -39,6 +39,7 @@
       "select": "不可编辑的下拉选择器：只显示当前项，无文本输入与搜索。",
       "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。",
       "navigation-view": "左侧可折叠导航面板：分组、选中指示条、内置设置项，键位对齐 WinUI NavigationView。",
+      "split-button": "主区执行默认动作、箭头区展开浮层的拆分按钮；含勾选变体 Toggle Split Button。",
       "menu-flyout": "命令菜单浮层：条目 / 子菜单 / 勾选项 / 分隔线，键盘与层级对齐 WinUI MenuFlyout。"
     }
   },
@@ -199,6 +200,25 @@
         "none": "不可更改",
         "emptyHeader": "空列表",
         "emptyHint": "没有可选项"
+      }
+    },
+    "split-button": {
+      "basic": {
+        "create": "新建",
+        "folder": "文件夹",
+        "document": "文本文档",
+        "archive": "压缩文件",
+        "statusLine": "最近一次操作：{action}",
+        "hint": "主区执行默认动作，箭头展开更多选项；两者各自可 Tab 到达。"
+      },
+      "states": {
+        "disabledLabel": "禁用（新建）",
+        "toggleLabel": "固定到快速访问",
+        "toggleStateOn": "已固定",
+        "toggleStateOff": "未固定",
+        "statusLine": "勾选状态：{state}",
+        "secondaryLabel": "更多新建选项",
+        "flyoutItem": "固定项（示例）"
       }
     },
     "menu-flyout": {

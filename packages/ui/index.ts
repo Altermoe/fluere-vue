@@ -46,6 +46,8 @@ import FluereScrollView from './src/scrollview/scroll-view.vue'
 import { SCROLL_VIEW_AGENT_EVENTS } from './src/scrollview/use-agent-surface'
 import FluereSelect from './src/select/select.vue'
 import FluereSlider from './src/slider/slider.vue'
+import FluereSplitButton from './src/split-button/split-button.vue'
+import FluereToggleSplitButton from './src/split-button/toggle-split-button.vue'
 import FluereTabViewItem from './src/tab-view/tab-view-item.vue'
 import FluereTabView from './src/tab-view/tab-view.vue'
 import FluereToggleButton from './src/toggle-button/toggle-button.vue'
@@ -84,11 +86,13 @@ export {
   FluereSelect,
   FluereSlider,
   FluereSmokeLayer,
+  FluereSplitButton,
   FluereTabView,
   FluereTabViewItem,
   FluereToggleButton,
   FluereToggleGroup,
   FluereToggleGroupItem,
+  FluereToggleSplitButton,
   FluereToggleSwitch,
   FluereTooltip,
   FluereTooltipProvider,
@@ -116,6 +120,11 @@ export type {
 } from './src/focus-visual/use-focus-visual'
 export type { FluereButtonProps } from './src/button/button.vue'
 export type { FluereToggleButtonProps } from './src/toggle-button/toggle-button.vue'
+export type {
+  FluereSplitButtonFlyoutSlotProps,
+  FluereSplitButtonProps,
+  FluereToggleSplitButtonProps,
+} from './src/split-button/types'
 export type {
   FluereSelectChangeEventArgs,
   FluereSelectItem,

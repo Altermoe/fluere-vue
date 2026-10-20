@@ -8,6 +8,7 @@ import { numberBoxLocale } from '../src/number-box/locale'
 import { progressBarLocale } from '../src/progress-bar/locale'
 import { progressRingLocale } from '../src/progress-ring/locale'
 import { scrollViewLocale } from '../src/scrollview/locale'
+import { splitButtonLocale } from '../src/split-button/locale'
 
 /**
  * @fluere-vue/ui/locales/zh-Hans —— 简体中文内置文案聚合（todo §1.4 子路径导出）。
@@ -29,6 +30,7 @@ export const zhHans: LocaleOverrideMessages = {
   'progress-bar': progressBarLocale.zhHans,
   'progress-ring': progressRingLocale.zhHans,
   'scroll-view': scrollViewLocale.zhHans,
+  'split-button': splitButtonLocale.zhHans,
 }
 
 export default zhHans
