@@ -58,6 +58,8 @@ Pass `wrap-enabled` for `IsWrapEnabled`: after reaching an endpoint the value wr
 
 `spinButtonPlacementMode` maps to `SpinButtonPlacementMode`: `hidden` (default) / `inline` (up/down buttons inline to the right of the input box) / `compact` (a button panel floats up on focus). `inline` shares a TextBox border with the input box; the buttons are 32×24, margin 4, corner radius 4; holding a button steps once immediately, then repeats every 250ms (the WinUI `RepeatButton` `Delay` / `Interval` defaults). Buttons never enter the Tab sequence (WinUI `IsTabStop=False`) but can be activated with `Enter` / `Space`.
 
+> Width follows the host: the component host is `inline-flex`, so inside a `flex` / grid container it is stretched to the container width by default (the demo container uses `max-w-sm` for a fixed width), and the embedded input always fills the control row — that is why the inline buttons share a single TextBox border with the input box. Set `width` on the host when a fixed width is needed.
+
 ::demo-block{title="Inline buttons"}
 #preview
 :NumberBoxInlineDemo

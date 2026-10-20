@@ -445,15 +445,36 @@ describe('FluereNumberBox 状态样式（WinUI NumberBox 契约）', () => {
     expect(control).toContain('align-items: stretch')
   })
 
-  it('内联模式：NumberBoxMinWidth 120 + 让出 76px 按钮位（再留 8px 间隔）', () => {
+  /**
+   * 回归守卫：FluereInput 是多元素组件（宿主 span + 内层 input），且 `inheritAttrs: false`
+   * + 显式 `v-bind="attrs"`，传进去的 class 会落到内层 input 而不是宿主；scoped 的 data-v
+   * 又只加在本模板元素 / 子组件根节点上，于是旧写法 `.fui-number-box__control
+   * .fui-number-box__input { width: 100% }` 静默失效 —— 文档站里输入框只有浏览器默认
+   * 200px，内联增减按钮浮在输入框之外（2026-10-20 的 UI 异常）。
+   * 修法：宽度写在子组件根节点 `.fui-input` 上（它同时带两个 data-v），内边距用
+   * `:deep()` 穿透到内层 input（与 Slider 处理 reka 底座同一手法）。
+   * 浏览器实测见 number-box.vue 样式块顶部注释（容器 384px：输入框 384、按钮在右内边距内）。
+   */
+  it('输入框：子组件根节点撑满控件行，文本让位穿透到内层 input', () => {
+    const inputRoot = rules.get('.fui-number-box__control > .fui-input') ?? ''
+    expect(inputRoot).toContain('flex: 1 1 auto')
+    expect(inputRoot).toContain('min-width: 0')
+    expect(
+      rules.get(
+        ".fui-number-box[data-spin-buttons='inline'] .fui-number-box__control :deep(.fui-number-box__input)",
+      ) ?? '',
+    ).toContain('padding-inline-end: 84px')
+    expect(
+      rules.get(
+        ".fui-number-box[data-spin-buttons='compact'] .fui-number-box__control :deep(.fui-number-box__input)",
+      ) ?? '',
+    ).toContain('padding-inline-end: 32px')
+  })
+
+  it('内联模式：NumberBoxMinWidth 120（按钮占位由输入框右内边距让出，见上一条）', () => {
     expect(
       rules.get(".fui-number-box[data-spin-buttons='inline'] .fui-number-box__control") ?? '',
     ).toContain('min-width: 120px')
-    expect(
-      rules.get(
-        ".fui-number-box[data-spin-buttons='inline'] .fui-number-box__control .fui-number-box__input",
-      ) ?? '',
-    ).toContain('padding-inline-end: 84px')
   })
 
   it('内联按钮：MinWidth 32 / Margin 4（减号左侧无外边距）/ ControlCornerRadius 4', () => {

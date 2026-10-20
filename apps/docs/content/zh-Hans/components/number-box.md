@@ -58,6 +58,8 @@ nav:
 
 `spinButtonPlacementMode` 对应 `SpinButtonPlacementMode`：`hidden`（默认）/ `inline`（输入框右侧内联上 / 下按钮）/ `compact`（聚焦时浮出按钮面板）。`inline` 与输入框共用一个 TextBox 边框，按钮 32×24、外边距 4、圆角 4；按住按钮会立即步进一次，随后每 250ms 重复（WinUI `RepeatButton` 的 `Delay` / `Interval` 缺省值）。按钮不进入 Tab 序列（WinUI `IsTabStop=False`），但可用 `Enter` / `Space` 激活。
 
+> 宽度跟随宿主：组件宿主是 `inline-flex`，放进 `flex` / 栅格容器时默认按容器宽度拉伸（示例容器用 `max-w-sm` 定宽），内嵌输入框始终铺满控件行，所以内联按钮与输入框共用同一个 TextBox 边框。需要固定宽度时给宿主设 `width` 即可。
+
 ::demo-block{title="内联按钮"}
 #preview
 :NumberBoxInlineDemo

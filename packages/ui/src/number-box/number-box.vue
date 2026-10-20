@@ -462,6 +462,19 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
 /*   3. 紧凑浮层用 colorNeutralBackground1 + shadow16 近似 Acrylic        */
 /*      （Fluent 令牌集中没有 Acrylic 材质令牌，取不透明表面 + 同一      */
 /*       阴影档位；真实 Mica/Acrylic 见 docs 目标 2）                     */
+/*                                                                     */
+/* 组合 FluereInput 的 scoped 作用域（0.5.x 回归修复）：                 */
+/*   FluereInput 是多元素组件（宿主 span + 内层 input），且 `inheritAttrs: */
+/*   false` + 显式 `v-bind="attrs"` —— 传进去的 class 落到「内层 input」 */
+/*   而不是宿主；scoped 样式的 data-v 又只加在「本模板元素 / 子组件根节点」*/
+/*   上，于是旧选择器 `.fui-number-box__input` 既拿不到宿主宽度、也到不了 */
+/*   内层 input（整套规则静默失效，单元测试解析源码时照样全绿）。修法：   */
+/*   宽度写在子组件根节点 `.fui-input` 上（它带两个 data-v），内边距用     */
+/*   `:deep()` 穿透到真正接收文本的 input（同 Slider 对底座的处理）。     */
+/*   真实浏览器实测（dev 服务器 + Playwright，示例容器 max-w-sm = 384px， */
+/*   控件行 x 353–737）：修复前输入框宽 200、内联按钮 661–737 全落在输入  */
+/*   框右缘（553）之外；修复后输入框宽 384（= 宿主），按钮 661–737 落在   */
+/*   84px 右内边距内，文本不再与按钮重叠。复现方法见契约测试的同名用例。  */
 /* ------------------------------------------------------------------ */
 
 /* ---- 宿主：Header / 控件 / Description 三行 ---- */
@@ -499,16 +512,22 @@ const ariaDescribedby = computed(() => (hasDescription.value ? descriptionId : u
   min-width: 120px;
 }
 
-/* ---- 输入框：样式完全由 FluereInput（TextBox）提供，这里只调内边距 ---- */
-.fui-number-box__control .fui-number-box__input {
-  width: 100%;
+/* ---- 输入框：样式完全由 FluereInput（TextBox）提供，这里只调宽度与内边距 ---- */
+/* FluereInput 的根节点（`.fui-input`）撑满控件行：等价于 WinUI 里 InputBox 横跨
+   模板三列；`min-width: 0` 让它在窄容器里能收缩，兜底由 NumberBoxMinWidth 负责 */
+.fui-number-box__control > .fui-input {
+  flex: 1 1 auto;
+  min-width: 0;
 }
-/* 76 = 列宽（Up 32+4+4 / Down 0+32+4），再留 8px 与按钮分开 */
-.fui-number-box[data-spin-buttons='inline'] .fui-number-box__control .fui-number-box__input {
+/* 76 = 列宽（Up 32+4+4 / Down 0+32+4），再留 8px 与按钮分开。
+   文本真正写在 FluereInput 内层 input 上，scoped 的 data-v 到不了它，必须 :deep() */
+.fui-number-box[data-spin-buttons='inline'] .fui-number-box__control :deep(.fui-number-box__input) {
   padding-inline-end: 84px;
 }
-/* 让开右侧指示器（12px 图标 + 8px 边距） */
-.fui-number-box[data-spin-buttons='compact'] .fui-number-box__control .fui-number-box__input {
+/* 让开右侧指示器（12px 图标 + 8px 边距），同样穿透到内层 input */
+.fui-number-box[data-spin-buttons='compact']
+  .fui-number-box__control
+  :deep(.fui-number-box__input) {
   padding-inline-end: 32px;
 }
 
