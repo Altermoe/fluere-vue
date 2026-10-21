@@ -53,6 +53,7 @@ FluereVue 的实现基准是 Windows 实机表现与对应版本的 Windows App 
 | `FluereNavigationView` / `…Item` / `…ItemHeader` / `…ItemSeparator`      | NavigationView（左侧面板形态）    | 已完成 | 0.5.0      |
 | `FluereMenuFlyout` / `…Item` / `…SubItem` / `…Separator` / `…ToggleItem` | MenuFlyout（命令菜单浮层）        | 已完成 | 0.6.0      |
 | `FluereSplitButton` / `FluereToggleSplitButton`                          | SplitButton / ToggleSplitButton   | 已完成 | 0.6.0      |
+| `FluereText`                                                             | —（文本样式 / Windows type ramp） | 已完成 | 0.6.0      |
 
 - 每个组件的 Props / 事件 / 示例见[文档站](#文档与站点)的组件页。
 - 「版本」列是组件进入仓库的里程碑：`0.1.0-rc.1` 为通用控件清单批次，`0.3.0-rc.1` 为 i18n / 配置通道批次，`0.4.0` 为基建 + 通用件收尾批次（`ToggleButton` / `ToggleGroup` / `Select`），`0.5.0` 为 Explorer 骨架批次（窗口外框 + caption 按钮 + 选项卡 + 导航视图）；当前已发布的 `0.5.0-alpha.1` 包含截至 `0.5.0` 批次的组件；`0.6.0` 批次为仓库内已落地、尚未随版本发布。

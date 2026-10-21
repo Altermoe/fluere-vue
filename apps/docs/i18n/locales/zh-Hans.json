@@ -40,7 +40,8 @@
       "tab-view": "选项卡容器：等宽 / 按内容 / 折叠三种宽度模式，可关闭、可溢出滚动。",
       "navigation-view": "左侧可折叠导航面板：分组、选中指示条、内置设置项，键位对齐 WinUI NavigationView。",
       "split-button": "主区执行默认动作、箭头区展开浮层的拆分按钮；含勾选变体 Toggle Split Button。",
-      "menu-flyout": "命令菜单浮层：条目 / 子菜单 / 勾选项 / 分隔线，键盘与层级对齐 WinUI MenuFlyout。"
+      "menu-flyout": "命令菜单浮层：条目 / 子菜单 / 勾选项 / 分隔线，键盘与层级对齐 WinUI MenuFlyout。",
+      "text": "纯样式文本组件：九档 Windows type ramp，字号 / 行高 / 字重对齐 WinUI 3 TextBlock。"
     }
   },
   "theme": {
@@ -172,6 +173,33 @@
     "hideCode": "收起代码"
   },
   "demos": {
+    "text": {
+      "ramp": {
+        "ariaLabel": "Windows type ramp 九档对照表",
+        "columnExample": "示例",
+        "columnFont": "Variable Font",
+        "columnSize": "Size / Line height",
+        "columnStyle": "WinUI Style"
+      },
+      "usage": {
+        "asLabel": "as：按语义选择标签",
+        "asTitle": "页面标题（h1 · titleLarge）",
+        "asSection": "小节标题（h2 · subtitle）",
+        "asBody": "正文段落使用 p + body 档；这个组件只改变视觉，不改变语义。",
+        "asCaption": "辅助说明（span · caption）",
+        "alignLabel": "align：文本对齐（对应 TextBlock.TextAlignment）",
+        "alignStart": "start：按书写方向靠行首",
+        "alignCenter": "center：在容器中居中",
+        "alignEnd": "end：靠向行尾",
+        "alignJustify": "justify：两端对齐。这是一段足够长的正文，用来观察每一行如何被拉伸到容器两侧，同时最后一行保持自然长度。",
+        "truncateLabel": "truncate：单行截断（约束宽度后出现省略号）",
+        "truncateSample": "这是一段很长的文本，容器宽度不足时会被省略号截断，而不会换行。",
+        "truncateHint": "truncate 同时输出 display: block；宽度约束来自外部容器，与 XAML 里 TextBlock 需要被约束才会触发 TextTrimming 的前提一致。",
+        "foregroundLabel": "--fui-text-foreground：一行覆盖前景",
+        "foregroundPrimary": "主前景（缺省 colorNeutralForeground1）",
+        "foregroundSecondary": "次级前景（覆盖为 colorNeutralForeground3，对应 TextFillColorSecondary）"
+      }
+    },
     "select": {
       "basic": {
         "label": "刷新频率",

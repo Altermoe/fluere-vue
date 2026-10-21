@@ -50,6 +50,7 @@ import FluereSplitButton from './src/split-button/split-button.vue'
 import FluereToggleSplitButton from './src/split-button/toggle-split-button.vue'
 import FluereTabViewItem from './src/tab-view/tab-view-item.vue'
 import FluereTabView from './src/tab-view/tab-view.vue'
+import FluereText from './src/text/text.vue'
 import FluereToggleButton from './src/toggle-button/toggle-button.vue'
 import FluereToggleGroupItem from './src/toggle-group/toggle-group-item.vue'
 import FluereToggleGroup from './src/toggle-group/toggle-group.vue'
@@ -89,6 +90,7 @@ export {
   FluereSplitButton,
   FluereTabView,
   FluereTabViewItem,
+  FluereText,
   FluereToggleButton,
   FluereToggleGroup,
   FluereToggleGroupItem,
@@ -119,6 +121,7 @@ export type {
   UseFocusVisualReturn,
 } from './src/focus-visual/use-focus-visual'
 export type { FluereButtonProps } from './src/button/button.vue'
+export type { FluereTextAlignment, FluereTextProps, FluereTextVariant } from './src/text/types'
 export type { FluereToggleButtonProps } from './src/toggle-button/toggle-button.vue'
 export type {
   FluereSplitButtonFlyoutSlotProps,

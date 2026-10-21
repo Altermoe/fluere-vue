@@ -49,6 +49,7 @@ import '@fluere-vue/ui/style.css'
 | `FluereConfigProvider`                                                   | [config-provider](./src/config-provider/config-provider.vue) | [Config Provider / i18n](../../apps/docs/content/zh-Hans/components/config-provider.md)        |
 | `FluereTabView` / `FluereTabViewItem`                                    | [tab-view](./src/tab-view/tab-view.vue)                      | [Tab View](../../apps/docs/content/zh-Hans/components/tab-view.md)                             |
 | `FluereNavigationView` / `…Item` / `…ItemHeader` / `…ItemSeparator`      | [navigation-view](./src/navigation-view/navigation-view.vue) | [Navigation View](../../apps/docs/content/zh-Hans/components/navigation-view.md)               |
+| `FluereText`                                                             | [text](./src/text/text.vue)                                  | [Text](../../apps/docs/content/zh-Hans/components/text.md)                                     |
 
 > 完整导出清单（含 `SCROLL_VIEW_AGENT_EVENTS` 与全部 Props / 事件类型）以 [index.ts](./index.ts) 为准；
 > 英文文档与上表同名，位于 [content/en/components](../../apps/docs/content/en/components)。

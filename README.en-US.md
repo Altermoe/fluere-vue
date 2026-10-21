@@ -50,6 +50,7 @@ Current version **0.5.0-alpha.1** (pre-release); all six packages are published 
 | `FluereAppWindow`                             | TitleBar (window chrome)                        | Done   | 0.5.0      |
 | `FluereCaptionButtons`                        | AppWindowTitleBar (caption buttons)             | Done   | 0.5.0      |
 | `FluereTabView` / `FluereTabViewItem`         | TabView                                         | Done   | 0.5.0      |
+| `FluereText`                                  | — (text styles / Windows type ramp)             | Done   | 0.6.0      |
 
 - See the component pages on the [documentation site](https://fluere-vue.nahida.space) for each component's Props / events / examples.
 - The **Version** column marks the milestone at which a component landed in the repository: `0.1.0-rc.1` is the general control batch, `0.3.0-rc.1` is the i18n / configuration batch, `0.4.0` closes out the primitives plus ToggleButton / ToggleGroup / Select, and `0.5.0` is the Explorer-skeleton batch (window chrome, caption buttons, tabs); the currently published `0.5.0-alpha.1` already includes the `0.4.0` and `0.5.0` batches.

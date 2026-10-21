@@ -40,6 +40,7 @@ import FluereSplitButton from '../split-button/split-button.vue'
 import FluereToggleSplitButton from '../split-button/toggle-split-button.vue'
 import FluereTabViewItem from '../tab-view/tab-view-item.vue'
 import FluereTabView from '../tab-view/tab-view.vue'
+import FluereText from '../text/text.vue'
 import FluereToggleSwitch from '../toggle-switch/toggle-switch.vue'
 import FluereTooltipProvider from '../tooltip/tooltip-provider.vue'
 import FluereTooltip from '../tooltip/tooltip.vue'
@@ -543,5 +544,20 @@ describe('SSR 兼容性（i18n：locale 内建文案 + 并发不串语言）', (
     expect(html).toContain('菜单')
     // 关闭态不直出菜单面板（面板由客户端交互后挂载）
     expect(html).not.toContain('role="menu"')
+  })
+  it('FluereText 可服务端渲染（纯样式组件，setup 无浏览器 API 依赖）', async () => {
+    const html = await renderServer(FluereText, '标题')
+    expect(html).toContain('fui-text')
+    expect(html).toContain('fui-text--body')
+    expect(html).toContain('data-variant="body"')
+    expect(html).toContain('标题')
+
+    // `as` 换成语义标签时 SSR 直出对应标签
+    const headingApp = createSSRApp({
+      render: () => h(FluereText, { as: 'h1', variant: 'titleLarge' }, { default: () => '标题' }),
+    })
+    const headingHtml = await renderToString(headingApp)
+    expect(headingHtml).toContain('<h1')
+    expect(headingHtml).toContain('fui-text--titleLarge')
   })
 })

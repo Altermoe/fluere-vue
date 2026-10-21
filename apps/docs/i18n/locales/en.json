@@ -40,7 +40,8 @@
       "tab-view": "Tab container: equal, size-to-content and compact widths, closable tabs, overflow scrolling.",
       "navigation-view": "Collapsible left navigation pane: groups, selection indicator, built-in settings item; keys aligned with WinUI NavigationView.",
       "split-button": "A split button: the primary area runs the default action while the arrow opens a flyout; includes the toggle variant.",
-      "menu-flyout": "Command menu flyout with items, submenus, toggle items and separators; keyboard and layering aligned with WinUI MenuFlyout."
+      "menu-flyout": "Command menu flyout with items, submenus, toggle items and separators; keyboard and layering aligned with WinUI MenuFlyout.",
+      "text": "A style-only text component with the nine-step Windows type ramp; sizes, line heights and weights align with WinUI 3 TextBlock."
     }
   },
   "theme": {
@@ -177,6 +178,33 @@
     "hideCode": "Hide code"
   },
   "demos": {
+    "text": {
+      "ramp": {
+        "ariaLabel": "Windows type ramp: nine-step comparison table",
+        "columnExample": "Example",
+        "columnFont": "Variable Font",
+        "columnSize": "Size / Line height",
+        "columnStyle": "WinUI Style"
+      },
+      "usage": {
+        "asLabel": "as: pick the semantic element",
+        "asTitle": "Page title (h1 · titleLarge)",
+        "asSection": "Section title (h2 · subtitle)",
+        "asBody": "Body paragraphs use p + the body step; this component changes visuals only, not semantics.",
+        "asCaption": "Supporting note (span · caption)",
+        "alignLabel": "align: text alignment (corresponds to TextBlock.TextAlignment)",
+        "alignStart": "start: aligned to the line start",
+        "alignCenter": "center: centered in the container",
+        "alignEnd": "end: aligned to the line end",
+        "alignJustify": "justify: both edges aligned. This paragraph is long enough to show how each line stretches to both sides of the container while the last line keeps its natural length.",
+        "truncateLabel": "truncate: single-line trimming (ellipsis appears once width is constrained)",
+        "truncateSample": "This is a long piece of text; when the container is too narrow it is trimmed with an ellipsis instead of wrapping.",
+        "truncateHint": "truncate also emits display: block; the width constraint comes from the outer container, matching the XAML precondition that TextBlock must be constrained for TextTrimming to take effect.",
+        "foregroundLabel": "--fui-text-foreground: override the foreground in one line",
+        "foregroundPrimary": "Primary foreground (default colorNeutralForeground1)",
+        "foregroundSecondary": "Secondary foreground (overridden to colorNeutralForeground3, corresponding to TextFillColorSecondary)"
+      }
+    },
     "select": {
       "basic": {
         "label": "Refresh rate",
