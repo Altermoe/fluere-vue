@@ -3,8 +3,22 @@
  * 1) 亮/暗双主题：@nuxt/content 配置 highlight.theme = { default, dark }，
  *    会输出 --shiki-dark-* 变量，默认仅在下层 .shiki 上携带 default 色。
  *    此处在系统深色模式下切换到 dark 配色，无需额外引入 color-mode 模块。
+ *    **只切色 / 字形，不切 background**：@nuxt/content 会把 Shiki `<pre>` 的
+ *    内联样式清空（未配置 wrapperStyle），`--shiki-*-bg` 因此没有定义；原先这里
+ *    对 `.shiki` / `.shiki span` 写的 `background-color: var(--shiki-dark-bg)`
+ *    是「计算值阶段非法」的声明，会把 background 重置为 initial（透明）并压掉
+ *    下面卡片底色。代码块底色统一交给第 3 条的卡面（token 化，明暗都成立）。
  * 2) 行号：Shiki 为每一行生成 <span class="line">，用 CSS 计数器渲染行号，
  *    伪元素不进入 textContent，因此“复制”默认拿到的是纯净源码，不含行号。
+ * 3) 独立代码卡面：不在 demo-block `#code` 槽里的围栏代码块（含缩进在引用块 / 列表项
+ *    里的那种）原本没有任何容器、直接落在页面底色上（16px 默认字号也与正文 14px
+ *    不协调）。这里给与 demo 卡面同源的表面：colorNeutralBackground1 底 +
+ *    NeutralStroke1 描边 + 8px 圆角 + 13px/1.6 字号行高（对齐 #code 区）。
+ *    实测（2026-10-21，Chromium 1440×1000，明 / 暗）：底色 #ffffff / #292929、
+ *    描边 #d1d1d1 / #666666、圆角 8px、padding 12px 16px、font-size 13px /
+ *    line-height 20.8px；demo-block `#code` 区仍为透明（由 DemoBlock 卡片承接底色）。
+ *    全站 25 个组件页 / 142 个 Shiki 块（其中 15 个独立块）逐一量过：
+ *    独立块卡面属性齐全、demo 区未被套双层卡面。
  */
 
 /* ---- 深色模式：切换 Shiki 双主题 ---- */
@@ -12,7 +26,6 @@
 html[data-color-mode='dark'] .shiki,
 html[data-color-mode='dark'] .shiki span {
   color: var(--shiki-dark) !important;
-  background-color: var(--shiki-dark-bg) !important;
   font-style: var(--shiki-dark-font-style) !important;
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
@@ -23,7 +36,6 @@ html[data-color-mode='dark'] .shiki span {
   html:not([data-color-mode]) .shiki,
   html:not([data-color-mode]) .shiki span {
     color: var(--shiki-dark) !important;
-    background-color: var(--shiki-dark-bg) !important;
     font-style: var(--shiki-dark-font-style) !important;
     font-weight: var(--shiki-dark-font-weight) !important;
     text-decoration: var(--shiki-dark-text-decoration) !important;
@@ -42,6 +54,34 @@ html[data-color-mode='dark'] .shiki span {
   border-radius: var(--borderRadiusMedium);
   /* 略深于主背景 colorNeutralBackground2（#fafafa / #1f1f1f）：暗色下再压深会糊成一片，故改为略提亮 */
   background-color: light-dark(#f0f0f0, #2e2e2e);
+}
+
+/* ---- 独立代码卡面（正文里不在 demo-block 内的围栏代码块） ---- */
+/*
+ * 正文围栏代码块有的在顶层、有的缩进在引用块 / 列表项里（`> - ```css`），
+ * 因此不能只用「.docs-prose 直接子节点」来选中；这里用 Selectors L4 的
+ * `:not(.demo-block__code *)`（复合选择器可放进 :not()，Chrome 88+ / FF 84+ /
+ * Safari 9+ 均支持）排除 demo-block `#code` 槽里的 `<pre>`，避免「卡片里再套一层卡片」。
+ * 字号 / 行高 / 内边距与 `#code` 区（demo-block.vue 的 scoped 样式）保持一致；
+ * 底色 / 描边 / 圆角与 demo 卡面同源（colorNeutralBackground1 + NeutralStroke1 +
+ * borderRadiusXLarge），明暗两套都由 token 的 light-dark() 解析。
+ */
+.docs-prose pre.shiki:not(.demo-block__code *) {
+  margin-block: var(--spacingVerticalL);
+  padding: var(--spacingVerticalM) var(--spacingHorizontalL);
+  font-size: 13px;
+  line-height: 1.6;
+  background-color: var(--colorNeutralBackground1);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusXLarge);
+  /* 长行在卡面内横向滚动，不把正文容器撑宽 */
+  overflow-x: auto;
+}
+
+.docs-prose pre.shiki:not(.demo-block__code *) code {
+  display: block;
+  /* 让包裹层与最长行同宽；配合 pre 的 overflow-x 横向滚动 */
+  min-width: max-content;
 }
 
 /* ---- 行号 ---- */

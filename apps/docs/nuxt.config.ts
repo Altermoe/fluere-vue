@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { presetFluere } from '@fluere-vue/themes'
 import { presetWind4, type Preset } from 'unocss'
 
@@ -33,6 +34,19 @@ function resolveOptimizeDepsEntry(id: string, rootDir: string) {
 
 /** 当前 docs 项目根目录（本配置文件所在目录），用作解析起点，避免依赖 cwd。 */
 const docsRootDir = dirname(new URL(import.meta.url).pathname)
+
+/**
+ * 「模板片段」围栏的 rehype 插件（绝对路径，交给 @nuxt/content 的 importPlugins 加载）。
+ *
+ * 为什么用绝对路径当 rehypePlugins 的 key：@nuxt/content 的 `importPlugins()` 按
+ * **插件 key** 动态 import，而 key 必须在 `.nuxt` / Nitro 运行时里可解析——这里直接给
+ * 文件路径（file URL），不依赖别名或包导出。插件职责见 `utils/rehype-vue-template-snippet.mjs`：
+ * 把 `<FluereXxx>…</FluereXxx>` 这类 **Vue 模板片段**的 ```vue 改标成 `vue-html`，
+ * 让 Shiki 用 `grammarContextCode: '<template>'` 解析，修复「嵌套子元素丢失高亮」。
+ */
+const rehypeVueTemplateSnippet = fileURLToPath(
+  new URL('./utils/rehype-vue-template-snippet.mjs', import.meta.url),
+)
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -96,6 +110,11 @@ export default defineNuxtConfig({
             dark: 'github-dark',
           },
           langs: ['js', 'ts', 'json', 'vue', 'html', 'css', 'shell', 'md', 'mdc', 'yaml'],
+        },
+        // 「模板片段」围栏改标 vue-html（修嵌套子元素高亮丢失）；@nuxt/content 把
+        // `highlight` 固定排在自定义 rehype 插件之后，所以这里拿到的还是原始语言名。
+        rehypePlugins: {
+          [rehypeVueTemplateSnippet]: {},
         },
       },
     },
