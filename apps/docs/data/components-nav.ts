@@ -7,6 +7,24 @@
  *   这一支**必须**同时给出 `summary`（卡片一句话摘要）与 `icon`（卡片图标），
  *   类型上由 `ImplementedComponentNavItem` 强制，漏写会编译报错。
  * - `implemented: false` 表示尚未实现，侧边栏展示「未实现」占位提示。
+ *   收录口径（2026-10-21 收敛）：**只保留需要独立控件级实现**的条目；能作为既有组件
+ *   （或已排期组件）的模式 / 变体 / 薄组合交付的形态一律不单列，写进覆盖组件的文档页：
+ *   - 已由现有组件覆盖：Toggle → ToggleButton / ToggleGroup；Label → Text（`as="label"`）；
+ *     Editable → Input 的编辑态；Scroll Area → ScrollView；Context Menu → MenuFlyout 的
+ *     锚点 / `showAt()` 触发；Hover Card → Tooltip 的 `#content` 富内容形态（补 hoverable
+ *     行为，不新增控件）；Alert Dialog / Dialog → ContentDialog；Aspect Ratio / Separator
+ *     → CSS `aspect-ratio` 与 `--dividerStrokeColorDefault` 描边（非控件）；Color Swatch /
+ *     Color Swatch Picker → Button / ToggleButton + ToggleGroup 的组合。
+ *   - 已排期组件的模式 / 变体：Collapsible → Expander（docs/todo.md 0.8.5 以 reka
+ *     Collapsible 为底座）；Accordion → 多个 Expander 的组合；Toolbar → CommandBar
+ *     （0.8.3）；Date Range Field / Date Range Picker / Range Calendar / Time Range Field
+ *     → 对应单值控件的 range 模式；Month / Month Range / Year / Year Range Picker →
+ *     CalendarView 的 `DisplayMode` 档位。
+ *   保留下来的待实现项（Autocomplete / Listbox / Pin Input / Rating / Tags Input /
+ *   Color Area / Color Field / Color Slider / Calendar / Date Field / Date Picker /
+ *   Time Field / Avatar / Drawer / Menubar / Pagination / Popover / Splitter / Stepper /
+ *   Toast / Tree）均有 WinUI 独立控件、或需要新的交互 / 几何 / 数据层；删除项不得再被
+ *   当成「新组件」加回。
  *
  * 卡片文案为什么单独写 `summary` 而不复用 `.md` frontmatter 的 `description`：
  * 后者是文档页的头部描述（含「遮罩层与弹窗的进入 / 退出缓动逐帧对齐 WinUI 3」这类
@@ -165,7 +183,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'combobox',
         icon: FluentIconAppsListDetail24Regular,
       },
-      { slug: 'editable', name: 'Editable', implemented: false },
       { slug: 'listbox', name: 'Listbox', implemented: false },
       {
         slug: 'number-box',
@@ -174,7 +191,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'number-box',
         icon: FluentIconNumberSymbol24Regular,
       },
-      { slug: 'label', name: 'Label', implemented: false },
       { slug: 'pin-input', name: 'Pin Input', implemented: false },
       {
         slug: 'radio-group',
@@ -206,7 +222,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         icon: FluentIconToggleRight24Regular,
       },
       { slug: 'tags-input', name: 'Tags Input', implemented: false },
-      { slug: 'toggle', name: 'Toggle', implemented: false },
       {
         slug: 'toggle-group',
         name: 'Toggle Group',
@@ -223,8 +238,6 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'color-area', name: 'Color Area', implemented: false },
       { slug: 'color-field', name: 'Color Field', implemented: false },
       { slug: 'color-slider', name: 'Color Slider', implemented: false },
-      { slug: 'color-swatch', name: 'Color Swatch', implemented: false },
-      { slug: 'color-swatch-picker', name: 'Color Swatch Picker', implemented: false },
     ],
   },
   {
@@ -234,23 +247,13 @@ const componentNavGroups: ComponentNavGroup[] = [
       { slug: 'calendar', name: 'Calendar', implemented: false },
       { slug: 'date-field', name: 'Date Field', implemented: false },
       { slug: 'date-picker', name: 'Date Picker', implemented: false },
-      { slug: 'date-range-field', name: 'Date Range Field', implemented: false },
-      { slug: 'date-range-picker', name: 'Date Range Picker', implemented: false },
-      { slug: 'range-calendar', name: 'Range Calendar', implemented: false },
       { slug: 'time-field', name: 'Time Field', implemented: false },
-      { slug: 'time-range-field', name: 'Time Range Field', implemented: false },
-      { slug: 'month-picker', name: 'Month Picker', implemented: false },
-      { slug: 'month-range-picker', name: 'Month Range Picker', implemented: false },
-      { slug: 'year-picker', name: 'Year Picker', implemented: false },
-      { slug: 'year-range-picker', name: 'Year Range Picker', implemented: false },
     ],
   },
   {
     id: 'general',
     palette: 'teal',
     items: [
-      { slug: 'accordion', name: 'Accordion', implemented: false },
-      { slug: 'alert-dialog', name: 'Alert Dialog', implemented: false },
       {
         slug: 'app-window',
         name: 'App Window',
@@ -258,9 +261,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'app-window',
         icon: FluentIconWindow24Regular,
       },
-      { slug: 'aspect-ratio', name: 'Aspect Ratio', implemented: false },
       { slug: 'avatar', name: 'Avatar', implemented: false },
-      { slug: 'collapsible', name: 'Collapsible', implemented: false },
       {
         slug: 'config-provider',
         name: 'Config Provider',
@@ -275,10 +276,7 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'content-dialog',
         icon: FluentIconSquareMultiple24Regular,
       },
-      { slug: 'context-menu', name: 'Context Menu', implemented: false },
-      { slug: 'dialog', name: 'Dialog', implemented: false },
       { slug: 'drawer', name: 'Drawer', implemented: false },
-      { slug: 'hover-card', name: 'Hover Card', implemented: false },
       {
         slug: 'info-badge',
         name: 'Info Badge',
@@ -308,7 +306,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'navigation-view',
         icon: FluentIconPanelLeft24Regular,
       },
-      { slug: 'navigation-menu', name: 'Navigation Menu', implemented: false },
       { slug: 'pagination', name: 'Pagination', implemented: false },
       { slug: 'popover', name: 'Popover', implemented: false },
       {
@@ -325,8 +322,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         summaryKey: 'progress-ring',
         icon: FluentIconCircleHalfFill24Regular,
       },
-      { slug: 'scroll-area', name: 'Scroll Area', implemented: false },
-      { slug: 'separator', name: 'Separator', implemented: false },
       { slug: 'splitter', name: 'Splitter', implemented: false },
       { slug: 'stepper', name: 'Stepper', implemented: false },
       {
@@ -337,7 +332,6 @@ const componentNavGroups: ComponentNavGroup[] = [
         icon: FluentIconContentView24Regular,
       },
       { slug: 'toast', name: 'Toast', implemented: false },
-      { slug: 'toolbar', name: 'Toolbar', implemented: false },
       {
         slug: 'tooltip',
         name: 'Tooltip',
